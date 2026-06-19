@@ -1,0 +1,37 @@
+[0.740s] Invoking command in '/home/joshua/rover_ws/src/rover_control': PYTHONPATH=/home/joshua/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /home/joshua/rover_ws/build/rover_control/build install --record /home/joshua/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data
+[0.924s] running egg_info
+[0.924s] creating ../../build/rover_control/rover_control.egg-info
+[0.925s] writing ../../build/rover_control/rover_control.egg-info/PKG-INFO
+[0.925s] writing dependency_links to ../../build/rover_control/rover_control.egg-info/dependency_links.txt
+[0.925s] writing entry points to ../../build/rover_control/rover_control.egg-info/entry_points.txt
+[0.925s] writing requirements to ../../build/rover_control/rover_control.egg-info/requires.txt
+[0.926s] writing top-level names to ../../build/rover_control/rover_control.egg-info/top_level.txt
+[0.926s] writing manifest file '../../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[0.927s] reading manifest file '../../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[0.928s] writing manifest file '../../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[0.928s] running build
+[0.928s] running build_py
+[0.928s] creating /home/joshua/rover_ws/build/rover_control/build
+[0.928s] creating /home/joshua/rover_ws/build/rover_control/build/lib
+[0.928s] creating /home/joshua/rover_ws/build/rover_control/build/lib/rover_control
+[0.929s] copying rover_control/command_node.py -> /home/joshua/rover_ws/build/rover_control/build/lib/rover_control
+[0.933s] copying rover_control/__init__.py -> /home/joshua/rover_ws/build/rover_control/build/lib/rover_control
+[0.933s] running install
+[0.934s] running install_lib
+[0.935s] creating /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control
+[0.936s] copying /home/joshua/rover_ws/build/rover_control/build/lib/rover_control/command_node.py -> /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control
+[0.936s] copying /home/joshua/rover_ws/build/rover_control/build/lib/rover_control/__init__.py -> /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control
+[0.936s] byte-compiling /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/command_node.py to command_node.cpython-310.pyc
+[0.937s] byte-compiling /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__init__.py to __init__.cpython-310.pyc
+[0.937s] running install_data
+[0.938s] creating /home/joshua/rover_ws/install/rover_control/share/ament_index
+[0.938s] creating /home/joshua/rover_ws/install/rover_control/share/ament_index/resource_index
+[0.938s] creating /home/joshua/rover_ws/install/rover_control/share/ament_index/resource_index/packages
+[0.938s] copying resource/rover_control -> /home/joshua/rover_ws/install/rover_control/share/ament_index/resource_index/packages
+[0.939s] copying package.xml -> /home/joshua/rover_ws/install/rover_control/share/rover_control
+[0.939s] running install_egg_info
+[0.940s] Copying ../../build/rover_control/rover_control.egg-info to /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control-0.0.0-py3.10.egg-info
+[0.941s] running install_scripts
+[0.960s] Installing command_node script to /home/joshua/rover_ws/install/rover_control/lib/rover_control
+[0.960s] writing list of installed files to '/home/joshua/rover_ws/build/rover_control/install.log'
+[0.982s] Invoked command in '/home/joshua/rover_ws/src/rover_control' returned '0': PYTHONPATH=/home/joshua/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /home/joshua/rover_ws/build/rover_control/build install --record /home/joshua/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data
