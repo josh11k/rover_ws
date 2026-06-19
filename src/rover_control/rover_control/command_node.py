@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 
 
 class CommandNode(Node):
@@ -14,17 +15,26 @@ class CommandNode(Node):
             10
         )
 
+        self.status_publisher = self.create_publisher(
+            String,
+            "/commander/status",
+            10
+        )
+
         self.timer = self.create_timer(
-            1.0,
+            5,
             self.timer_callback
         )
 
     def timer_callback(self):
+        status_msg = String()
         msg = Twist()
 
         msg.linear.x = 0.2
         msg.angular.z = 0.0
+        status_msg.data = "COMMANDER_ACTIVE"
 
+        self.status_publisher.publish(status_msg)
         self.publisher.publish(msg)
 
         self.get_logger().info(

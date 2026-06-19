@@ -12,6 +12,7 @@ resource/rover_control
 rover_control/__init__.py
 rover_control/command_node.py
 rover_control/fake_stm32_bridge_node.py
+rover_control/wifi_node.py
 test/test_copyright.py
 test/test_flake8.py
 test/test_pep257.py
