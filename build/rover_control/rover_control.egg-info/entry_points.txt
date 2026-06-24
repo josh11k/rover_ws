@@ -1,5 +1,6 @@
 [console_scripts]
 command_node = rover_control.command_node:main
 fake_stm32_bridge_node = rover_control.fake_stm32_bridge_node:main
+rover_pose_node = rover_control.rover_pose_node:main
 wifi_node = rover_control.wifi_node:main
 

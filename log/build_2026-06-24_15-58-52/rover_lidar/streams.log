@@ -1,0 +1,37 @@
+[0.878s] Invoking command in '/home/joshua/rover_ws/src/rover_lidar': PYTHONPATH=/home/joshua/rover_ws/build/rover_lidar/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_lidar build --build-base /home/joshua/rover_ws/build/rover_lidar/build install --record /home/joshua/rover_ws/build/rover_lidar/install.log --single-version-externally-managed install_data
+[1.080s] running egg_info
+[1.081s] creating ../../build/rover_lidar/rover_lidar.egg-info
+[1.082s] writing ../../build/rover_lidar/rover_lidar.egg-info/PKG-INFO
+[1.082s] writing dependency_links to ../../build/rover_lidar/rover_lidar.egg-info/dependency_links.txt
+[1.082s] writing entry points to ../../build/rover_lidar/rover_lidar.egg-info/entry_points.txt
+[1.083s] writing requirements to ../../build/rover_lidar/rover_lidar.egg-info/requires.txt
+[1.083s] writing top-level names to ../../build/rover_lidar/rover_lidar.egg-info/top_level.txt
+[1.083s] writing manifest file '../../build/rover_lidar/rover_lidar.egg-info/SOURCES.txt'
+[1.086s] reading manifest file '../../build/rover_lidar/rover_lidar.egg-info/SOURCES.txt'
+[1.087s] writing manifest file '../../build/rover_lidar/rover_lidar.egg-info/SOURCES.txt'
+[1.087s] running build
+[1.088s] running build_py
+[1.088s] creating /home/joshua/rover_ws/build/rover_lidar/build
+[1.088s] creating /home/joshua/rover_ws/build/rover_lidar/build/lib
+[1.088s] creating /home/joshua/rover_ws/build/rover_lidar/build/lib/rover_lidar
+[1.089s] copying rover_lidar/fake_lidar_node.py -> /home/joshua/rover_ws/build/rover_lidar/build/lib/rover_lidar
+[1.089s] copying rover_lidar/__init__.py -> /home/joshua/rover_ws/build/rover_lidar/build/lib/rover_lidar
+[1.090s] running install
+[1.090s] running install_lib
+[1.091s] creating /home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar
+[1.091s] copying /home/joshua/rover_ws/build/rover_lidar/build/lib/rover_lidar/fake_lidar_node.py -> /home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar
+[1.091s] copying /home/joshua/rover_ws/build/rover_lidar/build/lib/rover_lidar/__init__.py -> /home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar
+[1.092s] byte-compiling /home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar/fake_lidar_node.py to fake_lidar_node.cpython-310.pyc
+[1.093s] byte-compiling /home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar/__init__.py to __init__.cpython-310.pyc
+[1.093s] running install_data
+[1.093s] creating /home/joshua/rover_ws/install/rover_lidar/share/ament_index
+[1.094s] creating /home/joshua/rover_ws/install/rover_lidar/share/ament_index/resource_index
+[1.094s] creating /home/joshua/rover_ws/install/rover_lidar/share/ament_index/resource_index/packages
+[1.095s] copying resource/rover_lidar -> /home/joshua/rover_ws/install/rover_lidar/share/ament_index/resource_index/packages
+[1.095s] copying package.xml -> /home/joshua/rover_ws/install/rover_lidar/share/rover_lidar
+[1.095s] running install_egg_info
+[1.097s] Copying ../../build/rover_lidar/rover_lidar.egg-info to /home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar-0.0.0-py3.10.egg-info
+[1.099s] running install_scripts
+[1.123s] Installing fake_lidar_node script to /home/joshua/rover_ws/install/rover_lidar/lib/rover_lidar
+[1.123s] writing list of installed files to '/home/joshua/rover_ws/build/rover_lidar/install.log'
+[1.166s] Invoked command in '/home/joshua/rover_ws/src/rover_lidar' returned '0': PYTHONPATH=/home/joshua/rover_ws/build/rover_lidar/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/joshua/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_lidar build --build-base /home/joshua/rover_ws/build/rover_lidar/build install --record /home/joshua/rover_ws/build/rover_lidar/install.log --single-version-externally-managed install_data

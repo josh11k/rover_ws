@@ -1,10 +1,14 @@
+/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/test:commands.py
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/fake_stm32_bridge_node.py
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/command_node.py
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/wifi_node.py
+/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/rover_pose_node.py
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__init__.py
+/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__pycache__/test:commands.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__pycache__/fake_stm32_bridge_node.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__pycache__/command_node.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__pycache__/wifi_node.cpython-310.pyc
+/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__pycache__/rover_pose_node.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/__pycache__/__init__.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_control/share/ament_index/resource_index/packages/rover_control
 /home/joshua/rover_ws/install/rover_control/share/rover_control/package.xml
@@ -17,4 +21,5 @@
 /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control-0.0.0-py3.10.egg-info/SOURCES.txt
 /home/joshua/rover_ws/install/rover_control/lib/rover_control/command_node
 /home/joshua/rover_ws/install/rover_control/lib/rover_control/fake_stm32_bridge_node
+/home/joshua/rover_ws/install/rover_control/lib/rover_control/rover_pose_node
 /home/joshua/rover_ws/install/rover_control/lib/rover_control/wifi_node
