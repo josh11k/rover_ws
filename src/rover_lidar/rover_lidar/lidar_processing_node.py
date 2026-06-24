@@ -1,10 +1,11 @@
 import math
-from collections import defaultdict
 
 import numpy as np
+from scipy.spatial import cKDTree
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import PointCloud2
 from nav_msgs.msg import OccupancyGrid
@@ -14,183 +15,255 @@ import sensor_msgs_py.point_cloud2 as pc2
 
 
 # =========================
-# CONFIG
+# DEFAULT CONFIG
+# (alle Werte sind jetzt zusätzlich als ROS2-Parameter
+#  zur Laufzeit überschreibbar, siehe _declare_parameters)
 # =========================
 
-POINTS_TOPIC = "/livox/points"
-TRAVERSABILITY_TOPIC = "/terrain/traversability_grid"
+DEFAULTS = {
+    "points_topic": "/livox/points",
+    "traversability_topic": "/terrain/traversability_grid",
+    "output_frame_id": "",  # leer = msg.header.frame_id der PointCloud übernehmen
 
-GRID_RESOLUTION = 0.25  # meter pro grid cell
-GRID_SIZE_X = 100.0      # meter
-GRID_SIZE_Y = 100.0      # meter
+    "grid_resolution": 0.25,   # meter pro grid cell
+    "grid_size_x": 100.0,      # meter
+    "grid_size_y": 100.0,      # meter
 
-MIN_X = -50.0
-MAX_X = 50.0
-MIN_Y = -50.0
-MAX_Y = 50.0
-MIN_Z = -10.0
-MAX_Z = 10.0
+    "min_x": -50.0,
+    "max_x": 50.0,
+    "min_y": -50.0,
+    "max_y": 50.0,
+    "min_z": -10.0,
+    "max_z": 10.0,
 
-VOXEL_SIZE = 0.20
+    "voxel_size": 0.20,
 
-OUTLIER_RADIUS = 0.50
-MIN_NEIGHBORS = 2
+    "outlier_radius": 0.50,
+    "min_neighbors": 2,
 
-MAX_STEP_HEIGHT = 0.20
-MAX_ROUGHNESS = 0.10
-MAX_SLOPE_DEG = 18.0
-MIN_POINTS_PER_CELL = 2
+    "max_step_height": 0.20,
+    "max_roughness": 0.10,
+    "max_slope_deg": 18.0,
+    "min_points_per_cell": 2,
+    "min_points_for_plane_fit": 4,
+}
 
 
 class LidarProcessingNode(Node):
     def __init__(self):
         super().__init__("lidar_processing_node")
 
+        self._declare_parameters()
+        self._load_parameters()
+
         self.pointcloud_sub = self.create_subscription(
             PointCloud2,
-            POINTS_TOPIC,
+            self.points_topic,
             self.pointcloud_callback,
-            10
+            qos_profile_sensor_data,  # passt zu typischen LiDAR-Treiber-QoS (BEST_EFFORT)
         )
 
         self.trav_pub = self.create_publisher(
             OccupancyGrid,
-            TRAVERSABILITY_TOPIC,
+            self.traversability_topic,
             10
         )
 
-        self.grid_width = int(GRID_SIZE_X / GRID_RESOLUTION)
-        self.grid_height = int(GRID_SIZE_Y / GRID_RESOLUTION)
+        self.grid_width = int(self.grid_size_x / self.grid_resolution)
+        self.grid_height = int(self.grid_size_y / self.grid_resolution)
 
         self.get_logger().info("LiDAR Processing Node started")
 
+    # =========================
+    # PARAMETERS
+    # =========================
+
+    def _declare_parameters(self):
+        for name, value in DEFAULTS.items():
+            self.declare_parameter(name, value)
+
+    def _load_parameters(self):
+        for name in DEFAULTS:
+            setattr(self, name, self.get_parameter(name).value)
+
+    # =========================
+    # CALLBACK
+    # =========================
+
     def pointcloud_callback(self, msg: PointCloud2):
-        points_structured = pc2.read_points(
-            msg,
-            field_names=("x", "y", "z"),
-            skip_nans=True
-        )
+        try:
+            raw_points = pc2.read_points_numpy(
+                msg,
+                field_names=("x", "y", "z"),
+                skip_nans=True,
+            ).astype(np.float32)
 
-        raw_points = np.array(
-            [
-                [point["x"], point["y"], point["z"]]
-                for point in points_structured
-            ],
-            dtype=np.float32
-        )
+            if raw_points.size == 0:
+                self.get_logger().warn("Empty point cloud received")
+                return
 
-        if raw_points.size == 0:
-            self.get_logger().warn("Empty point cloud received")
-            return
+            cropped = self.crop_filter(raw_points)
+            voxel = self.voxel_grid_filter(cropped)
+            clean = self.radius_outlier_filter(voxel)
 
-        cropped = self.crop_filter(raw_points)
-        voxel = self.voxel_grid_filter(cropped)
-        clean = self.radius_outlier_filter(voxel)
+            elevation = self.build_elevation_grid(clean)
+            traversability = self.compute_traversability(elevation)
 
-        elevation = self.build_elevation_grid(clean)
-        traversability = self.compute_traversability(elevation)
+            frame_id = self.output_frame_id or msg.header.frame_id or "lidar_frame"
+            self.publish_occupancy_grid(traversability, msg.header.stamp, frame_id)
 
-        self.publish_occupancy_grid(traversability, msg.header.stamp)
+            self.get_logger().info(
+                f"Raw={len(raw_points)} | Crop={len(cropped)} | "
+                f"Voxel={len(voxel)} | Clean={len(clean)}"
+            )
 
-        self.get_logger().info(
-            f"Raw={len(raw_points)} | Crop={len(cropped)} | "
-            f"Voxel={len(voxel)} | Clean={len(clean)}"
-        )
+        except Exception as exc:  # noqa: BLE001 - Callback darf den Node nicht crashen
+            self.get_logger().error(f"pointcloud_callback failed: {exc}")
 
     # =========================
     # 1. CROP / ROI FILTER
     # =========================
 
     def crop_filter(self, points: np.ndarray) -> np.ndarray:
+        # FIX: vorher fehlte ein '&' zwischen Y- und Z-Bedingung. Dadurch wurde
+        # das Boolean-Array der Y-Bedingung wie eine Funktion aufgerufen
+        # ("'numpy.ndarray' object is not callable") und der Callback crashte
+        # bei jedem eingehenden Scan.
         mask = (
-            (points[:, 0] >= MIN_X) & (points[:, 0] <= MAX_X) &
-            (points[:, 1] >= MIN_Y) & (points[:, 1] <= MAX_Y) 
-            (points[:, 2] >= MIN_Z) & (points[:, 2] <= MAX_Z)
+            (points[:, 0] >= self.min_x) & (points[:, 0] <= self.max_x) &
+            (points[:, 1] >= self.min_y) & (points[:, 1] <= self.max_y) &
+            (points[:, 2] >= self.min_z) & (points[:, 2] <= self.max_z)
         )
 
         return points[mask]
 
     # =========================
-    # 2. VOXEL GRID FILTER
+    # 2. VOXEL GRID FILTER (vektorisiert)
     # =========================
 
     def voxel_grid_filter(self, points: np.ndarray) -> np.ndarray:
         if len(points) == 0:
             return points
 
-        voxel_indices = np.floor(points / VOXEL_SIZE).astype(np.int32)
-        voxel_dict = defaultdict(list)
+        voxel_indices = np.floor(points / self.voxel_size).astype(np.int64)
 
-        for idx, point in zip(map(tuple, voxel_indices), points):
-            voxel_dict[idx].append(point)
+        # Eindeutige Voxel-Zellen + Rückindex je Punkt -> Zelle
+        _, inverse, counts = np.unique(
+            voxel_indices, axis=0, return_inverse=True, return_counts=True
+        )
+        inverse = inverse.ravel()
 
-        downsampled = []
+        n_voxels = counts.shape[0]
+        sums = np.zeros((n_voxels, 3), dtype=np.float64)
+        np.add.at(sums, inverse, points.astype(np.float64))
 
-        for voxel_points in voxel_dict.values():
-            downsampled.append(np.mean(voxel_points, axis=0))
+        means = sums / counts[:, None]
 
-        return np.array(downsampled, dtype=np.float32)
+        return means.astype(np.float32)
 
     # =========================
-    # 3. RADIUS OUTLIER REMOVAL
+    # 3. RADIUS OUTLIER REMOVAL (KDTree, statt O(n^2))
     # =========================
 
     def radius_outlier_filter(self, points: np.ndarray) -> np.ndarray:
         if len(points) == 0:
             return points
 
-        filtered = []
-        radius_sq = OUTLIER_RADIUS ** 2
+        tree = cKDTree(points)
 
-        for i, p in enumerate(points):
-            diff = points - p
-            dist_sq = np.sum(diff * diff, axis=1)
+        # return_length=True liefert direkt die Anzahl der Nachbarn
+        # (inkl. sich selbst) pro Punkt, ohne Python-seitige Listen.
+        neighbor_counts = tree.query_ball_point(
+            points, r=self.outlier_radius, return_length=True
+        )
 
-            neighbor_count = np.sum(dist_sq < radius_sq) - 1
+        # -1, weil der Punkt sich selbst immer als Nachbar mitzählt
+        mask = (neighbor_counts - 1) >= self.min_neighbors
 
-            if neighbor_count >= MIN_NEIGHBORS:
-                filtered.append(p)
-
-        return np.array(filtered, dtype=np.float32)
+        return points[mask]
 
     # =========================
-    # 4. ELEVATION GRID
+    # 4. ELEVATION GRID (vektorisierte Aggregation + Ebenenanpassung)
     # =========================
 
     def build_elevation_grid(self, points: np.ndarray) -> dict:
         grid = {}
 
-        for x, y, z in points:
-            ix = int((x + GRID_SIZE_X / 2.0) / GRID_RESOLUTION)
-            iy = int((y + GRID_SIZE_Y / 2.0) / GRID_RESOLUTION)
+        if len(points) == 0:
+            return grid
 
-            if 0 <= ix < self.grid_width and 0 <= iy < self.grid_height:
-                key = (ix, iy)
+        ix = np.floor((points[:, 0] + self.grid_size_x / 2.0) / self.grid_resolution).astype(np.int64)
+        iy = np.floor((points[:, 1] + self.grid_size_y / 2.0) / self.grid_resolution).astype(np.int64)
 
-                if key not in grid:
-                    grid[key] = {
-                        "z_values": [],
-                        "min_z": float(z),
-                        "max_z": float(z),
-                        "mean_z": float(z),
-                        "roughness": 0.0,
-                        "point_count": 0,
-                    }
+        valid = (ix >= 0) & (ix < self.grid_width) & (iy >= 0) & (iy < self.grid_height)
+        ix, iy, pts = ix[valid], iy[valid], points[valid]
 
-                cell = grid[key]
+        if len(pts) == 0:
+            return grid
 
-                cell["z_values"].append(float(z))
-                cell["min_z"] = min(cell["min_z"], float(z))
-                cell["max_z"] = max(cell["max_z"], float(z))
+        keys = ix * self.grid_height + iy
+        order = np.argsort(keys, kind="stable")
+        keys_sorted = keys[order]
+        pts_sorted = pts[order]
+        ix_sorted = ix[order]
+        iy_sorted = iy[order]
 
-        for cell in grid.values():
-            z_values = np.array(cell["z_values"])
+        boundaries = np.flatnonzero(np.diff(keys_sorted)) + 1
+        starts = np.concatenate(([0], boundaries))
+        ends = np.concatenate((boundaries, [len(keys_sorted)]))
 
-            cell["mean_z"] = float(np.mean(z_values))
-            cell["roughness"] = float(np.std(z_values))
-            cell["point_count"] = len(z_values)
+        for start, end in zip(starts, ends):
+            cell_pts = pts_sorted[start:end]
+            z_vals = cell_pts[:, 2]
+            key = (int(ix_sorted[start]), int(iy_sorted[start]))
+
+            min_z = float(np.min(z_vals))
+            max_z = float(np.max(z_vals))
+            mean_z = float(np.mean(z_vals))
+            point_count = len(z_vals)
+
+            roughness, plane_slope_deg = self._fit_plane_roughness_and_slope(cell_pts)
+
+            grid[key] = {
+                "min_z": min_z,
+                "max_z": max_z,
+                "mean_z": mean_z,
+                "roughness": roughness,
+                "plane_slope_deg": plane_slope_deg,
+                "point_count": point_count,
+            }
 
         return grid
+
+    def _fit_plane_roughness_and_slope(self, cell_points: np.ndarray):
+        """Fittet z = a*x + b*y + c pro Zelle und liefert die Residual-Streuung
+        (Roughness, unabhängig von der reinen Hangneigung) sowie die aus der
+        Ebene abgeleitete Neigung in Grad. Fällt bei zu wenigen Punkten auf
+        std(z) bzw. 0.0 Grad Hangneigung zurück."""
+
+        z_vals = cell_points[:, 2]
+
+        if len(cell_points) < self.min_points_for_plane_fit:
+            return float(np.std(z_vals)), 0.0
+
+        x = cell_points[:, 0]
+        y = cell_points[:, 1]
+
+        design = np.column_stack([x, y, np.ones_like(x)])
+
+        try:
+            coeffs, _, _, _ = np.linalg.lstsq(design, z_vals, rcond=None)
+        except np.linalg.LinAlgError:
+            return float(np.std(z_vals)), 0.0
+
+        a, b, _c = coeffs
+        predicted = design @ coeffs
+        residuals = z_vals - predicted
+
+        roughness = float(np.std(residuals))
+        plane_slope_deg = float(math.degrees(math.atan(math.hypot(a, b))))
+
+        return roughness, plane_slope_deg
 
     # =========================
     # 5. TRAVERSABILITY ANALYSIS
@@ -210,33 +283,38 @@ class LidarProcessingNode(Node):
             roughness = cell["roughness"]
             point_count = cell["point_count"]
 
-            slope_deg = self.compute_local_slope_deg(elevation, ix, iy)
+            neighbor_slope_deg = self.compute_local_slope_deg(elevation, ix, iy)
+            # Kombination aus Nachbarzellen-Gradient und lokaler Ebenenanpassung:
+            # robust gegen Rauschen einzelner Nachbar-Mittelwerte UND gegen
+            # echte Hangneigung innerhalb einer einzelnen Zelle.
+            slope_deg = max(neighbor_slope_deg, cell["plane_slope_deg"])
+
             max_step_to_neighbor = self.compute_max_step_to_neighbor(
                 elevation,
                 ix,
                 iy
             )
 
-            if point_count < MIN_POINTS_PER_CELL:
+            if point_count < self.min_points_per_cell:
                 cost = -1
 
-            elif height_diff > MAX_STEP_HEIGHT:
+            elif height_diff > self.max_step_height:
                 cost = 100
 
-            elif max_step_to_neighbor > MAX_STEP_HEIGHT:
+            elif max_step_to_neighbor > self.max_step_height:
                 cost = 100
 
-            elif roughness > MAX_ROUGHNESS:
+            elif roughness > self.max_roughness:
                 cost = 80
 
-            elif slope_deg > MAX_SLOPE_DEG:
+            elif slope_deg > self.max_slope_deg:
                 cost = 80
 
             else:
-                step_cost = min(1.0, max_step_to_neighbor / MAX_STEP_HEIGHT)
-                rough_cost = min(1.0, roughness / MAX_ROUGHNESS)
-                slope_cost = min(1.0, slope_deg / MAX_SLOPE_DEG)
-                height_cost = min(1.0, height_diff / MAX_STEP_HEIGHT)
+                step_cost = min(1.0, max_step_to_neighbor / self.max_step_height)
+                rough_cost = min(1.0, roughness / self.max_roughness)
+                slope_cost = min(1.0, slope_deg / self.max_slope_deg)
+                height_cost = min(1.0, height_diff / self.max_step_height)
 
                 cost = int(
                     60 * max(
@@ -301,7 +379,7 @@ class LidarProcessingNode(Node):
             neighbor_z = elevation[n_key]["mean_z"]
 
             dz = abs(center_z - neighbor_z)
-            horizontal_distance = GRID_RESOLUTION * math.sqrt(dx * dx + dy * dy)
+            horizontal_distance = self.grid_resolution * math.sqrt(dx * dx + dy * dy)
 
             slope_rad = math.atan2(dz, horizontal_distance)
             slope_deg = math.degrees(slope_rad)
@@ -314,19 +392,19 @@ class LidarProcessingNode(Node):
     # 6. PUBLISH OCCUPANCY GRID
     # =========================
 
-    def publish_occupancy_grid(self, traversability: np.ndarray, stamp):
+    def publish_occupancy_grid(self, traversability: np.ndarray, stamp, frame_id: str):
         msg = OccupancyGrid()
 
         msg.header.stamp = stamp
-        msg.header.frame_id = "lidar_frame"
+        msg.header.frame_id = frame_id
 
-        msg.info.resolution = GRID_RESOLUTION
+        msg.info.resolution = self.grid_resolution
         msg.info.width = self.grid_width
         msg.info.height = self.grid_height
 
         msg.info.origin = Pose()
-        msg.info.origin.position.x = -GRID_SIZE_X / 2.0
-        msg.info.origin.position.y = -GRID_SIZE_Y / 2.0
+        msg.info.origin.position.x = -self.grid_size_x / 2.0
+        msg.info.origin.position.y = -self.grid_size_y / 2.0
         msg.info.origin.position.z = 0.0
         msg.info.origin.orientation.w = 1.0
 
