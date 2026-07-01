@@ -125,10 +125,6 @@ class LidarProcessingNode(Node):
     # =========================
 
     def crop_filter(self, points: np.ndarray) -> np.ndarray:
-        # FIX: vorher fehlte ein '&' zwischen Y- und Z-Bedingung. Dadurch wurde
-        # das Boolean-Array der Y-Bedingung wie eine Funktion aufgerufen
-        # ("'numpy.ndarray' object is not callable") und der Callback crashte
-        # bei jedem eingehenden Scan.
         mask = (
             (points[:, 0] >= self.min_x) & (points[:, 0] <= self.max_x) &
             (points[:, 1] >= self.min_y) & (points[:, 1] <= self.max_y) &
