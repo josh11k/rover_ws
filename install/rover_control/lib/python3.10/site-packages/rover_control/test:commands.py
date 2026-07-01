@@ -3,11 +3,9 @@
 # cd ~/rover_ws
 # colcon build
 # source install/setup.bash
-
 # 13. Node einzeln testen
 # TODO: Node starten
 # ros2 run rover_control <node_name>
-
 # 14. Topics prüfen
 # TODO: Anzeigen, welche Topics existieren
 # ros2 topic list

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rover_perception_msgs</name>
+  <version>0.0.0</version>
+  <description>
+    Custom message interfaces for rover_perception: per-cell terrain
+    statistics (elevation, roughness, slope, point density) published
+    alongside the collapsed traversability cost grid. Split into its own
+    package because ROS2 message generation (rosidl) requires an
+    ament_cmake package -- rover_perception itself stays ament_python.
+  </description>
+  <maintainer email="joshua.kaelble@gmx.dem">joshua</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+  <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
