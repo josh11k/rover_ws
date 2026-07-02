@@ -19,10 +19,9 @@ from sensor_msgs.msg import PointCloud2
 from nav_msgs.msg import OccupancyGrid, MapMetaData
 from geometry_msgs.msg import Pose
 
-import sensor_msgs_py.point_cloud2 as pc2
-
 from rover_perception_msgs.msg import TerrainGrid
 
+from rover_perception.pointcloud_filters import read_weighted_points
 from rover_perception.terrain_analysis import (
     build_elevation_grid,
     compute_traversability,
@@ -95,9 +94,7 @@ class ObstacleGridNode(Node):
 
     def cloud_callback(self, msg: PointCloud2):
         try:
-            points = pc2.read_points_numpy(
-                msg, field_names=("x", "y", "z"), skip_nans=True
-            ).astype(np.float32)
+            points = read_weighted_points(msg)
 
             if points.size == 0:
                 return
@@ -192,6 +189,7 @@ class ObstacleGridNode(Node):
         msg.roughness = stats["roughness"].tolist()
         msg.plane_slope_deg = stats["plane_slope_deg"].tolist()
         msg.point_count = stats["point_count"].tolist()
+        msg.total_weight = stats["total_weight"].tolist()
 
         self.stats_pub.publish(msg)
 

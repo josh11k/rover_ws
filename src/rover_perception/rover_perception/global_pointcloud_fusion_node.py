@@ -6,9 +6,12 @@ already been:
 
   1. transformed into base_link by frame_transform_node, and
   2. cropped / downsampled / outlier-filtered by pointcloud_preprocessing_node
+     (which also guarantees both clouds carry a 4th "weight" field by now,
+     see pointcloud_filters.py)
 
 so this node's job is just a time-synchronized concatenation, not another
-round of sensor-specific processing.
+round of sensor-specific processing. The per-point weight is passed through
+unchanged -- it's consumed downstream by terrain_analysis.py.
 """
 
 import numpy as np
@@ -17,9 +20,13 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2
-import sensor_msgs_py.point_cloud2 as pc2
 
 import message_filters
+
+from rover_perception.pointcloud_filters import (
+    create_weighted_cloud,
+    read_weighted_points,
+)
 
 
 DEFAULTS = {
@@ -74,13 +81,8 @@ class GlobalPointcloudFusionNode(Node):
 
     def fusion_callback(self, lidar_msg: PointCloud2, stereo_msg: PointCloud2):
         try:
-            lidar_points = pc2.read_points_numpy(
-                lidar_msg, field_names=("x", "y", "z"), skip_nans=True
-            ).astype(np.float32)
-
-            stereo_points = pc2.read_points_numpy(
-                stereo_msg, field_names=("x", "y", "z"), skip_nans=True
-            ).astype(np.float32)
+            lidar_points = read_weighted_points(lidar_msg)
+            stereo_points = read_weighted_points(stereo_msg)
 
             if lidar_points.size == 0 and stereo_points.size == 0:
                 return
@@ -111,7 +113,7 @@ class GlobalPointcloudFusionNode(Node):
             )
 
             newest_header.frame_id = self.output_frame_id
-            out_msg = pc2.create_cloud_xyz32(newest_header, combined)
+            out_msg = create_weighted_cloud(newest_header, combined)
             self.pub.publish(out_msg)
 
         except Exception as exc:  # noqa: BLE001 - keep the node alive

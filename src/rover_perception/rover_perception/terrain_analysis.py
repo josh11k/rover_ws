@@ -2,10 +2,15 @@
 rover_lidar/lidar_processing_node.py so it can be reused against a fused
 (lidar + stereo) global point cloud instead of raw lidar-only points.
 
-This is a straight port of the vectorized aggregation + plane-fit logic that
-already existed and worked well in the lidar-only pipeline -- the algorithm
-itself is unchanged, only the input source changes (fused cloud instead of
-/livox/points directly).
+Points are (N, 4): x, y, z, weight (see pointcloud_filters.py). `weight`
+(0..1) expresses per-point confidence -- low for far-away/low-light stereo
+points, 1.0 for lidar points (no confidence model for lidar yet). It's used
+in two places here: as a weighted mean/plane-fit instead of a plain one (so
+low-confidence points are outweighed rather than treated equally), and as an
+"effective point count" (`total_weight`) that gates whether a cell is
+trusted at all -- a cell built only from far/dark stereo points needs many
+more of them to pass the same bar as a cell with a couple of solid lidar
+returns.
 """
 
 import math
@@ -51,16 +56,23 @@ def build_elevation_grid(
 
     for start, end in zip(starts, ends):
         cell_pts = pts_sorted[start:end]
-        z_vals = cell_pts[:, 2]
+        xyz = cell_pts[:, :3]
+        cell_weight = cell_pts[:, 3]
+        z_vals = xyz[:, 2]
         key = (int(ix_sorted[start]), int(iy_sorted[start]))
 
         min_z = float(np.min(z_vals))
         max_z = float(np.max(z_vals))
-        mean_z = float(np.mean(z_vals))
         point_count = len(z_vals)
+        total_weight = float(np.sum(cell_weight))
+
+        if total_weight > 1e-9:
+            mean_z = float(np.sum(z_vals * cell_weight) / total_weight)
+        else:
+            mean_z = float(np.mean(z_vals))
 
         roughness, plane_slope_deg = _fit_plane_roughness_and_slope(
-            cell_pts, min_points_for_plane_fit
+            xyz, cell_weight, min_points_for_plane_fit
         )
 
         grid[key] = {
@@ -70,26 +82,38 @@ def build_elevation_grid(
             "roughness": roughness,
             "plane_slope_deg": plane_slope_deg,
             "point_count": point_count,
+            "total_weight": total_weight,
         }
 
     return grid
 
 
-def _fit_plane_roughness_and_slope(cell_points: np.ndarray, min_points_for_plane_fit: int):
-    """Fit z = a*x + b*y + c per cell; return (roughness, slope_deg)."""
+def _fit_plane_roughness_and_slope(
+    cell_xyz: np.ndarray, cell_weight: np.ndarray, min_points_for_plane_fit: int
+):
+    """Fit z = a*x + b*y + c per cell (weighted least squares); return
+    (roughness, slope_deg). Low-weight points still count as *samples* for
+    the min_points_for_plane_fit check (that's about numerical stability /
+    degrees of freedom, not confidence) but contribute less to the fitted
+    plane itself.
+    """
 
-    z_vals = cell_points[:, 2]
+    z_vals = cell_xyz[:, 2]
 
-    if len(cell_points) < min_points_for_plane_fit:
+    if len(cell_xyz) < min_points_for_plane_fit:
         return float(np.std(z_vals)), 0.0
 
-    x = cell_points[:, 0]
-    y = cell_points[:, 1]
+    x = cell_xyz[:, 0]
+    y = cell_xyz[:, 1]
 
     design = np.column_stack([x, y, np.ones_like(x)])
 
+    sqrt_w = np.sqrt(np.clip(cell_weight, 1e-6, None))
+    design_weighted = design * sqrt_w[:, None]
+    z_weighted = z_vals * sqrt_w
+
     try:
-        coeffs, _, _, _ = np.linalg.lstsq(design, z_vals, rcond=None)
+        coeffs, _, _, _ = np.linalg.lstsq(design_weighted, z_weighted, rcond=None)
     except np.linalg.LinAlgError:
         return float(np.std(z_vals)), 0.0
 
@@ -113,9 +137,9 @@ def flatten_elevation_grid(
     layout `traversability.flatten()` already uses in obstacle_grid_node, so
     both can be published side by side and correlated by index.
 
-    Cells with no data get NaN (float fields) / 0 (point_count), instead of
-    a shared sentinel like the traversability grid's -1, since these are
-    continuous quantities rather than a bounded cost.
+    Cells with no data get NaN (float fields) / 0 (point_count / total_weight),
+    instead of a shared sentinel like the traversability grid's -1, since
+    these are continuous quantities rather than a bounded cost.
     """
 
     n = grid_width * grid_height
@@ -126,6 +150,7 @@ def flatten_elevation_grid(
     roughness = np.full(n, np.nan, dtype=np.float32)
     plane_slope_deg = np.full(n, np.nan, dtype=np.float32)
     point_count = np.zeros(n, dtype=np.int32)
+    total_weight = np.zeros(n, dtype=np.float32)
 
     for (ix, iy), cell in elevation.items():
         idx = iy * grid_width + ix
@@ -136,6 +161,7 @@ def flatten_elevation_grid(
         roughness[idx] = cell["roughness"]
         plane_slope_deg[idx] = cell["plane_slope_deg"]
         point_count[idx] = cell["point_count"]
+        total_weight[idx] = cell["total_weight"]
 
     return {
         "min_z": min_z,
@@ -144,6 +170,7 @@ def flatten_elevation_grid(
         "roughness": roughness,
         "plane_slope_deg": plane_slope_deg,
         "point_count": point_count,
+        "total_weight": total_weight,
     }
 
 
@@ -220,7 +247,14 @@ def compute_traversability(
     max_slope_deg: float,
     min_points_per_cell: int,
 ) -> np.ndarray:
-    """Turn per-cell elevation stats into an occupancy-style cost grid."""
+    """Turn per-cell elevation stats into an occupancy-style cost grid.
+
+    The "enough data to trust this cell" gate now compares against
+    `total_weight` (sum of per-point confidence) instead of the raw point
+    count -- a cell built from many low-confidence (far/dark) stereo points
+    needs to accumulate the same effective weight as a cell with a couple
+    of full-confidence returns before it's treated as known terrain.
+    """
 
     grid_data = np.full((grid_height, grid_width), -1, dtype=np.int8)
 
@@ -229,16 +263,19 @@ def compute_traversability(
 
         height_diff = cell["max_z"] - cell["min_z"]
         roughness = cell["roughness"]
-        point_count = cell["point_count"]
+        total_weight = cell["total_weight"]
 
         neighbor_slope_deg = compute_local_slope_deg(
             elevation, ix, iy, grid_resolution
         )
+        # Kombination aus Nachbarzellen-Gradient und lokaler Ebenenanpassung:
+        # robust gegen Rauschen einzelner Nachbar-Mittelwerte UND gegen
+        # echte Hangneigung innerhalb einer einzelnen Zelle.
         slope_deg = max(neighbor_slope_deg, cell["plane_slope_deg"])
 
         max_step_to_neighbor = compute_max_step_to_neighbor(elevation, ix, iy)
 
-        if point_count < min_points_per_cell:
+        if total_weight < min_points_per_cell:
             cost = -1
 
         elif height_diff > max_step_height:

@@ -7,6 +7,14 @@ via launch args with different topics/params -- noise characteristics
 differ enough between a LiDAR and a stereo depth sensor that the filter
 *parameters* should stay per-sensor even though the filter *code* is
 shared.
+
+Points are carried through this node as (N, 4): x, y, z, weight (see
+pointcloud_filters.py). Not every source has a weight yet -- the stereo
+branch (stereo_pointcloud_node) computes a real one, the raw Livox topic
+does not. If the incoming cloud has no "weight" field, one is synthesized
+here with a constant 1.0 (full confidence), so every node downstream of
+this one can assume 4 columns unconditionally, regardless of which sensor
+branch it came from.
 """
 
 import numpy as np
@@ -22,6 +30,8 @@ from rover_perception.pointcloud_filters import (
     crop_filter,
     voxel_grid_filter,
     radius_outlier_filter,
+    create_weighted_cloud,
+    read_weighted_points,
 )
 
 
@@ -79,11 +89,22 @@ class PointcloudPreprocessingNode(Node):
         for name in DEFAULTS:
             setattr(self, name, self.get_parameter(name).value)
 
+    def _read_points_with_weight(self, msg: PointCloud2) -> np.ndarray:
+        field_names = {f.name for f in msg.fields}
+
+        if "weight" in field_names:
+            return read_weighted_points(msg)
+
+        xyz = pc2.read_points_numpy(
+            msg, field_names=("x", "y", "z"), skip_nans=True
+        ).astype(np.float32)
+
+        weight = np.ones((len(xyz), 1), dtype=np.float32)
+        return np.concatenate([xyz, weight], axis=1)
+
     def cloud_callback(self, msg: PointCloud2):
         try:
-            points = pc2.read_points_numpy(
-                msg, field_names=("x", "y", "z"), skip_nans=True
-            ).astype(np.float32)
+            points = self._read_points_with_weight(msg)
 
             if points.size == 0:
                 return
@@ -107,7 +128,7 @@ class PointcloudPreprocessingNode(Node):
             if len(points) == 0:
                 return
 
-            out_msg = pc2.create_cloud_xyz32(msg.header, points)
+            out_msg = create_weighted_cloud(msg.header, points)
             self.pub.publish(out_msg)
 
         except Exception as exc:  # noqa: BLE001 - keep the node alive

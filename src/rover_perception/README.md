@@ -25,31 +25,65 @@ Kamera-Intrinsics (fx, fy, cx, cy) passend zum obigen Tiefenbild — wird zur
 Rückprojektion in 3D gebraucht.
 
 ### `/stereo/points`
-**Typ:** `sensor_msgs/PointCloud2`
+**Typ:** `sensor_msgs/PointCloud2` (4 Felder: x, y, z, **weight**)
 **Publisher:** `stereo_pointcloud_node`
 **Frame:** `camera_depth_optical_frame`
 Tiefenbild + CameraInfo per Pinhole-Rückprojektion in 3D-Punkte umgerechnet.
+Jeder Punkt bekommt zusätzlich ein `weight`-Feld (0–1), siehe
+"Gewichtungssystem" unten.
 
 ### `/lidar/points_base_link`, `/stereo/points_base_link`
-**Typ:** `sensor_msgs/PointCloud2`
+**Typ:** `sensor_msgs/PointCloud2` (4 Felder: x, y, z, weight)
 **Publisher:** je eine Instanz von `frame_transform_node` (Lidar / Stereo)
 **Frame:** `base_link`
 Dieselben Punkte wie oben, per TF2 in das Roboter-Koordinatensystem
-transformiert.
+transformiert. `frame_transform_node` transformiert nur x/y/z — das
+`weight`-Feld läuft unverändert durch (`tf2_sensor_msgs.do_transform_cloud`
+lässt zusätzliche Felder unangetastet).
 
 ### `/lidar/points_filtered`, `/stereo/points_filtered`
-**Typ:** `sensor_msgs/PointCloud2`
+**Typ:** `sensor_msgs/PointCloud2` (4 Felder: x, y, z, weight)
 **Publisher:** je eine Instanz von `pointcloud_preprocessing_node`
 **Frame:** `base_link`
 Nach Crop / Voxel-Downsampling / Radius-Outlier-Removal (Parameter pro
-Sensor unterschiedlich, siehe Launch-File).
+Sensor unterschiedlich, siehe Launch-File). Falls die eingehende Cloud noch
+kein `weight`-Feld hat (aktuell: der Lidar-Zweig), wird hier `weight = 1.0`
+(volles Vertrauen) ergänzt.
 
 ### `/perception/global_points`
-**Typ:** `sensor_msgs/PointCloud2`
+**Typ:** `sensor_msgs/PointCloud2` (4 Felder: x, y, z, weight)
 **Publisher:** `global_pointcloud_fusion_node`
 **Frame:** `base_link`
 Zeitlich synchronisierte Vereinigung von gefilterter Lidar- und
 Stereo-Punktwolke.
+
+---
+
+### Gewichtungssystem (`weight`-Feld)
+
+Stereo-Tiefe wird bei wenig Licht und größerer Entfernung unzuverlässiger;
+Lidar ist davon kaum betroffen. Statt Stereo-Punkte hart zu verwerfen, trägt
+jeder Punkt ab `stereo_pointcloud_node` ein `weight`-Feld (0–1) mit, das die
+ganze Pipeline durchläuft und erst in `terrain_analysis.py` ausgewertet wird:
+
+- **Stereo:** `weight = distance_weight(z) * scene_confidence`
+  - `distance_weight(z) = 1 / (1 + (z / distance_weight_ref_m)²)`, hart auf
+    0 gesetzt jenseits von `max_reliable_range_m`.
+  - `scene_confidence` ist ein globaler (0–1) Wert, empfangen auf
+    `/camera/scene_confidence` (`std_msgs/Float32`). Es publiziert aktuell
+    noch niemand dorthin — Default bleibt `1.0` (keine Abwertung), bis ein
+    zukünftiger Helligkeits-/Low-Light-Node das übernimmt. Die Verkabelung
+    ist real und schon jetzt testbar (`ros2 topic pub` auf diesen Topic).
+- **Lidar:** hat kein natives Konfidenzmodell, bekommt `weight = 1.0`
+  (siehe oben, ergänzt in `pointcloud_preprocessing_node`).
+- **Aggregation** (`pointcloud_filters.py`, `terrain_analysis.py`):
+  Voxel-Downsampling nutzt den gewichteten Mittelwert der Position, die
+  Ebenenanpassung pro Zelle ist eine gewichtete Kleinste-Quadrate-Schätzung,
+  und die Zellen-Gültigkeit (`min_points_per_cell`) wird gegen die Summe der
+  Gewichte (`total_weight`) statt gegen die rohe Punktanzahl geprüft — eine
+  Zelle aus vielen unsicheren (fernen/dunklen) Stereo-Punkten braucht also
+  mehr "effektive" Punkte, um als bekanntes Terrain zu gelten, als eine
+  Zelle mit wenigen sicheren Lidar-Rückgaben.
 
 ### `/terrain/traversability_grid`
 **Typ:** `nav_msgs/OccupancyGrid`
@@ -80,8 +114,10 @@ Traversability-Wert abgeleitet wird:
 | `mean_z`          | `float32[]`| mittlere Höhe der Zelle (m)                                         |
 | `roughness`       | `float32[]`| Standardabweichung der Residuen zur gefitteten Ebene (m)            |
 | `plane_slope_deg` | `float32[]`| Neigung der gefitteten Ebene in der Zelle (Grad)                    |
-| `point_count`     | `int32[]`  | Anzahl der Punkte, die in die Zelle gefallen sind                   |
+| `point_count`     | `int32[]`  | rohe Anzahl der Punkte, die in die Zelle gefallen sind (Diagnose)   |
+| `total_weight`    | `float32[]`| Summe der Punkt-Gewichte in der Zelle — **das** entscheidet (nicht `point_count`), ob die Zelle als bekanntes Terrain gilt |
 
-Zellen ohne genug Punkte: alle `float32`-Felder = `NaN`, `point_count = 0`
-(bewusst kein gemeinsamer Sentinel-Wert wie bei der OccupancyGrid, da das
+Zellen ohne genug effektive Punkte (`total_weight < min_points_per_cell`):
+alle `float32`-Felder = `NaN`, `point_count`/`total_weight` = 0 (bewusst
+kein gemeinsamer Sentinel-Wert wie bei der OccupancyGrid, da das
 kontinuierliche Größen sind statt eines begrenzten 0–100-Kostenwerts).
