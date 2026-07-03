@@ -13,8 +13,8 @@ Run one instance per sensor via launch args, e.g.:
 
     frame_transform_node --ros-args \
         -p input_topic:=/livox/points \
-        -p output_topic:=/lidar/points_base_link \
-        -p target_frame:=base_link
+        -p output_topic:=/lidar/points_mast_base_link \
+        -p target_frame:=mast_base_link
 
 The node degrades gracefully (skips the frame, logs a throttled warning) if
 no transform is available yet, e.g. because the extrinsic calibration has
@@ -33,8 +33,8 @@ from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 
 DEFAULTS = {
     "input_topic": "/livox/points",
-    "output_topic": "/lidar/points_base_link",
-    "target_frame": "base_link",
+    "output_topic": "/lidar/points_mast_base_link",
+    "target_frame": "mast_base_link",
     # How long to wait for a transform before dropping a cloud, in seconds.
     "tf_timeout_sec": 0.1,
     # If true, subscribe with the sensor-data QoS (best effort, small

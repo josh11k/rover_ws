@@ -33,6 +33,10 @@ setup(
             'pointcloud_preprocessing_node = rover_perception.pointcloud_preprocessing_node:main',
             'global_pointcloud_fusion_node = rover_perception.global_pointcloud_fusion_node:main',
             'obstacle_grid_node = rover_perception.obstacle_grid_node:main',
+            'fake_mono_camera_node = rover_perception.fake_mono_camera_node:main',
+            'led_detector_node = rover_perception.led_detector_node:main',
+            'mast_pose_node = rover_perception.mast_pose_node:main',
+            'fake_mast_hw_node = rover_perception.fake_mast_hw_node:main',
         ],
     },
 )

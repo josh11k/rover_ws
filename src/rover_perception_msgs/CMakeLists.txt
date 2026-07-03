@@ -9,10 +9,13 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TerrainGrid.msg"
-  DEPENDENCIES std_msgs nav_msgs
+  "msg/LedDetection.msg"
+  "msg/LedDetectionArray.msg"
+  DEPENDENCIES std_msgs nav_msgs geometry_msgs
 )
 
 if(BUILD_TESTING)

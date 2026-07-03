@@ -1,7 +1,9 @@
 """grid_node + identify_obstacles_node combined.
 
 Consumes the fused global point cloud (lidar + stereo, already in
-base_link) and publishes an OccupancyGrid traversability map, reusing the
+mast_base_link -- the mast's own quasi-static frame, only moves under real
+mast lean, not with pan/tilt) and publishes an OccupancyGrid traversability
+map, reusing the
 elevation-grid / traversability algorithm from terrain_analysis.py (ported
 from rover_lidar/lidar_processing_node.py).
 
@@ -33,7 +35,7 @@ DEFAULTS = {
     "points_topic": "/perception/global_points",
     "traversability_topic": "/terrain/traversability_grid",
     "terrain_stats_topic": "/terrain/terrain_grid_stats",
-    "output_frame_id": "base_link",
+    "output_frame_id": "mast_base_link",
 
     "grid_resolution": 0.25,
     "grid_size_x": 100.0,
@@ -121,7 +123,7 @@ class ObstacleGridNode(Node):
             )
 
             frame_id = (
-                self.output_frame_id or msg.header.frame_id or "base_link"
+                self.output_frame_id or msg.header.frame_id or "mast_base_link"
             )
             info = self._build_map_info()
 

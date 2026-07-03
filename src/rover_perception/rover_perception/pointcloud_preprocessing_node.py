@@ -36,7 +36,7 @@ from rover_perception.pointcloud_filters import (
 
 
 DEFAULTS = {
-    "input_topic": "/lidar/points_base_link",
+    "input_topic": "/lidar/points_mast_base_link",
     "output_topic": "/lidar/points_filtered",
 
     "enable_crop": True,

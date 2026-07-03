@@ -4,7 +4,9 @@ This is the diagram's "make_global_pointcloud_node" ("combine stereocam and
 lidar point cloud into one"). By the time clouds reach this node they have
 already been:
 
-  1. transformed into base_link by frame_transform_node, and
+  1. transformed into mast_base_link (the mast's own quasi-static frame --
+     only moves under real mast lean, not with pan/tilt) by
+     frame_transform_node, and
   2. cropped / downsampled / outlier-filtered by pointcloud_preprocessing_node
      (which also guarantees both clouds carry a 4th "weight" field by now,
      see pointcloud_filters.py)
@@ -33,7 +35,7 @@ DEFAULTS = {
     "lidar_points_topic": "/lidar/points_filtered",
     "stereo_points_topic": "/stereo/points_filtered",
     "output_topic": "/perception/global_points",
-    "output_frame_id": "base_link",
+    "output_frame_id": "mast_base_link",
     "sync_slop_sec": 0.10,
 }
 

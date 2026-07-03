@@ -32,19 +32,21 @@ Tiefenbild + CameraInfo per Pinhole-Rückprojektion in 3D-Punkte umgerechnet.
 Jeder Punkt bekommt zusätzlich ein `weight`-Feld (0–1), siehe
 "Gewichtungssystem" unten.
 
-### `/lidar/points_base_link`, `/stereo/points_base_link`
+### `/lidar/points_mast_base_link`, `/stereo/points_mast_base_link`
 **Typ:** `sensor_msgs/PointCloud2` (4 Felder: x, y, z, weight)
 **Publisher:** je eine Instanz von `frame_transform_node` (Lidar / Stereo)
-**Frame:** `base_link`
-Dieselben Punkte wie oben, per TF2 in das Roboter-Koordinatensystem
-transformiert. `frame_transform_node` transformiert nur x/y/z — das
+**Frame:** `mast_base_link`
+Dieselben Punkte wie oben, per TF2 in das feste Referenzsystem des
+Mast-Moduls transformiert (das Modul selbst bewegt sich nicht — der Rover,
+der beobachtet wird, ist ein separates, bewegliches Ding, siehe Mono-Cam-
+Zweig unten). `frame_transform_node` transformiert nur x/y/z — das
 `weight`-Feld läuft unverändert durch (`tf2_sensor_msgs.do_transform_cloud`
 lässt zusätzliche Felder unangetastet).
 
 ### `/lidar/points_filtered`, `/stereo/points_filtered`
 **Typ:** `sensor_msgs/PointCloud2` (4 Felder: x, y, z, weight)
 **Publisher:** je eine Instanz von `pointcloud_preprocessing_node`
-**Frame:** `base_link`
+**Frame:** `mast_base_link`
 Nach Crop / Voxel-Downsampling / Radius-Outlier-Removal (Parameter pro
 Sensor unterschiedlich, siehe Launch-File). Falls die eingehende Cloud noch
 kein `weight`-Feld hat (aktuell: der Lidar-Zweig), wird hier `weight = 1.0`
@@ -53,7 +55,7 @@ kein `weight`-Feld hat (aktuell: der Lidar-Zweig), wird hier `weight = 1.0`
 ### `/perception/global_points`
 **Typ:** `sensor_msgs/PointCloud2` (4 Felder: x, y, z, weight)
 **Publisher:** `global_pointcloud_fusion_node`
-**Frame:** `base_link`
+**Frame:** `mast_base_link`
 Zeitlich synchronisierte Vereinigung von gefilterter Lidar- und
 Stereo-Punktwolke.
 
@@ -88,17 +90,79 @@ ganze Pipeline durchläuft und erst in `terrain_analysis.py` ausgewertet wird:
 ### `/terrain/traversability_grid`
 **Typ:** `nav_msgs/OccupancyGrid`
 **Publisher:** `obstacle_grid_node`
-**Frame:** `base_link`
+**Frame:** `mast_base_link`
 Ein Wert pro Zelle (`data`, row-major, Index `iy * width + ix`):
 - `-1` = unbekannt (zu wenige Punkte in der Zelle)
 - `0–60` = befahrbar, steigende "Kosten" je näher an den Grenzwerten
 - `80` = nicht befahrbar (zu rau oder zu steil)
 - `100` = nicht befahrbar (Stufe/Sprung zu hoch)
 
+### `/camera/imu`
+**Typ:** `sensor_msgs/Imu`
+**Publisher:** `fake_stereo_camera_node` (später `realsense2_camera`)
+**Frame:** `camera_depth_optical_frame`
+Eingebaute IMU der Stereo-Cam. Fake-Version publiziert Identity-Orientierung
+(Kamera als eben/level angenommen) mit gültiger `orientation_covariance`.
+Wird von `mast_pose_node` für den Plattform-IMU-Plausibilitätscheck genutzt.
+
+### `/livox/imu`
+**Typ:** `sensor_msgs/Imu`
+**Publisher:** `rover_lidar` (`fake_lidar_node`, später `livox_ros_driver2`)
+**Frame:** `lidar_frame`
+Eingebaute IMU des Lidars. Gleiche Rolle wie `/camera/imu` oben, für den
+Plausibilitätscheck in `mast_pose_node`.
+
+### `/hardware_box/imu`
+**Typ:** `sensor_msgs/Imu`
+**Publisher:** `fake_mast_hw_node` (echte Hardware/Treiber existiert noch nicht)
+**Frame:** `hardware_box_link`
+IMU in der Elektronik-Box weiter unten am Mast — bestimmt die Neigung des
+Mastes selbst (nicht der Plattform). Fließt in `mast_pose_node`s
+`world -> mast_base_link`-Transform ein (nur Rotation, keine Position).
+
+### `/mast/joint_states`
+**Typ:** `sensor_msgs/JointState`
+**Publisher:** `fake_mast_hw_node` (echte Motor-Controller-Schnittstelle existiert noch nicht)
+Aktuelle Pan-/Tilt-Winkel (`mast_pan_joint`, `platform_tilt_joint`, Radiant).
+Primäre (autoritative) Quelle für `mast_pose_node`s
+`mast_base_link -> mast_platform_link`-Transform.
+
+### `/mono_cam/image_raw`
+**Typ:** `sensor_msgs/Image` (Encoding `rgb8`)
+**Publisher:** `fake_mono_camera_node` (später `v4l2_camera_node`)
+**Frame:** `mono_cam_optical_frame`
+Farbbild der Mono-Cam, die (wie Lidar/Stereo) fest auf dem Mast montiert
+ist und den beweglichen Rover von außen beobachtet — nicht Teil des Rovers
+selbst. Fake-Version simuliert das bekannte 5-LED-"Würfel"-Muster des
+Rovers (4 Eckpunkte + Mitte) als starren Körper, der sich mit variierender
+Distanz, seitlicher Position und Rotation vor der Kamera bewegt
+(perspektivisch korrekt projiziert, siehe ARCHITECTURE.md).
+
+### `/mono_cam/camera_info`
+**Typ:** `sensor_msgs/CameraInfo`
+**Publisher:** wie oben
+Intrinsics (fx, fy, cx, cy), aus dem FOV des Arducam-B0497-Datenblatts
+abgeleitet — für die Rückprojektion in Sichtstrahlen in `led_detector_node`.
+
+### `/mono_cam/led_detections` (custom message)
+**Typ:** `rover_perception_msgs/LedDetectionArray`
+**Publisher:** `led_detector_node`
+**Frame:** `mono_cam_optical_frame`
+Liste erkannter LED-Blobs pro Frame (leer = normal, kein Fehler). Ein Blob
+muss drei Filter passieren: Helligkeit (`brightness_threshold`), Größe
+(`min/max_blob_area_px`) und Farbe (`min_green_dominance` — Grünkanal muss
+Rot und Blau deutlich übersteigen, da die Rover-LEDs vermutlich grün sind;
+per `enable_color_filter` abschaltbar). Pro Blob (`LedDetection`):
+Pixel-Zentroid (`pixel_u`/`pixel_v`), Blob-Größe (`area_px`), mittlere
+Farbe (`color_r/g/b`) und ein normierter Sichtstrahl (`bearing`,
+`geometry_msgs/Vector3`) im Kamera-Optical-Frame — eine Mono-Cam liefert
+nur eine *Richtung*, keine Distanz; die eigentliche Positionsschätzung ist
+Aufgabe von `position_rover_node` (noch nicht gebaut).
+
 ### `/terrain/terrain_grid_stats` (custom message)
 **Typ:** `rover_perception_msgs/TerrainGrid`
 **Publisher:** `obstacle_grid_node`
-**Frame:** `base_link`
+**Frame:** `mast_base_link`
 Dieselbe Grid-Geometrie und dasselbe `info` (Auflösung/Breite/Höhe/Ursprung)
 wie `/terrain/traversability_grid` — Zellen sind 1:1 per Index vergleichbar.
 Enthält zusätzlich die rohen Zellstatistiken, aus denen der obige
@@ -106,7 +170,7 @@ Traversability-Wert abgeleitet wird:
 
 | Feld              | Typ        | Bedeutung                                                        |
 |-------------------|------------|--------------------------------------------------------------------|
-| `header`          | `std_msgs/Header` | Stamp + `frame_id` (`base_link`)                            |
+| `header`          | `std_msgs/Header` | Stamp + `frame_id` (`mast_base_link`)                       |
 | `info`            | `nav_msgs/MapMetaData` | Auflösung, Breite, Höhe, Ursprungspose des Grids        |
 | `traversability`  | `int8[]`   | identisch zu `OccupancyGrid.data` (s.o.), zur einfachen Korrelation |
 | `min_z`           | `float32[]`| niedrigster Punkt in der Zelle (m)                                  |

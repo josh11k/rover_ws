@@ -26,6 +26,12 @@ The synthetic scene is a flat floor plane plus a single box-shaped
 "obstacle" so the rest of the pipeline (pointcloud conversion, fusion,
 traversability grid) has something non-trivial to chew on while no real
 camera is attached.
+
+Also publishes /camera/imu (sensor_msgs/Imu) -- the D435i variant's built-in
+IMU, matching what realsense2_camera itself publishes. Held level (identity
+orientation, i.e. camera assumed mounted upright) since the fake camera
+doesn't otherwise move; this feeds mast_pose_node's platform-IMU
+cross-check (see that node for why).
 """
 
 import numpy as np
@@ -34,12 +40,13 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
-from sensor_msgs.msg import Image, CameraInfo
+from sensor_msgs.msg import Image, CameraInfo, Imu
 
 
 DEFAULTS = {
     "depth_topic": "/camera/depth/image_rect_raw",
     "camera_info_topic": "/camera/depth/camera_info",
+    "imu_topic": "/camera/imu",
     "frame_id": "camera_depth_optical_frame",
 
     "width": 640,
@@ -169,6 +176,12 @@ class FakeStereoCameraNode(Node):
             qos_profile_sensor_data,
         )
 
+        self.imu_pub = self.create_publisher(
+            Imu,
+            self.imu_topic,
+            qos_profile_sensor_data,
+        )
+
         self.camera_info_msg = self._build_camera_info()
 
         period = 1.0 / self.fps
@@ -224,6 +237,17 @@ class FakeStereoCameraNode(Node):
         self.camera_info_msg.header.stamp = stamp
         self.camera_info_msg.header.frame_id = self.frame_id
         self.camera_info_pub.publish(self.camera_info_msg)
+
+        imu_msg = Imu()
+        imu_msg.header.stamp = stamp
+        imu_msg.header.frame_id = self.frame_id
+        # Identity orientation (camera held level) -- valid, per
+        # sensor_msgs/Imu convention (orientation_covariance[0] != -1 means
+        # "orientation is provided").
+        imu_msg.orientation.w = 1.0
+        imu_msg.orientation_covariance = [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
+        imu_msg.linear_acceleration.z = 9.81
+        self.imu_pub.publish(imu_msg)
 
 
 def main(args=None):
