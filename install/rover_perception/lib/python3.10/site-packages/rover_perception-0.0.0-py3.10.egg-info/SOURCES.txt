@@ -1,3 +1,4 @@
+README.md
 package.xml
 setup.cfg
 setup.py
@@ -11,9 +12,13 @@ setup.py
 launch/stereo_lidar_fusion.launch.py
 resource/rover_perception
 rover_perception/__init__.py
+rover_perception/fake_mast_hw_node.py
+rover_perception/fake_mono_camera_node.py
 rover_perception/fake_stereo_camera_node.py
 rover_perception/frame_transform_node.py
 rover_perception/global_pointcloud_fusion_node.py
+rover_perception/led_detector_node.py
+rover_perception/mast_pose_node.py
 rover_perception/obstacle_grid_node.py
 rover_perception/pointcloud_filters.py
 rover_perception/pointcloud_preprocessing_node.py

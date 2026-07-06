@@ -6,6 +6,22 @@ cloud in the camera's optical frame, using vectorized numpy pinhole
 back-projection (same style as rover_lidar/lidar_processing_node.py's
 vectorized filters).
 
+Each point also gets a 4th "weight" field (0..1) expressing how much it
+should be trusted downstream. Stereo depth is known to degrade with
+distance (triangulation error grows roughly with z^2) and in low light, so:
+
+    weight = distance_weight(z) * scene_confidence
+
+- distance_weight(z) = 1 / (1 + (z / distance_weight_ref_m)^2), hard-zeroed
+  beyond max_reliable_range_m.
+- scene_confidence is a global (0..1) scalar received on
+  scene_confidence_topic, meant to be published by a future brightness /
+  low-light-detection node. No such node exists yet, so it simply defaults
+  to 1.0 (no light-based penalty) until something publishes to that topic --
+  the wiring is real and testable today (e.g. `ros2 topic pub` a low value
+  to see the weighting/traversability react), only the upstream signal is
+  still a TODO.
+
 The diagram's "tbd / optional" stage between stereo_camera_node and this
 node is left as an explicit gap for now (e.g. temporal filtering / hole
 filling on the raw depth image) -- there's nothing to design against yet, so
@@ -20,9 +36,11 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
-import sensor_msgs_py.point_cloud2 as pc2
+from std_msgs.msg import Float32
 
 import message_filters
+
+from rover_perception.pointcloud_filters import create_weighted_cloud
 
 
 DEFAULTS = {
@@ -40,6 +58,18 @@ DEFAULTS = {
     "max_depth_m": 10.0,
 
     "sync_slop_sec": 0.05,
+
+    # Per-point weight (0..1): how much to trust this point downstream.
+    # distance_weight = 1 / (1 + (z / distance_weight_ref_m)^2), i.e. ~0.5
+    # at distance_weight_ref_m and falling off from there; hard-zeroed
+    # beyond max_reliable_range_m regardless of what the formula gives.
+    "distance_weight_ref_m": 2.5,
+    "max_reliable_range_m": 6.0,
+
+    # Global (0..1) light/scene-confidence multiplier, received from an
+    # external node. Not implemented yet -- defaults to 1.0 (no penalty)
+    # until something publishes here.
+    "scene_confidence_topic": "/camera/scene_confidence",
 }
 
 
@@ -50,6 +80,8 @@ class StereoPointcloudNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+
+        self._scene_confidence = 1.0
 
         self.points_pub = self.create_publisher(
             PointCloud2,
@@ -72,6 +104,13 @@ class StereoPointcloudNode(Node):
         )
         self.sync.registerCallback(self.depth_callback)
 
+        self.scene_confidence_sub = self.create_subscription(
+            Float32,
+            self.scene_confidence_topic,
+            self._scene_confidence_callback,
+            10,
+        )
+
         # Cached per-(width,height) ray directions, rebuilt if intrinsics
         # or resolution change.
         self._cached_shape = None
@@ -80,7 +119,9 @@ class StereoPointcloudNode(Node):
 
         self.get_logger().info(
             f"stereo_pointcloud_node: {self.depth_topic} + "
-            f"{self.camera_info_topic} -> {self.points_topic}"
+            f"{self.camera_info_topic} -> {self.points_topic} "
+            f"(weight = distance x scene_confidence, scene_confidence from "
+            f"{self.scene_confidence_topic}, default 1.0)"
         )
 
     def _declare_parameters(self):
@@ -90,6 +131,9 @@ class StereoPointcloudNode(Node):
     def _load_parameters(self):
         for name in DEFAULTS:
             setattr(self, name, self.get_parameter(name).value)
+
+    def _scene_confidence_callback(self, msg: Float32):
+        self._scene_confidence = float(np.clip(msg.data, 0.0, 1.0))
 
     def _update_ray_cache(self, width, height, fx, fy, cx, cy):
         stride = max(1, self.pixel_stride)
@@ -142,12 +186,22 @@ class StereoPointcloudNode(Node):
             x = self._ray_x[valid] * z
             y = self._ray_y[valid] * z
 
-            points = np.stack([x, y, z], axis=-1).astype(np.float32)
-
-            if points.size == 0:
+            if z.size == 0:
                 return
 
-            cloud_msg = pc2.create_cloud_xyz32(depth_msg.header, points)
+            distance_weight = 1.0 / (
+                1.0 + (z / self.distance_weight_ref_m) ** 2
+            )
+            distance_weight = np.where(
+                z > self.max_reliable_range_m, 0.0, distance_weight
+            )
+            weight = np.clip(
+                distance_weight * self._scene_confidence, 0.0, 1.0
+            )
+
+            points = np.stack([x, y, z, weight], axis=-1).astype(np.float32)
+
+            cloud_msg = create_weighted_cloud(depth_msg.header, points)
             self.points_pub.publish(cloud_msg)
 
         except Exception as exc:  # noqa: BLE001 - keep the node alive

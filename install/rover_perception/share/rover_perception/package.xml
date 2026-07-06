@@ -21,6 +21,7 @@
   <depend>tf2_sensor_msgs</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>message_filters</depend>
+  <depend>rover_perception_msgs</depend>
   <depend>python3-numpy</depend>
   <depend>python3-scipy</depend>
 

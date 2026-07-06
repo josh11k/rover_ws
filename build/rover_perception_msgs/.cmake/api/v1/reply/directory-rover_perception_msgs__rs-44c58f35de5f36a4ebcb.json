@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "rover_perception_msgs__rs",
+		"source" : "/home/joshua/rover_ws/build/rover_perception_msgs/rover_perception_msgs__rs"
+	}
+}
