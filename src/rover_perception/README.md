@@ -195,3 +195,16 @@ Zellen ohne genug effektive Punkte (`total_weight < min_points_per_cell`):
 alle `float32`-Felder = `NaN`, `point_count`/`total_weight` = 0 (bewusst
 kein gemeinsamer Sentinel-Wert wie bei der OccupancyGrid, da das
 kontinuierliche Größen sind statt eines begrenzten 0–100-Kostenwerts).
+
+### `/terrain/elevation_cloud`
+**Typ:** `sensor_msgs/PointCloud2` (Felder: x, y, z, intensity)
+**Publisher:** `terrain_visualization_node`
+**Frame:** `mast_base_link`
+Für RViz2 gedacht: wandelt `/terrain/terrain_grid_stats` in eine Standard-
+PointCloud2 um, da RViz das custom `TerrainGrid` nicht kennt. Ein Punkt pro
+gültiger Zelle (NaN-Zellen werden übersprungen): `x`/`y` = Zellenmittelpunkt,
+`z` = echte Höhe (`mean_z`, nicht normiert), `intensity` = per Parameter
+`color_field` wählbar (Default `mean_z`, auch möglich: `roughness`,
+`plane_slope_deg`, `traversability`). In RViz: PointCloud2-Display,
+Color Transformer "Intensity", Style "Squares"/"Boxes" mit Size ≈
+`grid_resolution` für einen flächigen Zell-Look.

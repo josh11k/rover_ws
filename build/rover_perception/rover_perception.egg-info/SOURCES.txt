@@ -24,6 +24,7 @@ rover_perception/pointcloud_filters.py
 rover_perception/pointcloud_preprocessing_node.py
 rover_perception/stereo_pointcloud_node.py
 rover_perception/terrain_analysis.py
+rover_perception/terrain_visualization_node.py
 test/test_copyright.py
 test/test_flake8.py
 test/test_pep257.py
