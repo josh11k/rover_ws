@@ -1,0 +1,198 @@
+[0.250s] Invoking command in '/home/joshua/rover_ws/build/rover_perception_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/joshua/rover_ws/install/rover_perception:/home/joshua/rover_ws/install/rover_lidar:/home/joshua/rover_ws/install/rover_control:/opt/ros/humble /usr/bin/cmake --build /home/joshua/rover_ws/build/rover_perception_msgs -- -j8 -l8
+[0.304s] [  2%] Built target rover_perception_msgs__rs
+[0.309s] [  4%] Built target rover_perception_msgs__cpp
+[0.311s] [ 14%] Built target rover_perception_msgs__rosidl_generator_c
+[0.318s] [ 14%] Built target ament_cmake_python_copy_rover_perception_msgs
+[0.345s] [ 25%] Built target rover_perception_msgs__rosidl_typesupport_fastrtps_cpp
+[0.346s] [ 45%] Built target rover_perception_msgs__rosidl_typesupport_cpp
+[0.346s] [ 45%] Built target rover_perception_msgs__rosidl_typesupport_introspection_cpp
+[0.351s] [ 56%] Built target rover_perception_msgs__rosidl_typesupport_fastrtps_c
+[0.353s] [ 66%] Built target rover_perception_msgs__rosidl_typesupport_c
+[0.356s] [ 77%] Built target rover_perception_msgs__rosidl_typesupport_introspection_c
+[0.380s] [ 77%] Built target rover_perception_msgs
+[0.404s] [ 79%] Built target rover_perception_msgs__py
+[0.419s] [35m[1mConsolidate compiler generated dependencies of target rover_perception_msgs__rosidl_generator_py[0m
+[0.435s] [ 87%] Built target rover_perception_msgs__rosidl_generator_py
+[0.449s] [35m[1mConsolidate compiler generated dependencies of target rover_perception_msgs__rosidl_typesupport_fastrtps_c__pyext[0m
+[0.449s] [35m[1mConsolidate compiler generated dependencies of target rover_perception_msgs__rosidl_typesupport_introspection_c__pyext[0m
+[0.452s] [35m[1mConsolidate compiler generated dependencies of target rover_perception_msgs__rosidl_typesupport_c__pyext[0m
+[0.467s] [ 93%] Built target rover_perception_msgs__rosidl_typesupport_fastrtps_c__pyext
+[0.467s] [ 95%] Built target rover_perception_msgs__rosidl_typesupport_introspection_c__pyext
+[0.469s] [100%] Built target rover_perception_msgs__rosidl_typesupport_c__pyext
+[0.626s] running egg_info
+[0.628s] writing rover_perception_msgs.egg-info/PKG-INFO
+[0.629s] writing dependency_links to rover_perception_msgs.egg-info/dependency_links.txt
+[0.629s] writing top-level names to rover_perception_msgs.egg-info/top_level.txt
+[0.632s] reading manifest file 'rover_perception_msgs.egg-info/SOURCES.txt'
+[0.633s] writing manifest file 'rover_perception_msgs.egg-info/SOURCES.txt'
+[0.666s] [100%] Built target ament_cmake_python_build_rover_perception_msgs_egg
+[0.679s] Invoked command in '/home/joshua/rover_ws/build/rover_perception_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/joshua/rover_ws/install/rover_perception:/home/joshua/rover_ws/install/rover_lidar:/home/joshua/rover_ws/install/rover_control:/opt/ros/humble /usr/bin/cmake --build /home/joshua/rover_ws/build/rover_perception_msgs -- -j8 -l8
+[0.690s] Invoking command in '/home/joshua/rover_ws/build/rover_perception_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/joshua/rover_ws/install/rover_perception:/home/joshua/rover_ws/install/rover_lidar:/home/joshua/rover_ws/install/rover_control:/opt/ros/humble /usr/bin/cmake --install /home/joshua/rover_ws/build/rover_perception_msgs
+[0.699s] -- Install configuration: ""
+[0.699s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/ament_index/resource_index/rosidl_interfaces/rover_perception_msgs
+[0.700s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs
+[0.700s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg
+[0.700s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/led_detection_array.h
+[0.700s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail
+[0.700s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__functions.c
+[0.701s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__functions.c
+[0.701s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__type_support.h
+[0.701s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__type_support.h
+[0.701s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__struct.h
+[0.702s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__struct.h
+[0.702s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__functions.c
+[0.702s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__functions.h
+[0.702s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__type_support.h
+[0.702s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__struct.h
+[0.703s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__functions.h
+[0.703s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__functions.h
+[0.703s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/rosidl_generator_c__visibility_control.h
+[0.703s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/terrain_grid.h
+[0.703s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/led_detection.h
+[0.704s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/library_path.sh
+[0.704s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/library_path.dsv
+[0.704s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_generator_c.so
+[0.705s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs
+[0.705s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg
+[0.705s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail
+[0.705s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__rosidl_typesupport_fastrtps_c.h
+[0.706s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__rosidl_typesupport_fastrtps_c.h
+[0.706s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__rosidl_typesupport_fastrtps_c.h
+[0.706s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[0.706s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_typesupport_fastrtps_c.so
+[0.706s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs
+[0.706s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg
+[0.707s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[0.707s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail
+[0.707s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__rosidl_typesupport_introspection_c.h
+[0.707s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__type_support.c
+[0.707s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__type_support.c
+[0.707s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__rosidl_typesupport_introspection_c.h
+[0.708s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__type_support.c
+[0.708s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__rosidl_typesupport_introspection_c.h
+[0.708s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_typesupport_introspection_c.so
+[0.708s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_typesupport_c.so
+[0.708s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs
+[0.708s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg
+[0.708s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/led_detection_array.hpp
+[0.709s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail
+[0.709s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__struct.hpp
+[0.711s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__builder.hpp
+[0.711s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__type_support.hpp
+[0.712s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__traits.hpp
+[0.712s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__builder.hpp
+[0.712s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__builder.hpp
+[0.712s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__struct.hpp
+[0.712s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__type_support.hpp
+[0.712s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__struct.hpp
+[0.712s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__traits.hpp
+[0.713s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__traits.hpp
+[0.713s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__type_support.hpp
+[0.713s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/led_detection.hpp
+[0.713s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+[0.713s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/terrain_grid.hpp
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__rosidl_typesupport_fastrtps_cpp.hpp
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/dds_fastrtps
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__rosidl_typesupport_fastrtps_cpp.hpp
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__rosidl_typesupport_fastrtps_cpp.hpp
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_typesupport_fastrtps_cpp.so
+[0.714s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__type_support.cpp
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__rosidl_typesupport_introspection_cpp.hpp
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/terrain_grid__type_support.cpp
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__type_support.cpp
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection_array__rosidl_typesupport_introspection_cpp.hpp
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/include/rover_perception_msgs/rover_perception_msgs/msg/detail/led_detection__rosidl_typesupport_introspection_cpp.hpp
+[0.715s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_typesupport_introspection_cpp.so
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_typesupport_cpp.so
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/pythonpath.sh
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/pythonpath.dsv
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs-0.0.0-py3.10.egg-info
+[0.716s] -- Installing: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs-0.0.0-py3.10.egg-info/PKG-INFO
+[0.716s] -- Installing: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs-0.0.0-py3.10.egg-info/dependency_links.txt
+[0.716s] -- Installing: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs-0.0.0-py3.10.egg-info/top_level.txt
+[0.716s] -- Installing: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs-0.0.0-py3.10.egg-info/SOURCES.txt
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg/_led_detection_s.c
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg/_led_detection_array_s.c
+[0.716s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg/_terrain_grid_s.c
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg/_led_detection.py
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg/_terrain_grid.py
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg/__init__.py
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg/_led_detection_array.py
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/rover_perception_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/librover_perception_msgs__rosidl_generator_py.so
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/_rover_perception_msgs_s.ep.rosidl_typesupport_introspection_c.c
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/rover_perception_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/_rover_perception_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/rover_perception_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/__init__.py
+[0.717s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/_rover_perception_msgs_s.ep.rosidl_typesupport_c.c
+[0.743s] Listing '/home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs'...
+[0.743s] Listing '/home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/msg'...
+[0.747s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/rover_perception_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[0.747s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/rover_perception_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[0.748s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages/rover_perception_msgs/rover_perception_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[0.748s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/lib/librover_perception_msgs__rosidl_generator_py.so
+[0.748s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/ament_index/resource_index/rust_packages/rover_perception_msgs
+[0.749s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust
+[0.749s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust/build.rs
+[0.749s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust/src
+[0.749s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust/src/msg
+[0.750s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust/src/msg/rmw.rs
+[0.750s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust/src/lib.rs
+[0.750s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust/src/msg.rs
+[0.750s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/rust/Cargo.toml
+[0.751s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/msg/TerrainGrid.idl
+[0.751s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/msg/LedDetection.idl
+[0.751s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/msg/LedDetectionArray.idl
+[0.751s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/msg/TerrainGrid.msg
+[0.752s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/msg/LedDetection.msg
+[0.752s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/msg/LedDetectionArray.msg
+[0.752s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/ament_index/resource_index/package_run_dependencies/rover_perception_msgs
+[0.752s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/ament_index/resource_index/parent_prefix_path/rover_perception_msgs
+[0.753s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/ament_prefix_path.sh
+[0.753s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/ament_prefix_path.dsv
+[0.753s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/path.sh
+[0.753s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/environment/path.dsv
+[0.753s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/local_setup.bash
+[0.753s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/local_setup.sh
+[0.753s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/local_setup.zsh
+[0.754s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/local_setup.dsv
+[0.754s] -- Installing: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.dsv
+[0.754s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/ament_index/resource_index/packages/rover_perception_msgs
+[0.754s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_generator_cExport.cmake
+[0.754s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_generator_cExport-noconfig.cmake
+[0.754s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+[0.755s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[0.755s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_introspection_cExport.cmake
+[0.755s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[0.755s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_cExport.cmake
+[0.755s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_cExport-noconfig.cmake
+[0.757s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_generator_cppExport.cmake
+[0.757s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+[0.758s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[0.758s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_introspection_cppExport.cmake
+[0.759s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[0.759s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_cppExport.cmake
+[0.759s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+[0.761s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_generator_pyExport.cmake
+[0.761s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/export_rover_perception_msgs__rosidl_generator_pyExport-noconfig.cmake
+[0.761s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rosidl_cmake-extras.cmake
+[0.762s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+[0.763s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+[0.763s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+[0.764s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/ament_cmake_export_targets-extras.cmake
+[0.764s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[0.766s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[0.766s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgsConfig.cmake
+[0.766s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/cmake/rover_perception_msgsConfig-version.cmake
+[0.766s] -- Up-to-date: /home/joshua/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.xml
+[0.766s] Invoked command in '/home/joshua/rover_ws/build/rover_perception_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/joshua/rover_ws/install/rover_perception:/home/joshua/rover_ws/install/rover_lidar:/home/joshua/rover_ws/install/rover_control:/opt/ros/humble /usr/bin/cmake --install /home/joshua/rover_ws/build/rover_perception_msgs

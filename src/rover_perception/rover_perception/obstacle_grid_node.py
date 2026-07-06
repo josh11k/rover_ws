@@ -59,9 +59,9 @@ DEFAULTS = {
     "terrain_stats_topic": "/terrain/terrain_grid_stats",
     "output_frame_id": "mast_base_link",
 
-    "grid_resolution": 0.25,
-    "grid_size_x": 100.0,
-    "grid_size_y": 100.0,
+    "grid_resolution": 1.0,
+    "grid_size_x": 10.0,
+    "grid_size_y": 10.0,
 
     "max_step_height": 0.20,
     "max_roughness": 0.10,

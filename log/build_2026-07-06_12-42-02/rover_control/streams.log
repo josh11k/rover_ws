@@ -1,0 +1,27 @@
+[1.126s] Invoking command in '/home/joshua/rover_ws/src/rover_control': PYTHONPATH=/home/joshua/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /home/joshua/rover_ws/build/rover_control/build install --record /home/joshua/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data
+[1.359s] running egg_info
+[1.360s] writing ../../build/rover_control/rover_control.egg-info/PKG-INFO
+[1.364s] writing dependency_links to ../../build/rover_control/rover_control.egg-info/dependency_links.txt
+[1.364s] writing entry points to ../../build/rover_control/rover_control.egg-info/entry_points.txt
+[1.365s] writing requirements to ../../build/rover_control/rover_control.egg-info/requires.txt
+[1.365s] writing top-level names to ../../build/rover_control/rover_control.egg-info/top_level.txt
+[1.368s] reading manifest file '../../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[1.370s] writing manifest file '../../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[1.370s] running build
+[1.370s] running build_py
+[1.370s] copying rover_control/fake_stm32_bridge_node.py -> /home/joshua/rover_ws/build/rover_control/build/lib/rover_control
+[1.372s] running install
+[1.372s] running install_lib
+[1.374s] copying /home/joshua/rover_ws/build/rover_control/build/lib/rover_control/fake_stm32_bridge_node.py -> /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control
+[1.375s] byte-compiling /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/fake_stm32_bridge_node.py to fake_stm32_bridge_node.cpython-310.pyc
+[1.377s] running install_data
+[1.377s] running install_egg_info
+[1.379s] removing '/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control-0.0.0-py3.10.egg-info' (and everything under it)
+[1.380s] Copying ../../build/rover_control/rover_control.egg-info to /home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control-0.0.0-py3.10.egg-info
+[1.382s] running install_scripts
+[1.403s] Installing command_node script to /home/joshua/rover_ws/install/rover_control/lib/rover_control
+[1.403s] Installing fake_stm32_bridge_node script to /home/joshua/rover_ws/install/rover_control/lib/rover_control
+[1.403s] Installing rover_pose_node script to /home/joshua/rover_ws/install/rover_control/lib/rover_control
+[1.403s] Installing wifi_node script to /home/joshua/rover_ws/install/rover_control/lib/rover_control
+[1.404s] writing list of installed files to '/home/joshua/rover_ws/build/rover_control/install.log'
+[1.438s] Invoked command in '/home/joshua/rover_ws/src/rover_control' returned '0': PYTHONPATH=/home/joshua/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/joshua/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /home/joshua/rover_ws/build/rover_control/build install --record /home/joshua/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data

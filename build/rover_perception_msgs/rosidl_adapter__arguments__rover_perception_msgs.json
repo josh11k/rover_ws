@@ -1,0 +1,8 @@
+{
+  "package_name": "rover_perception_msgs",
+  "non_idl_tuples": [
+    "/home/joshua/rover_ws/src/rover_perception_msgs:msg/TerrainGrid.msg",
+    "/home/joshua/rover_ws/src/rover_perception_msgs:msg/LedDetection.msg",
+    "/home/joshua/rover_ws/src/rover_perception_msgs:msg/LedDetectionArray.msg"
+  ]
+}

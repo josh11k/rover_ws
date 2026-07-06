@@ -13,12 +13,50 @@ Run one instance per sensor via launch args, e.g.:
 
     frame_transform_node --ros-args \
         -p input_topic:=/livox/points \
-        -p output_topic:=/lidar/points_base_link \
-        -p target_frame:=base_link
+        -p output_topic:=/lidar/points_mast_base_link \
+        -p target_frame:=mast_base_link
 
 The node degrades gracefully (skips the frame, logs a throttled warning) if
 no transform is available yet, e.g. because the extrinsic calibration has
 not been published, rather than crashing the pipeline.
+
+On tf_timeout_sec: the target frame (mast_base_link) is dynamic, broadcast
+by mast_pose_node at its own publish_rate_hz (default 20 Hz -> a new sample
+every 50 ms). A lookup for an exact past timestamp can only succeed once a
+TF sample *newer* than that timestamp has arrived (tf2 interpolates between
+two known samples, it never extrapolates into the future). If a sensor's
+cloud timestamp lands in the ~50 ms gap right after the last broadcast, the
+lookup has to wait for the *next* broadcast before it can succeed -- so
+tf_timeout_sec needs to comfortably cover that gap (plus jitter/scheduling
+slack), not just be "some small number". 0.1s cut it too close in practice
+(see chat: ExtrapolationException on the lidar branch); 0.3s gives roughly
+6x the nominal 50 ms period of margin.
+
+On concurrency (MultiThreadedExecutor, not TransformListener(spin_thread=True)):
+without some form of concurrency, the listener's own /tf and /tf_static
+subscriptions run on the *same* single-threaded executor as cloud_callback.
+If cloud_callback is blocked inside lookup_transform's timeout wait for a
+not-yet-arrived transform, the executor can't process any other callback
+either -- including the very /tf message that would satisfy the wait. That
+message just queues up and gets handled only after cloud_callback already
+gave up. Net effect: raising tf_timeout_sec alone does nothing, because the
+wait can never be resolved early by new data.
+
+We first tried fixing this with `TransformListener(..., spin_thread=True)`,
+which gives the listener its own background thread -- but that thread runs
+its own separate executor with the *same node* added to it, while main()
+also spins that node via the normal single-threaded rclpy.spin(). The same
+node ends up added to two executors at once, which is unsupported and
+produced exactly the symptom we were chasing: the buffer's most-recent
+transform stayed stale for the entire timeout window instead of updating
+every ~50ms as mast_pose_node published.
+
+The correct fix: run this node under a single `MultiThreadedExecutor` (see
+main() below) instead, and leave TransformListener at its default
+(spin_thread=False). One executor, multiple worker threads, one node -- the
+/tf subscription callback and cloud_callback can now genuinely run
+concurrently, so a lookup_transform() wait in one thread doesn't block the
+other thread from processing the next /tf message that would satisfy it.
 """
 
 import rclpy
@@ -33,10 +71,12 @@ from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 
 DEFAULTS = {
     "input_topic": "/livox/points",
-    "output_topic": "/lidar/points_base_link",
-    "target_frame": "base_link",
+    "output_topic": "/lidar/points_mast_base_link",
+    "target_frame": "mast_base_link",
     # How long to wait for a transform before dropping a cloud, in seconds.
-    "tf_timeout_sec": 0.1,
+    # See module docstring -- must comfortably exceed mast_pose_node's
+    # broadcast period (1/publish_rate_hz), not just be "small".
+    "tf_timeout_sec": 0.3,
     # If true, subscribe with the sensor-data QoS (best effort, small
     # history) which matches typical LiDAR / camera driver output.
     "use_sensor_data_qos": True,
@@ -52,6 +92,10 @@ class FrameTransformNode(Node):
         self._load_parameters()
 
         self.tf_buffer = tf2_ros.Buffer()
+        # Default (spin_thread=False) -- concurrency is handled by running
+        # this whole node under a MultiThreadedExecutor in main() instead.
+        # See module docstring for why spin_thread=True was tried and
+        # reverted.
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         qos = qos_profile_sensor_data if self.use_sensor_data_qos else 10
@@ -128,8 +172,16 @@ def main(args=None):
 
     node = FrameTransformNode()
 
+    # MultiThreadedExecutor, not the default rclpy.spin(node) -- see module
+    # docstring. 2 threads is enough: one for cloud_callback (which may be
+    # blocked inside a lookup_transform timeout wait), one free to run the
+    # TransformListener's /tf and /tf_static subscription callbacks so a
+    # new transform arriving can actually resolve that wait.
+    executor = rclpy.executors.MultiThreadedExecutor(num_threads=2)
+    executor.add_node(node)
+
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:

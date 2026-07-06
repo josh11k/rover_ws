@@ -1,0 +1,3 @@
+/home/joshua/rover_ws/build/rover_perception_msgs/rosidl_adapter/rover_perception_msgs:msg/TerrainGrid.idl
+/home/joshua/rover_ws/build/rover_perception_msgs/rosidl_adapter/rover_perception_msgs:msg/LedDetection.idl
+/home/joshua/rover_ws/build/rover_perception_msgs/rosidl_adapter/rover_perception_msgs:msg/LedDetectionArray.idl
