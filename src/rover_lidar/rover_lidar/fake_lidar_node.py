@@ -1,3 +1,5 @@
+import random
+
 import rclpy
 
 from rclpy.node import Node
@@ -9,6 +11,24 @@ from sensor_msgs.msg import Imu
 from std_msgs.msg import Header
 
 import sensor_msgs_py.point_cloud2 as pc2
+
+
+# Fake scene: instead of 4 fixed points, publish a fresh set of random points
+# every cycle, all lying exactly on one fixed plane (z = A*x + B*y + C). Since
+# obstacle_grid_node now buffers points per cell across callbacks (see its
+# module docstring), each new random sample adds another point to whichever
+# cell it falls in -- over several seconds the buffer accumulates enough
+# differently-placed points per cell to make plane fitting meaningful, and
+# the published /terrain/terrain_grid_stats should show a consistent
+# plane_slope_deg (matching the tilt below) with roughness ~ 0 (no noise
+# added -- points are exactly on the plane), which is a good sanity check
+# that build_elevation_grid's weighted plane fit is working correctly.
+PLANE_A = 0.02   # slope along x, m/m
+PLANE_B = -0.01  # slope along y, m/m
+PLANE_C = 0.30   # height at x=0, y=0, m
+PLANE_X_RANGE = (0.0, 5.0)
+PLANE_Y_RANGE = (0.0, 5.0)
+POINTS_PER_CLOUD = 10
 
 
 class FakeLidarNode(Node):
@@ -43,14 +63,14 @@ class FakeLidarNode(Node):
 
     def publish_fake_cloud(self):
 
-        points = [
+        points = []
 
-            (1.0, 0.0, 0.0),
-            (1.0, 1.0, 0.0),
-            (2.0, 1.0, 0.5),
-            (3.0, 2.0, 1.0),
+        for _ in range(POINTS_PER_CLOUD):
+            x = random.uniform(*PLANE_X_RANGE)
+            y = random.uniform(*PLANE_Y_RANGE)
+            z = PLANE_A * x + PLANE_B * y + PLANE_C
 
-        ]
+            points.append((x, y, z))
 
         header = Header()
 

@@ -170,8 +170,8 @@ def generate_launch_description():
             "input_topic": "/lidar/points_mast_base_link",
             "output_topic": "/lidar/points_filtered",
             "voxel_size": 0.20,
-            "outlier_radius": 0.50,
-            "min_neighbors": 2,
+            "outlier_radius": 2,
+            "min_neighbors": 1,
         }],
     )
 

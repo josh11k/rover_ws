@@ -97,6 +97,16 @@ Ein Wert pro Zelle (`data`, row-major, Index `iy * width + ix`):
 - `80` = nicht befahrbar (zu rau oder zu steil)
 - `100` = nicht befahrbar (Stufe/Sprung zu hoch)
 
+**Persistenter Punkte-Puffer pro Zelle:** `obstacle_grid_node` berechnet das
+Grid nicht mehr allein aus der zuletzt empfangenen `/perception/global_points`-
+Message, sondern hält pro Zelle einen `collections.deque(maxlen=
+max_points_per_cell)`-Puffer (`self.cell_buffers`, Default 50 Punkte/Zelle).
+Jede neue Punktwolke wird einsortiert, alte Punkte fallen erst raus, sobald
+eine Zelle voll ist (kontinuierlich gleitendes Fenster, kein harter Reset).
+`build_elevation_grid()` läuft danach über den gesamten Puffer, nicht nur
+über die neueste Message — so baut sich über mehrere Callbacks/Pan-Positionen
+ein vollständiges Bild auf, statt bei jedem Callback bei null anzufangen.
+
 ### `/camera/imu`
 **Typ:** `sensor_msgs/Imu`
 **Publisher:** `fake_stereo_camera_node` (später `realsense2_camera`)
