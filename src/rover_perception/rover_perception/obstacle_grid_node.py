@@ -10,7 +10,29 @@ from rover_lidar/lidar_processing_node.py).
 Diagram nodes covered: grid_node ("convert points into blocks") and
 identify_obstacles_node ("finds local height differences, which could mean
 obstacle").
+
+Persistent per-cell point buffer
+---------------------------------
+`global_pointcloud_fusion_node` only ever hands us a single *instant* --
+lidar+stereo synchronized to one moment in time. On real hardware (spinning
+lidar, panning mast) each instant only covers whatever the sensors happened
+to see right then; without memory the grid would forget everything from
+previous instants and never build up a full picture across a pan sweep.
+
+To fix that, this node keeps a persistent point buffer *per grid cell*
+(`self.cell_buffers`), independent of `terrain_analysis.py` (which stays a
+pure, stateless function of "whatever points you hand it"). Every incoming
+cloud's points are sorted into their cell's buffer; each buffer is a
+`collections.deque(maxlen=max_points_per_cell)`, so once a cell is full the
+oldest point is dropped automatically as a new one arrives -- a
+continuously sliding/rolling window, not a hard periodic reset. Each
+callback then re-runs `build_elevation_grid()` over the *entire* buffered
+point set (all cells combined), not just the newest message, so the
+published grid reflects everything accumulated so far, gradually aged out
+cell-by-cell rather than in discrete batches.
 """
+
+from collections import deque
 
 import numpy as np
 
@@ -46,6 +68,14 @@ DEFAULTS = {
     "max_slope_deg": 18.0,
     "min_points_per_cell": 2,
     "min_points_for_plane_fit": 4,
+
+    # Persistent per-cell point buffer (rolling window across callbacks --
+    # see module docstring). Each cell keeps at most this many of its most
+    # recent points; the oldest is dropped first once the cap is reached.
+    # Keep this modest: memory scales with (occupied cells) x this value,
+    # and a few dozen points per cell is already plenty for a stable mean/
+    # plane fit.
+    "max_points_per_cell": 50,
 }
 
 
@@ -59,6 +89,12 @@ class ObstacleGridNode(Node):
 
         self.grid_width = int(self.grid_size_x / self.grid_resolution)
         self.grid_height = int(self.grid_size_y / self.grid_resolution)
+
+        # Persistent per-cell point buffers: (ix, iy) -> deque of (x,y,z,weight)
+        # rows, capped at max_points_per_cell (oldest dropped first). This is
+        # what makes the published grid accumulate across callbacks instead
+        # of only reflecting the newest incoming cloud -- see module docstring.
+        self.cell_buffers: dict = {}
 
         self.sub = self.create_subscription(
             PointCloud2,
@@ -83,7 +119,8 @@ class ObstacleGridNode(Node):
             f"obstacle_grid_node: {self.points_topic} -> "
             f"{self.traversability_topic} + {self.terrain_stats_topic} "
             f"({self.grid_width}x{self.grid_height} cells @ "
-            f"{self.grid_resolution} m)"
+            f"{self.grid_resolution} m, max {self.max_points_per_cell} "
+            f"buffered points/cell)"
         )
 
     def _declare_parameters(self):
@@ -96,7 +133,15 @@ class ObstacleGridNode(Node):
 
     def cloud_callback(self, msg: PointCloud2):
         try:
-            points = read_weighted_points(msg)
+            new_points = read_weighted_points(msg)
+
+            if new_points.size > 0:
+                self._update_cell_buffers(new_points)
+
+            if not self.cell_buffers:
+                return
+
+            points = self._collect_buffered_points()
 
             if points.size == 0:
                 return
@@ -140,6 +185,56 @@ class ObstacleGridNode(Node):
 
         except Exception as exc:  # noqa: BLE001 - keep the node alive
             self.get_logger().error(f"cloud_callback failed: {exc}")
+
+    def _update_cell_buffers(self, points: np.ndarray):
+        """Sort incoming points into their grid cell's rolling buffer.
+
+        Uses the exact same cell-indexing convention as
+        `terrain_analysis.build_elevation_grid()` (same origin/resolution),
+        so a point ends up in the same cell here as it would if scored
+        directly -- this is purely about *which points survive* into that
+        later call, not a second/competing grid definition.
+        """
+        ix = np.floor(
+            (points[:, 0] + self.grid_size_x / 2.0) / self.grid_resolution
+        ).astype(np.int64)
+        iy = np.floor(
+            (points[:, 1] + self.grid_size_y / 2.0) / self.grid_resolution
+        ).astype(np.int64)
+
+        valid = (
+            (ix >= 0) & (ix < self.grid_width)
+            & (iy >= 0) & (iy < self.grid_height)
+        )
+        ix, iy, pts = ix[valid], iy[valid], points[valid]
+
+        for i in range(len(pts)):
+            key = (int(ix[i]), int(iy[i]))
+            buf = self.cell_buffers.get(key)
+            if buf is None:
+                buf = deque(maxlen=self.max_points_per_cell)
+                self.cell_buffers[key] = buf
+            buf.append(pts[i])
+
+    def _collect_buffered_points(self) -> np.ndarray:
+        """Flatten all per-cell buffers back into one (N, 4) array, the
+        input shape `build_elevation_grid()` already expects -- so that
+        function itself needs no changes, it just now sees accumulated
+        history instead of a single message's points.
+        """
+        if not self.cell_buffers:
+            return np.empty((0, 4), dtype=np.float32)
+
+        arrays = [
+            np.array(buf, dtype=np.float32)
+            for buf in self.cell_buffers.values()
+            if len(buf) > 0
+        ]
+
+        if not arrays:
+            return np.empty((0, 4), dtype=np.float32)
+
+        return np.concatenate(arrays, axis=0)
 
     def _build_map_info(self) -> MapMetaData:
         """Shared grid metadata for both published topics, so cells line up

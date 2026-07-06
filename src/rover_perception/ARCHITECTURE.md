@@ -88,6 +88,17 @@ Platzhalter-Extrinsics (siehe `launch/stereo_lidar_fusion.launch.py`) —
 dynamischen Teil davor (`world -> mast_base_link -> mast_platform_link`,
 siehe oben).
 
+**Persistenter Punkte-Puffer in `obstacle_grid_node`:** `global_pointcloud_
+fusion_node` liefert nur eine Momentaufnahme (Lidar+Stereo synchronisiert auf
+einen Zeitpunkt). Damit das Grid über mehrere Callbacks/Pan-Positionen hinweg
+ein vollständiges Bild aufbaut statt bei jedem neuen Frame wieder bei null
+anzufangen, hält `obstacle_grid_node` jetzt einen eigenen State: pro Zelle
+einen `deque(maxlen=max_points_per_cell)`-Puffer (Default 50 Punkte/Zelle,
+kontinuierlich gleitendes Fenster, ältester Punkt fällt zuerst raus).
+`terrain_analysis.py` selbst bleibt unverändert/zustandslos — es bekommt bei
+jedem Callback einfach mehr Punkte (den ganzen Puffer statt nur die neueste
+Message).
+
 ## Mono-Cam/LED-Zweig (im Aufbau)
 
 ```
