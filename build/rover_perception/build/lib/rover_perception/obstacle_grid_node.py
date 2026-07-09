@@ -75,7 +75,7 @@ DEFAULTS = {
     # Keep this modest: memory scales with (occupied cells) x this value,
     # and a few dozen points per cell is already plenty for a stable mean/
     # plane fit.
-    "max_points_per_cell": 50,
+    "max_points_per_cell": 1000,
 }
 
 

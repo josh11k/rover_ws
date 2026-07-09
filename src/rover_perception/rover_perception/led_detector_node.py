@@ -18,25 +18,34 @@ scipy, which the workspace already depends on everywhere else):
   3. Drop blobs outside [min_blob_area_px, max_blob_area_px] -- filters out
      both single-pixel sensor noise and large overexposed regions that
      aren't small, point-like LEDs.
-  4. Drop blobs whose mean color isn't "green enough" (green channel must
-     exceed both red and blue by min_green_dominance) -- the rover's LEDs
-     are expected to be green, so this rejects other bright objects (sun
-     glare, reflections, headlights) that pass the brightness/size filters
-     but aren't the right color. Deliberately a *dominance* check (G - R,
-     G - B) rather than matching a fixed target RGB triple: exposure and a
-     camera's automatic white balance shift the exact RGB values a lot more
-     than the "which channel wins" relationship, especially outdoors.
-     Toggle via enable_color_filter if this ever needs debugging.
-  5. For each surviving blob: pixel centroid, mean color (also reported, in
-     case a future consumer wants to distinguish LEDs by shade), and a
-     bearing vector from the camera intrinsics (pinhole back-projection,
-     same math family as stereo_pointcloud_node -- just normalized to unit
-     length since there's no depth here).
+  4. Drop blobs whose color isn't "pure enough" to be one of the rover's 3
+     LED panels (roof=green, left=red, right=blue -- see
+     fake_mono_camera_node). Rather than matching each blob against 3 fixed
+     target RGB triples, this finds each blob's *dominant* channel (R, G or
+     B -- whichever is highest) and checks it exceeds the other two by at
+     least min_color_dominance. A blob that passes is, by construction, one
+     of exactly 3 colors -- dominant-red, dominant-green or dominant-blue --
+     which is exactly the 3-panel-color scheme downstream nodes expect. This
+     is deliberately a *dominance* check rather than a fixed-RGB match:
+     exposure and a camera's automatic white balance shift the exact RGB
+     values a lot more than the "which channel wins" relationship,
+     especially outdoors. Toggle via enable_color_filter if this ever needs
+     debugging. Which panel a detection belongs to is *not* decided here --
+     this node just reports each blob's mean color (color_r/g/b);
+     position_rover_node is the one that groups detections by dominant
+     channel into roof/left/right and solves each panel's geometry
+     independently (see its module docstring).
+  5. For each surviving blob: pixel centroid, mean color (color_r/g/b --
+     used both to double-check the dominance filter and by
+     position_rover_node to classify which panel a detection belongs to),
+     and a bearing vector from the camera intrinsics (pinhole
+     back-projection, same math family as stereo_pointcloud_node -- just
+     normalized to unit length since there's no depth here).
 
 Runs against the fake camera today unchanged: fake_mono_camera_node draws
-green blobs (see its led_color_* parameters) on a dark noisy background, so
-this node's thresholding + color-filter logic is already exercised
-end-to-end without real hardware.
+green/red/blue blobs (its 3 panel colors -- see its panel_*_color_*
+parameters) on a dark noisy background, so this node's thresholding +
+color-filter logic is already exercised end-to-end without real hardware.
 """
 
 import math
@@ -67,13 +76,15 @@ DEFAULTS = {
     "min_blob_area_px": 4,
     "max_blob_area_px": 2000,
 
-    # Color filter: the rover's LEDs are expected to be green. A blob's
-    # mean green channel must exceed both mean red and mean blue by at
-    # least this much (0-255 scale) to count as a real detection. Set
-    # enable_color_filter to False to fall back to brightness+size only
-    # (e.g. while debugging, or if the LED color turns out to be wrong).
+    # Color filter: the rover's 3 LED panels are each a solid primary color
+    # (green/red/blue -- see fake_mono_camera_node). A blob's single
+    # brightest channel (whichever of R/G/B is highest) must exceed the
+    # other two by at least this much (0-255 scale) to count as a real
+    # detection -- this accepts red-, green- or blue-dominant blobs alike
+    # and rejects washed-out/white/gray ones. Set enable_color_filter to
+    # False to fall back to brightness+size only (e.g. while debugging).
     "enable_color_filter": True,
-    "min_green_dominance": 40,
+    "min_color_dominance": 40,
 
     "sync_slop_sec": 0.05,
 }
@@ -114,7 +125,7 @@ class LedDetectorNode(Node):
             f"(brightness>={self.brightness_threshold}, "
             f"area in [{self.min_blob_area_px}, {self.max_blob_area_px}] px, "
             f"color_filter={self.enable_color_filter} "
-            f"(green_dominance>={self.min_green_dominance}))"
+            f"(color_dominance>={self.min_color_dominance}))"
         )
 
     def _declare_parameters(self):
@@ -164,8 +175,13 @@ class LedDetectorNode(Node):
                         continue
 
                     if self.enable_color_filter:
-                        green_dominance = mean_g[i] - max(mean_r[i], mean_b[i])
-                        if green_dominance < self.min_green_dominance:
+                        # Dominant channel minus the *second*-highest
+                        # channel (not the sum of the other two) -- e.g.
+                        # pure green (60,255,80) must still pass even
+                        # though R+B=140 isn't small compared to G=255.
+                        channels = sorted([mean_r[i], mean_g[i], mean_b[i]], reverse=True)
+                        dominance = channels[0] - channels[1]
+                        if dominance < self.min_color_dominance:
                             continue
 
                     row, col = centroids[i]

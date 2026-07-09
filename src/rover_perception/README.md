@@ -143,10 +143,13 @@ Primäre (autoritative) Quelle für `mast_pose_node`s
 **Frame:** `mono_cam_optical_frame`
 Farbbild der Mono-Cam, die (wie Lidar/Stereo) fest auf dem Mast montiert
 ist und den beweglichen Rover von außen beobachtet — nicht Teil des Rovers
-selbst. Fake-Version simuliert das bekannte 5-LED-"Würfel"-Muster des
-Rovers (4 Eckpunkte + Mitte) als starren Körper, der sich mit variierender
-Distanz, seitlicher Position und Rotation vor der Kamera bewegt
-(perspektivisch korrekt projiziert, siehe ARCHITECTURE.md).
+selbst. Fake-Version simuliert 3 starre LED-Panels auf dem Rover (Dach/
+links/rechts, je eine eigene Farbe: grün/rot/blau), jedes mit derselben
+asymmetrischen Form (gleichschenkliges Dreieck + 1 LED auf einem Schenkel
+— siehe ARCHITECTURE.md). Pro Frame ist nur sichtbar, was gerade zur Kamera
+zeigt (einfacher Verdeckungstest per Panel-Normale), damit sich der Rover
+mit variierender Distanz, seitlicher Position und Rotation vor der Kamera
+bewegen kann, ohne dass alle 3 Panels gleichzeitig "durchscheinen".
 
 ### `/mono_cam/camera_info`
 **Typ:** `sensor_msgs/CameraInfo`
@@ -160,14 +163,42 @@ abgeleitet — für die Rückprojektion in Sichtstrahlen in `led_detector_node`.
 **Frame:** `mono_cam_optical_frame`
 Liste erkannter LED-Blobs pro Frame (leer = normal, kein Fehler). Ein Blob
 muss drei Filter passieren: Helligkeit (`brightness_threshold`), Größe
-(`min/max_blob_area_px`) und Farbe (`min_green_dominance` — Grünkanal muss
-Rot und Blau deutlich übersteigen, da die Rover-LEDs vermutlich grün sind;
-per `enable_color_filter` abschaltbar). Pro Blob (`LedDetection`):
+(`min/max_blob_area_px`) und Farbe (`min_color_dominance` — der jeweils
+stärkste Farbkanal muss die beiden anderen deutlich übersteigen; passt zu
+allen 3 Panel-Farben grün/rot/blau gleichermaßen, da hier nur "wie eindeutig
+ist die Farbe" geprüft wird, nicht gegen eine feste Ziel-Farbe; per
+`enable_color_filter` abschaltbar). *Welchem* Panel ein Blob zugehört,
+entscheidet dieser Node nicht — das übernimmt `position_rover_node` anhand
+von `color_r/g/b`. Pro Blob (`LedDetection`):
 Pixel-Zentroid (`pixel_u`/`pixel_v`), Blob-Größe (`area_px`), mittlere
 Farbe (`color_r/g/b`) und ein normierter Sichtstrahl (`bearing`,
 `geometry_msgs/Vector3`) im Kamera-Optical-Frame — eine Mono-Cam liefert
 nur eine *Richtung*, keine Distanz; die eigentliche Positionsschätzung ist
-Aufgabe von `position_rover_node` (noch nicht gebaut).
+Aufgabe von `position_rover_node`.
+
+### `/rover/estimated_pose`
+**Typ:** `geometry_msgs/PoseStamped`
+**Publisher:** `position_rover_node`
+**Frame:** `world`
+Geschätzte Position + Orientierung des Rovers. `position_rover_node`
+gruppiert die `/mono_cam/led_detections`-Blobs zunächst nach Farbe (Panel-
+Zugehörigkeit: Dach=grün, links=rot, rechts=blau), löst für jedes Panel mit
+genau 4 zugehörigen Blobs unabhängig ein PnP-Problem gegen die bekannte
+Panel-Geometrie (gleichschenkliges Dreieck + 1 Schenkel-LED), verrechnet die
+beste Panel-Lösung mit der festen Panel->Rover-Mittelpunkt-Montage-
+Transformation zu einer Rover-Pose, und rechnet diese über den TF-Baum
+(`world -> mast_base_link -> mast_platform_link -> mono_cam_optical_frame`)
+in den `world`-Frame um. Wird bei zu unsicherem Fit (`max_fit_residual_deg`)
+oder zu wenigen erkannten LEDs (`min_detections`) für diesen Frame
+übersprungen, statt einen schlechten Wert zu publizieren. Zusätzlich wird
+derselbe Pose-Schätzwert als TF (`world -> rover_estimated_link`) gebroadcastet,
+zur einfachen Visualisierung in RViz2.
+
+Da die Panel-Form (Dreieck + Schenkel-LED) keinerlei Rotations- oder
+Spiegelsymmetrie hat, ist die Ecken-Zuordnung pro Panel eindeutig (alle 24
+Permutationen werden geprüft, siehe ARCHITECTURE.md) — anders als beim
+früheren symmetrischen 5-LED-"Würfel"-Muster gibt es hier **keine**
+Yaw-Mehrdeutigkeit mehr: eine gute Passung legt die volle Orientierung fest.
 
 ### `/terrain/terrain_grid_stats` (custom message)
 **Typ:** `rover_perception_msgs/TerrainGrid`

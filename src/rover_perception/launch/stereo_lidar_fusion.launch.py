@@ -9,9 +9,8 @@ Wires together (see ARCHITECTURE.md for the full picture):
        v                                                                                         /
   stereo_pointcloud_node  ---------------------------------------------------------------------/
 
-  fake_mono_camera_node --> led_detector_node --> /mono_cam/led_detections
-    (separate branch -- not fed into the point-cloud fusion above;
-    position_rover_node, not yet built, is its next consumer)
+  fake_mono_camera_node --> led_detector_node --> position_rover_node --> /rover/estimated_pose
+    (separate branch -- not fed into the point-cloud fusion above)
 
 The whole perception module (this Jetson, with all its sensors) sits on a
 ~1.2m mast -- it does not move with the rover. `mast_base_link`/
@@ -60,7 +59,7 @@ Launch arguments -- run branches separately
                                     stereo_frame_transform_node,
                                     stereo_preprocessing_node
     use_mono   (default: true)  -- fake_mono_camera_node, mono_static_tf,
-                                    led_detector_node
+                                    led_detector_node, position_rover_node
     use_terrain_viz (default: true) -- terrain_visualization_node (RViz2
                                     elevation-grid PointCloud2)
 
@@ -115,7 +114,7 @@ def generate_launch_description():
     ld.add_action(DeclareLaunchArgument(
         "use_mono", default_value="true",
         description="Start the mono-cam/LED branch (fake_mono_camera_node, "
-                     "its static TF, led_detector_node).",
+                     "its static TF, led_detector_node, position_rover_node).",
     ))
     ld.add_action(DeclareLaunchArgument(
         "use_terrain_viz", default_value="true",
@@ -312,14 +311,22 @@ def generate_launch_description():
     )
 
     # ------------------------------------------------------------------
-    # Mono-cam / LED branch. Separate from the point-cloud fusion above --
-    # its output (/mono_cam/led_detections) has no consumer yet
-    # (position_rover_node isn't built).
+    # Mono-cam / LED branch. Separate from the point-cloud fusion above.
+    # position_rover_node solves the rover's world-frame pose from
+    # led_detector_node's blob detections (PnP-style pattern matching --
+    # see that node's docstring).
     # ------------------------------------------------------------------
     led_detector = Node(
         package="rover_perception",
         executable="led_detector_node",
         name="led_detector_node",
+        condition=IfCondition(use_mono),
+    )
+
+    position_rover = Node(
+        package="rover_perception",
+        executable="position_rover_node",
+        name="position_rover_node",
         condition=IfCondition(use_mono),
     )
 
@@ -330,7 +337,7 @@ def generate_launch_description():
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,
         fusion, obstacle_grid, terrain_viz,
-        led_detector,
+        led_detector, position_rover,
     ]:
         ld.add_action(action)
 
