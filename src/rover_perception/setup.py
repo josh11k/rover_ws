@@ -37,6 +37,8 @@ setup(
             'led_detector_node = rover_perception.led_detector_node:main',
             'mast_pose_node = rover_perception.mast_pose_node:main',
             'fake_mast_hw_node = rover_perception.fake_mast_hw_node:main',
+            'terrain_visualization_node = rover_perception.terrain_visualization_node:main',
+            'position_rover_node = rover_perception.position_rover_node:main',
         ],
     },
 )

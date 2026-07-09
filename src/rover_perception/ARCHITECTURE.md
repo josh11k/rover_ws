@@ -99,29 +99,84 @@ kontinuierlich gleitendes Fenster, ältester Punkt fällt zuerst raus).
 jedem Callback einfach mehr Punkte (den ganzen Puffer statt nur die neueste
 Message).
 
-## Mono-Cam/LED-Zweig (im Aufbau)
+## Mono-Cam/LED-Zweig
 
 ```
-fake_mono_camera_node ──> led_detector_node ──> (position_rover_node, noch nicht gebaut)
-  (rgb8, mast-montiert)     (Blob-Erkennung:
-                              Helligkeit + Größe
-                              -> Zentroid, Farbe,
-                              Sichtstrahl)
+fake_mono_camera_node ──> led_detector_node ──> position_rover_node ──> /rover/estimated_pose (world)
+  (rgb8, mast-montiert)     (Blob-Erkennung:      (PnP: Muster-Matching
+                              Helligkeit + Größe    + Least-Squares-Posenfit,
+                              -> Zentroid, Farbe,    dann TF-Umrechnung in
+                              Sichtstrahl)           den world-Frame)
 ```
 
-Der Rover trägt ein bekanntes LED-Muster (3-5 LEDs, feste geometrische
-Anordnung). `led_detector_node` findet einzelne Blobs im Bild und gibt pro
-Blob Pixel-Position, Farbe und einen normierten Sichtstrahl aus — **keine**
-Position, da eine Mono-Cam nur eine Richtung liefert. Aus dem erkannten
-*Muster* (mehrere Blobs, deren relative Anordnung mit dem bekannten
-Muster verglichen wird) Abstand und Position des Rovers relativ zum Mast
-zu berechnen (klassisches PnP-Problem, wie bei Motion-Capture-Markern) ist
-Aufgabe von `position_rover_node`, die noch nicht existiert.
+Der Rover trägt 3 starre LED-Panels (Dach, links, rechts — die restlichen
+Blickwinkel werden vorerst vernachlässigt), montiert an Platzhalter-
+Positionen relativ zum Rover-Mittelpunkt. Alle 3 Panels haben dieselbe Form
+(4 LEDs: gleichschenkliges Dreieck aus 3 LEDs + eine 4. LED auf einem der
+beiden Schenkel — Platzhalter-Abmessungen `panel_base_m`/`panel_leg_m`/
+`panel_extra_led_fraction`), aber je eine eigene Farbe (Dach=grün,
+links=rot, rechts=blau). Zwei Punkte lösen damit gemeinsam das Problem, das
+das alte 5-LED-"Würfel"-Muster hatte:
 
-`fake_mono_camera_node`s aktuelle Fake-Szene (unabhängig driftende Blobs)
-bildet das noch nicht korrekt ab — wird als Nächstes auf ein starres,
-sich gemeinsam bewegendes LED-Muster umgebaut, plus Einbindung der
-Mono-Cam-TF (`mast_link -> mono_cam_optical_frame`) ins Launch-File.
+- **Panel-Identität:** aus einer Kamera-Aufnahme ist nicht automatisch klar,
+  ob man gerade das Dach-, das linke oder das rechte Panel sieht — gelöst
+  über die 3 unterschiedlichen Farben (`led_detector_node` filtert nach
+  Farb-Dominanz, `position_rover_node` gruppiert danach).
+- **Ecken-Korrespondenz:** ein Quadrat (oder gleichseitiges Dreieck) hat
+  Rotations-/Spiegelsymmetrie, die einzelne LEDs ununterscheidbar macht.
+  Die Dreieck+Schenkel-LED-Form hat **keine** Symmetrie — jede der 4 LEDs
+  ist geometrisch eindeutig.
+
+`led_detector_node` findet einzelne Blobs im Bild und gibt pro Blob
+Pixel-Position, Farbe und einen normierten Sichtstrahl aus — **keine**
+Position, da eine Mono-Cam nur eine Richtung liefert; und **keine**
+Panel-Zuordnung, nur die rohe Farbe (`color_r/g/b`).
+
+`position_rover_node` löst daraus die eigentliche Pose (PnP-Problem, wie bei
+Motion-Capture-Markern):
+
+1. **Panels trennen:** Blobs werden nach dominantem Farbkanal gruppiert
+   (grün→Dach, rot→links, blau→rechts). Nur Gruppen mit genau 4 Blobs
+   werden weiterverarbeitet — ein teilweise verdecktes Panel liefert also
+   bewusst kein Ergebnis, statt zu raten.
+2. **Korrespondenz-Problem lösen:** welcher erkannte Blob ist welche
+   physische LED des Panels? Da die Panel-Form keine Symmetrie hat, werden
+   alle `4! = 24` möglichen Zuordnungen durchprobiert und die mit dem
+   besten Fit behalten — anders als beim alten Quadrat-Muster (8 Diedergruppen-
+   Kandidaten) ist hier genau eine Zuordnung die richtige, und ihr Fit ist
+   eindeutig besser als alle 23 falschen.
+3. **Pose lösen:** pro Kandidaten-Zuordnung eine nichtlineare
+   Kleinste-Quadrate-Anpassung (`scipy.optimize.least_squares`, mehrere
+   Yaw-Startwerte gegen falsche lokale Minima) zwischen bekannter
+   3D-Punktgeometrie und beobachteten Sichtstrahlen. Liefert die Pose des
+   *Panels* (nicht des Rovers) relativ zur Kamera.
+4. **Panel-Pose → Rover-Pose:** die feste Montage-Transformation (Position +
+   Orientierung des Panels relativ zum Rover-Mittelpunkt, ebenfalls
+   Platzhalter-Werte) wird mit der gelösten Panel-Pose verrechnet, um die
+   Pose des Rover-*Mittelpunkts* relativ zur Kamera zu erhalten. Sind
+   mehrere Panels in einem Frame gültig lösbar (z.B. bei einem Blickwinkel,
+   der zwei Panels gleichzeitig knapp zeigt), gewinnt das Panel mit dem
+   besten (kleinsten) Fit-Residuum.
+5. **In den `world`-Frame umrechnen:** die Rover-Pose liegt zunächst in
+   `mono_cam_optical_frame` und wird über den bestehenden TF-Baum (`world ->
+   mast_base_link -> mast_platform_link -> mono_cam_optical_frame`) in
+   `world` transformiert — dieselbe TF2-Infrastruktur wie überall sonst im
+   Projekt, keine Sonderlösung.
+
+Bei zu wenigen erkannten LEDs oder einem zu schlechten Fit
+(`min_detections`/`max_fit_residual_deg`) wird der Frame verworfen statt
+eine unzuverlässige Pose zu publizieren. Da die Panel-Form asymmetrisch ist,
+gibt es (anders als beim alten Muster) **keine** Yaw-Mehrdeutigkeit mehr —
+ein guter Fit legt die volle Orientierung fest. Details siehe Docstring von
+`position_rover_node.py` bzw. `fake_mono_camera_node.py`.
+
+**Wichtig — Platzhalter, die synchron gehalten werden müssen:** Panel-Form
+(`panel_base_m`/`panel_leg_m`/`panel_extra_led_fraction`) und Panel-Montage
+(Offsets + Achsen-Tripel `right_axis`/`up_axis`/`normal` pro Panel) sind
+aktuell in `fake_mono_camera_node.py` UND `position_rover_node.py` je separat
+hinterlegt (kein gemeinsames Constants-Modul in diesem Workspace) — beide
+Dateien müssen bei einer Änderung manuell konsistent gehalten werden, bis
+echte Messwerte der LED-Halterungen vorliegen.
 
 ## Wichtigste Architektur-Änderung ggü. deinem Diagramm
 
@@ -159,9 +214,14 @@ Das ist durch den ROS2-TF2-Baum ersetzt:
    (siehe "Pan/Tilt-Kinematik" oben). Offen bleibt nur die *Position*
    der Hardware-Box/des Mastfußes (Translation `world -> mast_base_link`),
    bewusst als späteres Thema zurückgestellt.
-3. **position_rover_node** (Muster-Matching + PnP-Posenschätzung aus den
-   `led_detector_node`-Blobs): noch nicht gebaut, siehe "Mono-Cam/LED-Zweig"
-   oben.
+3. ~~**position_rover_node**~~ **Erledigt** — siehe "Mono-Cam/LED-Zweig"
+   oben. Durch das asymmetrische 3-Panel-Muster (Dreieck + Schenkel-LED,
+   je eine Farbe pro Panel) ist die frühere 90°-Yaw-Mehrdeutigkeit
+   behoben. Offen bleibt: Panel-Form und -Montage sind noch
+   Platzhalter-Werte (siehe Hinweis im "Mono-Cam/LED-Zweig"-Abschnitt),
+   und nur Dach/links/rechts sind abgedeckt — vorne/hinten sowie echte
+   Verdeckung durch den Rover-Körper selbst (statt nur per Normalen-Test)
+   sind noch nicht modelliert.
 4. **Comms-Kette** (WIFI_jetson_node <-> com_encoder_node <-> Commander_node
    <-> Data_storage_node/bridge_STM_node): out of scope für Phase 1, existiert
    teilweise schon in `rover_control` — perspektivisch der Weg, über den

@@ -9,25 +9,36 @@ the ROS2 node around it.
 
 Setup (see ARCHITECTURE.md): this mono-cam is mounted on the same fixed
 mast as the rest of the perception module and observes a single, separate
-rover driving around it. The rover carries a known, rigid LED pattern: 5
-LEDs arranged like the "5" face of a die (4 corners of a square + 1 center),
-same color (green -- matches led_detector_node's color filter), known
-spacing. led_detector_node finds individual blobs;
-matching the detected blobs against this known pattern to solve for the
-rover's distance/position (a PnP-style problem, like optical motion-capture
-markers) is position_rover_node's job, not this node's or led_detector's.
+rover driving around it. Since one panel of LEDs can only be seen from
+roughly the hemisphere it faces, the rover carries **three** LED panels --
+roof, left, right -- covering most viewing angles as it turns (front/back
+are deliberately left uncovered for now, see chat). Each panel:
 
-So the fake scene here simulates one rigid rover pattern moving through the
-frame -- not several independent blobs -- with:
-  - distance from the mast oscillating (rover driving closer/further),
-  - lateral position oscillating on a different period (driving side to
-    side / around the mast), and
-  - the whole pattern slowly rotating (yaw), so the projected square
-    foreshortens as if the rover were turning -- giving a future
-    position_rover_node varying orientations to solve for, not just
-    varying positions.
-Each LED's apparent pixel size and brightness-blob radius shrinks with
-distance (1/Z), matching real perspective.
+  - has the same shape: 3 LEDs at the corners of an isosceles triangle
+    (panel_base_m / panel_leg_m) plus a 4th LED on one of the two equal
+    legs (panel_extra_led_fraction along it). Unlike a symmetric shape
+    (square, equilateral triangle), this has NO rotational or mirror
+    symmetry -- every one of the 4 LEDs is geometrically unique, so
+    position_rover_node can always figure out which is which from
+    geometry alone, no per-LED color-coding needed.
+  - has its own solid color (roof=green, left=red, right=blue), so
+    led_detector_node / position_rover_node can tell *which panel* they're
+    looking at without needing to see more than one at once.
+
+Placeholder geometry throughout (panel shape+size, mounting positions/
+normals on the rover body) -- replace with real measurements once the
+rover's physical LED mounts are finalized. position_rover_node's DEFAULTS
+must mirror panel_base_m/panel_leg_m/panel_extra_led_fraction and the
+mount offsets/normals here exactly, or the fake scenario won't validate
+correctly -- there is no shared source of truth for these yet (same
+caveat as the stereo/lidar shared-plane constants).
+
+Self-occlusion is simplified: a panel is only "visible" (LEDs rendered) if
+its outward normal, after the rover's current yaw rotation, points at
+least roughly toward the camera (dot product against the panel-to-camera
+direction above visibility_dot_threshold). No actual rover-body geometry is
+modeled -- each panel is treated as if it alone determines its own
+visibility, good enough for a placeholder scene.
 
 Real hardware: Arducam B0497 (Sony IMX678 sensor, USB3.0, UVC-compliant --
 confirms the choice below of the generic ROS2 `v4l2_camera` driver over a
@@ -53,9 +64,7 @@ to the mast. And the sensor only has 3 fixed USB3.0 modes (3840x2160
 60fps ceiling), not the native max.
 
 Frame: mono_cam_optical_frame, REP-103 optical convention (Z forward, X
-right, Y down) -- same convention used for the stereo camera. Not yet wired
-into the launch file's static-TF chain (mast_link -> mono_cam_optical_frame)
--- that's the next step after this node.
+right, Y down) -- same convention used for the stereo camera.
 """
 
 import math
@@ -93,15 +102,32 @@ DEFAULTS = {
     "cx": 959.5,
     "cy": 539.5,
 
-    # The rover's known LED pattern: "5" on a die -- 4 corners of a square
-    # (edge length = 2 * pattern_half_size_m) + 1 center LED, all the same
-    # color. Placeholder geometry until the real pattern is finalized.
-    # Color: LEDs are expected to be green (matches led_detector_node's
-    # min_green_dominance color filter).
-    "pattern_half_size_m": 0.15,
-    "led_color_r": 60,
-    "led_color_g": 255,
-    "led_color_b": 80,
+    # Shared LED-panel shape (all 3 panels use this same asymmetric
+    # geometry -- see module docstring): isosceles triangle (2 legs of
+    # panel_leg_m, base of panel_base_m) + a 4th LED at
+    # panel_extra_led_fraction along ONE leg (0 = at the base corner,
+    # 1 = at the apex). MUST match position_rover_node's DEFAULTS.
+    "panel_base_m": 0.20,
+    "panel_leg_m": 0.25,
+    "panel_extra_led_fraction": 0.5,
+
+    # Per-panel solid colors -- lets position_rover_node tell panels apart
+    # without seeing more than one at a time.
+    "panel_roof_color_r": 60, "panel_roof_color_g": 255, "panel_roof_color_b": 80,
+    "panel_left_color_r": 255, "panel_left_color_g": 60, "panel_left_color_b": 60,
+    "panel_right_color_r": 60, "panel_right_color_g": 120, "panel_right_color_b": 255,
+
+    # Placeholder panel mounting, relative to the rover's own center/height
+    # (before the rover's yaw rotation is applied -- see get_frame()).
+    # MUST match position_rover_node's panel extrinsics DEFAULTS.
+    "roof_height_offset_m": 0.20,
+    "side_offset_m": 0.15,
+    "side_height_offset_m": 0.05,
+
+    # Self-occlusion cutoff (see module docstring): panel normal . direction
+    # to camera must exceed this to be considered visible. ~0.15 -> panel
+    # normal within ~81 degrees of pointing at the camera.
+    "visibility_dot_threshold": 0.15,
 
     # Apparent blob radius (pixels) at 1m distance; actual radius scales
     # as 1/distance (perspective), clamped to this range.
@@ -113,7 +139,7 @@ DEFAULTS = {
     # (no mast_link roundtrip needed for a synthetic scene): distance and
     # lateral position each oscillate on their own period (different
     # periods -> a more organic, non-repeating path), plus a slow yaw
-    # rotation of the whole pattern.
+    # rotation of the whole rover body (and everything mounted on it).
     "rover_center_distance_m": 3.0,
     "rover_distance_amplitude_m": 1.5,
     "rover_distance_period_s": 20.0,
@@ -126,19 +152,39 @@ DEFAULTS = {
 }
 
 
+def _build_panel_local_points(base_m: float, leg_m: float, extra_fraction: float) -> np.ndarray:
+    """The shared 4-LED panel shape, in the panel's own 2D (u, v) plane
+    (v=0 is the base, v>0 towards the apex): base-left, base-right, apex,
+    and the extra LED on the base-left -> apex leg. See module docstring.
+    """
+    half_base = base_m / 2.0
+    apex_height = math.sqrt(max(leg_m ** 2 - half_base ** 2, 1e-9))
+
+    base_left = np.array([-half_base, 0.0])
+    base_right = np.array([half_base, 0.0])
+    apex = np.array([0.0, apex_height])
+    extra = base_left + extra_fraction * (apex - base_left)
+
+    return np.array([base_left, base_right, apex, extra])  # (4, 2)
+
+
 class FakeMonoCameraInterface:
     """Stand-in for a real camera SDK / v4l2 capture loop.
 
     Generates a synthetic RGB8 frame each call to get_frame(t): a noisy dark
-    background plus the rover's 5-LED "die" pattern, projected via a pinhole
-    model as the pattern moves and rotates over time. Swapping to real
-    hardware later means replacing only this class (and ideally just
-    launching v4l2_camera instead of this whole node).
+    background plus the rover's 3 LED panels (roof/left/right), each
+    projected via a pinhole model as the rover moves and turns, with panels
+    fading in/out of visibility depending on which way the rover is facing.
+    Swapping to real hardware later means replacing only this class (and
+    ideally just launching v4l2_camera instead of this whole node).
     """
 
     def __init__(
         self, width, height, fx, fy, cx, cy,
-        pattern_half_size_m, led_color,
+        panel_base_m, panel_leg_m, panel_extra_led_fraction,
+        roof_color, left_color, right_color,
+        roof_height_offset_m, side_offset_m, side_height_offset_m,
+        visibility_dot_threshold,
         rover_center_distance_m, rover_distance_amplitude_m,
         rover_distance_period_s, rover_lateral_amplitude_m,
         rover_lateral_period_s, rover_height_m, rover_yaw_period_s,
@@ -151,7 +197,6 @@ class FakeMonoCameraInterface:
         self.fy = fy
         self.cx = cx
         self.cy = cy
-        self.led_color = led_color
 
         self.rover_center_distance_m = rover_center_distance_m
         self.rover_distance_amplitude_m = rover_distance_amplitude_m
@@ -164,18 +209,56 @@ class FakeMonoCameraInterface:
         self.led_apparent_radius_px_at_1m = led_apparent_radius_px_at_1m
         self.min_led_radius_px = min_led_radius_px
         self.max_led_radius_px = max_led_radius_px
+        self.visibility_dot_threshold = visibility_dot_threshold
 
-        # The "5" pattern: 4 square corners + 1 center, in the pattern's own
-        # local plane (local z=0, flat panel). Rotated by the pattern's yaw
-        # and placed at the rover's current position each frame.
-        s = pattern_half_size_m
-        self._local_led_positions = np.array([
-            (-s, -s, 0.0),
-            (s, -s, 0.0),
-            (-s, s, 0.0),
-            (s, s, 0.0),
-            (0.0, 0.0, 0.0),
-        ], dtype=np.float64)
+        panel_local_uv = _build_panel_local_points(
+            panel_base_m, panel_leg_m, panel_extra_led_fraction
+        )
+
+        # Each panel: local (u,v) points embedded into the rover's own
+        # unyawed 3D frame via mount_offset + u*right_axis + v*up_axis. The
+        # outward normal is NOT chosen independently -- it's always
+        # normal = right_axis x up_axis, so that [right_axis, up_axis,
+        # normal] forms a proper (determinant +1) rotation matrix from
+        # panel-local to rover-local. This matters: position_rover_node
+        # reuses these exact same right_axis/up_axis/normal triples as the
+        # panel's mounting *rotation* to compose a solved panel pose back
+        # into a rover-center pose -- an improper (mirrored) basis would
+        # silently produce a wrong/flipped rover pose. MUST match
+        # position_rover_node's panel extrinsics DEFAULTS exactly.
+        self._panels = [
+            {
+                "name": "roof",
+                "color": roof_color,
+                "mount_offset": np.array([0.0, roof_height_offset_m, 0.0]),
+                "right_axis": np.array([1.0, 0.0, 0.0]),
+                "up_axis": np.array([0.0, 0.0, -1.0]),
+                "normal": np.array([0.0, 1.0, 0.0]),
+            },
+            {
+                "name": "left",
+                "color": left_color,
+                "mount_offset": np.array([-side_offset_m, side_height_offset_m, 0.0]),
+                "right_axis": np.array([0.0, 0.0, 1.0]),
+                "up_axis": np.array([0.0, 1.0, 0.0]),
+                "normal": np.array([-1.0, 0.0, 0.0]),
+            },
+            {
+                "name": "right",
+                "color": right_color,
+                "mount_offset": np.array([side_offset_m, side_height_offset_m, 0.0]),
+                "right_axis": np.array([0.0, 0.0, -1.0]),
+                "up_axis": np.array([0.0, 1.0, 0.0]),
+                "normal": np.array([1.0, 0.0, 0.0]),
+            },
+        ]
+        for panel in self._panels:
+            # local_points: (4, 3) -- the panel's 4 LEDs embedded in the
+            # rover's unyawed 3D frame, still relative to mount_offset.
+            panel["local_points"] = (
+                panel_local_uv[:, 0:1] * panel["right_axis"]
+                + panel_local_uv[:, 1:2] * panel["up_axis"]
+            )
 
         # Static noisy background, generated once (fixed seed -> repeatable
         # test scenes) and reused every frame instead of re-randomizing at
@@ -188,6 +271,14 @@ class FakeMonoCameraInterface:
         vs, us = np.mgrid[0:height, 0:width]
         self._us = us.astype(np.float32)
         self._vs = vs.astype(np.float32)
+
+    @staticmethod
+    def _yaw(vec3: np.ndarray, cos_t: float, sin_t: float) -> np.ndarray:
+        """Rotate about the vertical (Y) axis: mixes x/z, leaves y alone --
+        same convention as the rover's own body yaw.
+        """
+        x, y, z = vec3
+        return np.array([x * cos_t - z * sin_t, y, x * sin_t + z * cos_t])
 
     def get_frame(self, t: float) -> np.ndarray:
         """Return a (height, width, 3) uint8 RGB frame for elapsed time t."""
@@ -205,34 +296,43 @@ class FakeMonoCameraInterface:
         center_z = max(center_z, 0.3)  # never let the rover reach the camera
         center_x = self.rover_lateral_amplitude_m * math.sin(lateral_omega * t)
         center_y = self.rover_height_m
+        center = np.array([center_x, center_y, center_z])
 
         theta = yaw_omega * t
         cos_t, sin_t = math.cos(theta), math.sin(theta)
 
-        for xl, yl, zl in self._local_led_positions:
-            # Yaw rotation about the vertical (Y) axis: mixes local x/z,
-            # leaves y (height) unchanged -- simulates the rover turning.
-            x_rot = xl * cos_t - zl * sin_t
-            z_rot = xl * sin_t + zl * cos_t
+        for panel in self._panels:
+            panel_center_unyawed = panel["mount_offset"]
+            panel_center = self._yaw(panel_center_unyawed, cos_t, sin_t) + center
+            normal_yawed = self._yaw(panel["normal"], cos_t, sin_t)
 
-            x = center_x + x_rot
-            y = center_y + yl
-            z = center_z + z_rot
+            # Visibility: does this panel's normal point roughly toward the
+            # camera (at the origin)? See module docstring.
+            to_camera = -panel_center
+            to_camera_norm = to_camera / max(np.linalg.norm(to_camera), 1e-6)
+            visible = float(np.dot(normal_yawed, to_camera_norm)) > self.visibility_dot_threshold
 
-            if z <= 0.05:
-                continue  # behind/at the camera -- not visible
+            if not visible:
+                continue
 
-            u = self.cx + self.fx * x / z
-            v = self.cy + self.fy * y / z
+            for local_pt in panel["local_points"]:
+                point_unyawed = panel["mount_offset"] + local_pt
+                x, y, z = self._yaw(point_unyawed, cos_t, sin_t) + center
 
-            radius_px = float(np.clip(
-                self.led_apparent_radius_px_at_1m / z,
-                self.min_led_radius_px, self.max_led_radius_px,
-            ))
+                if z <= 0.05:
+                    continue  # behind/at the camera -- not visible
 
-            dist2 = (self._us - u) ** 2 + (self._vs - v) ** 2
-            mask = dist2 <= (radius_px ** 2)
-            frame[mask] = self.led_color
+                u = self.cx + self.fx * x / z
+                v = self.cy + self.fy * y / z
+
+                radius_px = float(np.clip(
+                    self.led_apparent_radius_px_at_1m / z,
+                    self.min_led_radius_px, self.max_led_radius_px,
+                ))
+
+                dist2 = (self._us - u) ** 2 + (self._vs - v) ** 2
+                mask = dist2 <= (radius_px ** 2)
+                frame[mask] = panel["color"]
 
         return frame
 
@@ -252,8 +352,16 @@ class FakeMonoCameraNode(Node):
             fy=self.fy,
             cx=self.cx,
             cy=self.cy,
-            pattern_half_size_m=self.pattern_half_size_m,
-            led_color=(self.led_color_r, self.led_color_g, self.led_color_b),
+            panel_base_m=self.panel_base_m,
+            panel_leg_m=self.panel_leg_m,
+            panel_extra_led_fraction=self.panel_extra_led_fraction,
+            roof_color=(self.panel_roof_color_r, self.panel_roof_color_g, self.panel_roof_color_b),
+            left_color=(self.panel_left_color_r, self.panel_left_color_g, self.panel_left_color_b),
+            right_color=(self.panel_right_color_r, self.panel_right_color_g, self.panel_right_color_b),
+            roof_height_offset_m=self.roof_height_offset_m,
+            side_offset_m=self.side_offset_m,
+            side_height_offset_m=self.side_height_offset_m,
+            visibility_dot_threshold=self.visibility_dot_threshold,
             rover_center_distance_m=self.rover_center_distance_m,
             rover_distance_amplitude_m=self.rover_distance_amplitude_m,
             rover_distance_period_s=self.rover_distance_period_s,
@@ -287,8 +395,8 @@ class FakeMonoCameraNode(Node):
 
         self.get_logger().info(
             f"Fake mono camera started: {self.width}x{self.height} "
-            f"@ {self.fps} FPS, simulating a 5-LED die pattern at "
-            f"~{self.rover_center_distance_m}m, publishing to "
+            f"@ {self.fps} FPS, simulating 3 LED panels (roof/left/right) "
+            f"at ~{self.rover_center_distance_m}m, publishing to "
             f"{self.image_topic}"
         )
 

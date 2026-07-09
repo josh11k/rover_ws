@@ -49,14 +49,79 @@ link -> camera_link (physical pose) + a fixed camera_link -> *_optical_
 frame rotation, which is how realsense2_camera's own URDF/TF tree is
 structured -- that split makes it trivial to swap in the real driver later
 without recomputing the rotation.
+
+Launch arguments -- run branches separately
+--------------------------------------------
+    use_lidar  (default: true)  -- fake_lidar_node, lidar_static_tf,
+                                    lidar_frame_transform_node,
+                                    lidar_preprocessing_node
+    use_stereo (default: true)  -- fake_stereo_camera_node, stereo_static_tf,
+                                    stereo_pointcloud_node,
+                                    stereo_frame_transform_node,
+                                    stereo_preprocessing_node
+    use_mono   (default: true)  -- fake_mono_camera_node, mono_static_tf,
+                                    led_detector_node
+    use_terrain_viz (default: true) -- terrain_visualization_node (RViz2
+                                    elevation-grid PointCloud2)
+
+Examples:
+    ros2 launch rover_perception stereo_lidar_fusion.launch.py use_stereo:=false
+    ros2 launch rover_perception stereo_lidar_fusion.launch.py use_lidar:=false use_mono:=false
+
+Two things are deliberately NOT gated by these arguments, always running
+regardless of which branches are on:
+
+  - fake_mast_hw_node + mast_pose_node (the mast TF chain). They don't
+    belong to any one sensor branch -- lidar_frame_transform_node and
+    stereo_frame_transform_node both depend on the mast_base_link /
+    mast_platform_link transforms this pair produces, so gating them per
+    branch would mean re-deciding "does someone still need this" every
+    time you toggle a flag. Simpler to just always have them there; if you
+    need a mode without the mast chain at all, comment these two out by
+    hand for now.
+  - global_pointcloud_fusion_node + obstacle_grid_node. Since
+    global_pointcloud_fusion_node was made robust to either input being
+    absent/stale (see that node's docstring), there's no reason to gate it
+    either -- with use_stereo:=false it will just publish lidar-only (and
+    vice versa), which is exactly the "test one branch alone" behavior we
+    want, without a third on/off flag to track.
 """
 
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     ld = LaunchDescription()
+
+    use_lidar = LaunchConfiguration("use_lidar")
+    use_stereo = LaunchConfiguration("use_stereo")
+    use_mono = LaunchConfiguration("use_mono")
+
+    ld.add_action(DeclareLaunchArgument(
+        "use_lidar", default_value="true",
+        description="Start the lidar branch (fake_lidar_node, its static "
+                     "TF, frame_transform_node + pointcloud_preprocessing_node).",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "use_stereo", default_value="true",
+        description="Start the stereo branch (fake_stereo_camera_node, its "
+                     "static TF, stereo_pointcloud_node, "
+                     "frame_transform_node + pointcloud_preprocessing_node).",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "use_mono", default_value="true",
+        description="Start the mono-cam/LED branch (fake_mono_camera_node, "
+                     "its static TF, led_detector_node).",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "use_terrain_viz", default_value="true",
+        description="Start terrain_visualization_node (publishes the "
+                     "elevation grid as a colored PointCloud2 for RViz2).",
+    ))
 
     # ------------------------------------------------------------------
     # Sensor sources (fakes; swap for the real drivers when hardware is
@@ -68,32 +133,31 @@ def generate_launch_description():
         package="rover_lidar",
         executable="fake_lidar_node",
         name="fake_lidar_node",
+        condition=IfCondition(use_lidar),
     )
 
     fake_stereo = Node(
         package="rover_perception",
         executable="fake_stereo_camera_node",
         name="fake_stereo_camera_node",
+        condition=IfCondition(use_stereo),
     )
 
     fake_mono = Node(
         package="rover_perception",
         executable="fake_mono_camera_node",
         name="fake_mono_camera_node",
+        condition=IfCondition(use_mono),
     )
 
-    # Fake pan/tilt motor feedback + electronics-box IMU -- see
-    # fake_mast_hw_node.py. Swap for the real motor-controller interface
-    # once it exists.
+    # Mast TF chain -- always on, see module docstring for why this isn't
+    # gated by use_lidar/use_stereo/use_mono.
     fake_mast_hw = Node(
         package="rover_perception",
         executable="fake_mast_hw_node",
         name="fake_mast_hw_node",
     )
 
-    # Computes the mast's two dynamic transforms (world->mast_base_link
-    # lean, mast_base_link->mast_platform_link pan/tilt) from the above +
-    # the stereo/lidar IMUs. See mast_pose_node.py for the full reasoning.
     mast_pose = Node(
         package="rover_perception",
         executable="mast_pose_node",
@@ -114,6 +178,7 @@ def generate_launch_description():
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "lidar_frame",
         ],
+        condition=IfCondition(use_lidar),
     )
 
     stereo_static_tf = Node(
@@ -129,6 +194,7 @@ def generate_launch_description():
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "camera_depth_optical_frame",
         ],
+        condition=IfCondition(use_stereo),
     )
 
     mono_static_tf = Node(
@@ -145,6 +211,7 @@ def generate_launch_description():
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "mono_cam_optical_frame",
         ],
+        condition=IfCondition(use_mono),
     )
 
     # ------------------------------------------------------------------
@@ -160,6 +227,7 @@ def generate_launch_description():
             "output_topic": "/lidar/points_mast_base_link",
             "target_frame": "mast_base_link",
         }],
+        condition=IfCondition(use_lidar),
     )
 
     lidar_preprocessing = Node(
@@ -173,12 +241,14 @@ def generate_launch_description():
             "outlier_radius": 2.0,
             "min_neighbors": 1,
         }],
+        condition=IfCondition(use_lidar),
     )
 
     stereo_to_cloud = Node(
         package="rover_perception",
         executable="stereo_pointcloud_node",
         name="stereo_pointcloud_node",
+        condition=IfCondition(use_stereo),
     )
 
     stereo_transform = Node(
@@ -190,6 +260,7 @@ def generate_launch_description():
             "output_topic": "/stereo/points_mast_base_link",
             "target_frame": "mast_base_link",
         }],
+        condition=IfCondition(use_stereo),
     )
 
     stereo_preprocessing = Node(
@@ -199,14 +270,15 @@ def generate_launch_description():
         parameters=[{
             "input_topic": "/stereo/points_mast_base_link",
             "output_topic": "/stereo/points_filtered",
-            "voxel_size": 0.10,
-            "outlier_radius": 0.30,
-            "min_neighbors": 3,
+            "voxel_size": 0.20,
+            "outlier_radius": 2.0,
+            "min_neighbors": 1,
         }],
+        condition=IfCondition(use_stereo),
     )
 
     # ------------------------------------------------------------------
-    # Fusion + terrain analysis.
+    # Fusion + terrain analysis -- always on, see module docstring.
     # ------------------------------------------------------------------
     fusion = Node(
         package="rover_perception",
@@ -228,6 +300,17 @@ def generate_launch_description():
         }],
     )
 
+    # RViz2 visualization of the elevation grid (mean_z etc. as a colored
+    # PointCloud2) -- see terrain_visualization_node.py. Gated by its own
+    # flag since it's a debug aid, not part of the core pipeline; default
+    # on since it's cheap and harmless to leave running.
+    terrain_viz = Node(
+        package="rover_perception",
+        executable="terrain_visualization_node",
+        name="terrain_visualization_node",
+        condition=IfCondition(LaunchConfiguration("use_terrain_viz")),
+    )
+
     # ------------------------------------------------------------------
     # Mono-cam / LED branch. Separate from the point-cloud fusion above --
     # its output (/mono_cam/led_detections) has no consumer yet
@@ -237,6 +320,7 @@ def generate_launch_description():
         package="rover_perception",
         executable="led_detector_node",
         name="led_detector_node",
+        condition=IfCondition(use_mono),
     )
 
     for action in [
@@ -245,7 +329,7 @@ def generate_launch_description():
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,
-        fusion, obstacle_grid,
+        fusion, obstacle_grid, terrain_viz,
         led_detector,
     ]:
         ld.add_action(action)
