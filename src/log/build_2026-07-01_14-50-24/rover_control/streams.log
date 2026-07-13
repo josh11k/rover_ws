@@ -1,0 +1,52 @@
+[1.799s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../build/rover_control build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/install.log --single-version-externally-managed install_data
+[2.209s] running egg_info
+[2.211s] creating ../build/rover_control/rover_control.egg-info
+[2.212s] writing ../build/rover_control/rover_control.egg-info/PKG-INFO
+[2.214s] writing dependency_links to ../build/rover_control/rover_control.egg-info/dependency_links.txt
+[2.216s] writing entry points to ../build/rover_control/rover_control.egg-info/entry_points.txt
+[2.217s] writing requirements to ../build/rover_control/rover_control.egg-info/requires.txt
+[2.219s] writing top-level names to ../build/rover_control/rover_control.egg-info/top_level.txt
+[2.221s] writing manifest file '../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[2.230s] reading manifest file '../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[2.234s] writing manifest file '../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[2.236s] running build
+[2.238s] running build_py
+[2.239s] creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build
+[2.240s] creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib
+[2.241s] creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control
+[2.243s] copying rover_control/fake_stm32_bridge_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control
+[2.247s] copying rover_control/wifi_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control
+[2.250s] copying rover_control/__init__.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control
+[2.256s] copying rover_control/rover_pose_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control
+[2.260s] copying rover_control/test:commands.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control
+[2.263s] copying rover_control/command_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control
+[2.267s] running install
+[2.268s] running install_lib
+[2.272s] creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.275s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control/fake_stm32_bridge_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.283s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control/wifi_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.292s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control/__init__.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.301s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control/rover_pose_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.307s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control/test:commands.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.319s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build/lib/rover_control/command_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.329s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control/fake_stm32_bridge_node.py to fake_stm32_bridge_node.cpython-310.pyc
+[2.338s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control/wifi_node.py to wifi_node.cpython-310.pyc
+[2.348s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control/__init__.py to __init__.cpython-310.pyc
+[2.363s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control/rover_pose_node.py to rover_pose_node.cpython-310.pyc
+[2.369s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control/test:commands.py to test:commands.cpython-310.pyc
+[2.375s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control/command_node.py to command_node.cpython-310.pyc
+[2.389s] running install_data
+[2.390s] creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/share/ament_index
+[2.394s] creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/share/ament_index/resource_index
+[2.397s] creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/share/ament_index/resource_index/packages
+[2.403s] copying resource/rover_control -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/share/ament_index/resource_index/packages
+[2.408s] copying package.xml -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/share/rover_control
+[2.415s] running install_egg_info
+[2.420s] Copying ../build/rover_control/rover_control.egg-info to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages/rover_control-0.0.0-py3.10.egg-info
+[2.443s] running install_scripts
+[2.484s] Installing command_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/rover_control
+[2.491s] Installing fake_stm32_bridge_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/rover_control
+[2.494s] Installing rover_pose_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/rover_control
+[2.501s] Installing wifi_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/rover_control
+[2.511s] writing list of installed files to '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/install.log'
+[2.680s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control' returned '0': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../build/rover_control build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/build/rover_control/install.log --single-version-externally-managed install_data

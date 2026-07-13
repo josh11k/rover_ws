@@ -1,0 +1,17 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from rover_control_msgs/srv/SetOperationalMode.srv
+// generated code does not contain a copyright notice
+
+
+module rover_control_msgs {
+  module srv {
+    struct SetOperationalMode_Request {
+      string mode;
+    };
+    struct SetOperationalMode_Response {
+      boolean success;
+
+      string message;
+    };
+  };
+};

@@ -4,6 +4,7 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import PointField
+from sensor_msgs.msg import Imu
 
 from std_msgs.msg import Header
 
@@ -19,6 +20,15 @@ class FakeLidarNode(Node):
         self.publisher = self.create_publisher(
             PointCloud2,
             "/livox/points",
+            10
+        )
+
+        # Mid-360's built-in IMU -- matches the real livox_ros_driver2
+        # topic, so mast_pose_node's platform-IMU cross-check works
+        # unchanged once the real lidar is swapped in.
+        self.imu_publisher = self.create_publisher(
+            Imu,
+            "/livox/imu",
             10
         )
 
@@ -58,6 +68,17 @@ class FakeLidarNode(Node):
         self.get_logger().info(
             f"Published PointCloud with {len(points)} points"
         )
+
+        imu_msg = Imu()
+        imu_msg.header.stamp = header.stamp
+        imu_msg.header.frame_id = "lidar_frame"
+        # Identity orientation (lidar held level) -- valid, per
+        # sensor_msgs/Imu convention (orientation_covariance[0] != -1 means
+        # "orientation is provided").
+        imu_msg.orientation.w = 1.0
+        imu_msg.orientation_covariance = [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
+        imu_msg.linear_acceleration.z = 9.81
+        self.imu_publisher.publish(imu_msg)
 
 
 def main(args=None):

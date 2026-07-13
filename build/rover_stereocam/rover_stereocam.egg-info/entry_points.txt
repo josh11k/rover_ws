@@ -1,0 +1,4 @@
+[console_scripts]
+fake_stereo_node = rover_stereocam.fake_stereo_node:main
+stereo_processing_node = rover_stereocam.stereo_processing_node:main
+

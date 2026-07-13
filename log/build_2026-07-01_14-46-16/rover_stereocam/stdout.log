@@ -1,0 +1,37 @@
+running egg_info
+creating ../../build/rover_stereocam/rover_stereocam.egg-info
+writing ../../build/rover_stereocam/rover_stereocam.egg-info/PKG-INFO
+writing dependency_links to ../../build/rover_stereocam/rover_stereocam.egg-info/dependency_links.txt
+writing entry points to ../../build/rover_stereocam/rover_stereocam.egg-info/entry_points.txt
+writing requirements to ../../build/rover_stereocam/rover_stereocam.egg-info/requires.txt
+writing top-level names to ../../build/rover_stereocam/rover_stereocam.egg-info/top_level.txt
+writing manifest file '../../build/rover_stereocam/rover_stereocam.egg-info/SOURCES.txt'
+reading manifest file '../../build/rover_stereocam/rover_stereocam.egg-info/SOURCES.txt'
+writing manifest file '../../build/rover_stereocam/rover_stereocam.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build
+creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib
+creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib/rover_stereocam
+copying rover_stereocam/fake_stereo_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib/rover_stereocam
+copying rover_stereocam/__init__.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib/rover_stereocam
+copying rover_stereocam/stereo_cam_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib/rover_stereocam
+running install
+running install_lib
+creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam
+copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib/rover_stereocam/fake_stereo_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam
+copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib/rover_stereocam/__init__.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam
+copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build/lib/rover_stereocam/stereo_cam_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam
+byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam/fake_stereo_node.py to fake_stereo_node.cpython-310.pyc
+byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam/__init__.py to __init__.cpython-310.pyc
+byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam/stereo_cam_node.py to stereo_cam_node.cpython-310.pyc
+running install_data
+creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/share/ament_index
+creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/share/ament_index/resource_index
+creating /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/share/ament_index/resource_index/packages
+copying resource/rover_stereocam -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/share/ament_index/resource_index/packages
+copying package.xml -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/share/rover_stereocam
+running install_egg_info
+Copying ../../build/rover_stereocam/rover_stereocam.egg-info to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam-0.0.0-py3.10.egg-info
+running install_scripts
+writing list of installed files to '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/install.log'

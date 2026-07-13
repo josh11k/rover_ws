@@ -1,0 +1,22 @@
+[1.898s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_stereocam': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_stereocam build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/install.log --single-version-externally-managed install_data
+[2.456s] running egg_info
+[2.458s] writing ../../build/rover_stereocam/rover_stereocam.egg-info/PKG-INFO
+[2.463s] writing dependency_links to ../../build/rover_stereocam/rover_stereocam.egg-info/dependency_links.txt
+[2.466s] writing entry points to ../../build/rover_stereocam/rover_stereocam.egg-info/entry_points.txt
+[2.474s] writing requirements to ../../build/rover_stereocam/rover_stereocam.egg-info/requires.txt
+[2.475s] writing top-level names to ../../build/rover_stereocam/rover_stereocam.egg-info/top_level.txt
+[2.489s] reading manifest file '../../build/rover_stereocam/rover_stereocam.egg-info/SOURCES.txt'
+[2.493s] writing manifest file '../../build/rover_stereocam/rover_stereocam.egg-info/SOURCES.txt'
+[2.494s] running build
+[2.496s] running build_py
+[2.502s] running install
+[2.503s] running install_lib
+[2.512s] running install_data
+[2.514s] running install_egg_info
+[2.517s] removing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam-0.0.0-py3.10.egg-info' (and everything under it)
+[2.521s] Copying ../../build/rover_stereocam/rover_stereocam.egg-info to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages/rover_stereocam-0.0.0-py3.10.egg-info
+[2.561s] running install_scripts
+[2.626s] Installing fake_stereo_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/rover_stereocam
+[2.636s] Installing stereo_processing_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/rover_stereocam
+[2.642s] writing list of installed files to '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/install.log'
+[2.859s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_stereocam' returned '0': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_stereocam/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_stereocam build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_stereocam/install.log --single-version-externally-managed install_data

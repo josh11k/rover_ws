@@ -1,0 +1,23 @@
+{
+  "package_name": "rover_control_msgs",
+  "output_dir": "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_typesupport_cpp/rover_control_msgs",
+  "template_dir": "/opt/ros/humble/share/rosidl_typesupport_cpp/resource",
+  "idl_tuples": [
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:srv/SetOperationalMode.idl",
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:msg/SetOperationalMode.idl",
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:msg/OperationalModeSettings.idl",
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:msg/CurrentOperationalMode.idl"
+  ],
+  "target_dependencies": [
+    "/opt/ros/humble/lib/rosidl_typesupport_cpp/rosidl_typesupport_cpp",
+    "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_typesupport_cpp/__init__.py",
+    "/opt/ros/humble/share/rosidl_typesupport_cpp/resource/action__type_support.cpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_cpp/resource/idl__type_support.cpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_cpp/resource/msg__type_support.cpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_cpp/resource/srv__type_support.cpp.em",
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs/srv/SetOperationalMode.idl",
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs/msg/SetOperationalMode.idl",
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs/msg/OperationalModeSettings.idl",
+    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs/msg/CurrentOperationalMode.idl"
+  ]
+}

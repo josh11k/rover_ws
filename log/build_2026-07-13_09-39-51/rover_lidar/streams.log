@@ -1,0 +1,22 @@
+[2.329s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_lidar': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_lidar build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/install.log --single-version-externally-managed install_data
+[2.956s] running egg_info
+[2.957s] writing ../../build/rover_lidar/rover_lidar.egg-info/PKG-INFO
+[2.959s] writing dependency_links to ../../build/rover_lidar/rover_lidar.egg-info/dependency_links.txt
+[2.961s] writing entry points to ../../build/rover_lidar/rover_lidar.egg-info/entry_points.txt
+[2.963s] writing requirements to ../../build/rover_lidar/rover_lidar.egg-info/requires.txt
+[2.966s] writing top-level names to ../../build/rover_lidar/rover_lidar.egg-info/top_level.txt
+[2.968s] reading manifest file '../../build/rover_lidar/rover_lidar.egg-info/SOURCES.txt'
+[2.969s] writing manifest file '../../build/rover_lidar/rover_lidar.egg-info/SOURCES.txt'
+[2.971s] running build
+[2.972s] running build_py
+[2.975s] running install
+[2.977s] running install_lib
+[2.979s] running install_data
+[2.980s] running install_egg_info
+[2.982s] removing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar-0.0.0-py3.10.egg-info' (and everything under it)
+[2.984s] Copying ../../build/rover_lidar/rover_lidar.egg-info to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar-0.0.0-py3.10.egg-info
+[3.008s] running install_scripts
+[3.047s] Installing fake_lidar_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/rover_lidar
+[3.050s] Installing lidar_processing_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/rover_lidar
+[3.056s] writing list of installed files to '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/install.log'
+[3.191s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_lidar' returned '0': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_lidar build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/install.log --single-version-externally-managed install_data

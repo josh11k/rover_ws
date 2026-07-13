@@ -1,0 +1,31 @@
+running egg_info
+writing ../../build/rover_lidar/rover_lidar.egg-info/PKG-INFO
+writing dependency_links to ../../build/rover_lidar/rover_lidar.egg-info/dependency_links.txt
+writing entry points to ../../build/rover_lidar/rover_lidar.egg-info/entry_points.txt
+writing requirements to ../../build/rover_lidar/rover_lidar.egg-info/requires.txt
+writing top-level names to ../../build/rover_lidar/rover_lidar.egg-info/top_level.txt
+reading manifest file '../../build/rover_lidar/rover_lidar.egg-info/SOURCES.txt'
+writing manifest file '../../build/rover_lidar/rover_lidar.egg-info/SOURCES.txt'
+running build
+running build_py
+copying rover_lidar/fake_lidar_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build/lib/rover_lidar
+copying rover_lidar/lidar_processing_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build/lib/rover_lidar
+copying rover_lidar/__init__.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build/lib/rover_lidar
+running install
+running install_lib
+copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build/lib/rover_lidar/fake_lidar_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar
+copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build/lib/rover_lidar/lidar_processing_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar
+copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build/lib/rover_lidar/__init__.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar
+byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar/fake_lidar_node.py to fake_lidar_node.cpython-310.pyc
+byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar/lidar_processing_node.py to lidar_processing_node.cpython-310.pyc
+byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar/__init__.py to __init__.cpython-310.pyc
+running install_data
+copying resource/rover_lidar -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/ament_index/resource_index/packages
+copying package.xml -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar
+running install_egg_info
+removing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar-0.0.0-py3.10.egg-info' (and everything under it)
+Copying ../../build/rover_lidar/rover_lidar.egg-info to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages/rover_lidar-0.0.0-py3.10.egg-info
+running install_scripts
+Installing fake_lidar_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/rover_lidar
+Installing lidar_processing_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/rover_lidar
+writing list of installed files to '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/install.log'

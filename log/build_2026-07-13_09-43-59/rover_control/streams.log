@@ -1,0 +1,29 @@
+[2.189s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data
+[2.747s] running egg_info
+[2.754s] writing ../../build/rover_control/rover_control.egg-info/PKG-INFO
+[2.757s] writing dependency_links to ../../build/rover_control/rover_control.egg-info/dependency_links.txt
+[2.762s] writing entry points to ../../build/rover_control/rover_control.egg-info/entry_points.txt
+[2.773s] writing requirements to ../../build/rover_control/rover_control.egg-info/requires.txt
+[2.778s] writing top-level names to ../../build/rover_control/rover_control.egg-info/top_level.txt
+[2.781s] reading manifest file '../../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[2.783s] writing manifest file '../../build/rover_control/rover_control.egg-info/SOURCES.txt'
+[2.784s] running build
+[2.785s] running build_py
+[2.787s] copying rover_control/command_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/build/lib/rover_control
+[2.788s] running install
+[2.790s] running install_lib
+[2.791s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/build/lib/rover_control/command_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control
+[2.793s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control/command_node.py to command_node.cpython-310.pyc
+[2.797s] running install_data
+[2.799s] running install_egg_info
+[2.800s] removing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control-0.0.0-py3.10.egg-info' (and everything under it)
+[2.806s] Copying ../../build/rover_control/rover_control.egg-info to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages/rover_control-0.0.0-py3.10.egg-info
+[2.851s] running install_scripts
+[2.903s] Installing command_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/rover_control
+[2.910s] Installing fake_stm32_bridge_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/rover_control
+[2.916s] Installing rover_pose_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/rover_control
+[2.921s] Installing set_mode_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/rover_control
+[2.931s] Installing stm_bridge_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/rover_control
+[2.940s] Installing wifi_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/rover_control
+[2.947s] writing list of installed files to '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/install.log'
+[3.013s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control' returned '0': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data

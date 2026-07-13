@@ -1,0 +1,4 @@
+/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:srv/SetOperationalMode.idl
+/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:msg/SetOperationalMode.idl
+/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:msg/OperationalModeSettings.idl
+/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rosidl_adapter/rover_control_msgs:msg/CurrentOperationalMode.idl
