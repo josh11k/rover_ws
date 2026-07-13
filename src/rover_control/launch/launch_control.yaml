@@ -1,0 +1,10 @@
+launch:
+  - node:
+      pkg: "rover_control"
+      exec: "command_node"
+      name: "command_node"
+
+  - node:
+      pkg: "rover_control"
+      exec: "set_mode_node"
+      name: "set_mode_node"
