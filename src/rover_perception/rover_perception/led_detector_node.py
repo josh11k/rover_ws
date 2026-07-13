@@ -62,12 +62,14 @@ from sensor_msgs.msg import Image, CameraInfo
 import message_filters
 
 from rover_perception_msgs.msg import LedDetection, LedDetectionArray
+from rover_control_msgs.msg import OperationalModeSettings
 
 
 DEFAULTS = {
     "image_topic": "/mono_cam/image_raw",
     "camera_info_topic": "/mono_cam/camera_info",
     "detections_topic": "/mono_cam/led_detections",
+    "state_topic": "/operational_mode/settings",
 
     # A pixel counts as "LED" if its brightest channel is >= this.
     "brightness_threshold": 180,
@@ -97,36 +99,56 @@ class LedDetectorNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "STANDBY"
 
+        self.mode_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
+            10,
+        )
+        
         self.detections_pub = self.create_publisher(
             LedDetectionArray,
             self.detections_topic,
             10,
         )
+        
+    def state_callback(self, msg):
+        self.state = msg.mono_cam
 
-        self.image_sub = message_filters.Subscriber(
-            self, Image, self.image_topic, qos_profile=qos_profile_sensor_data
-        )
-        self.info_sub = message_filters.Subscriber(
-            self, CameraInfo, self.camera_info_topic,
-            qos_profile=qos_profile_sensor_data
-        )
+        if self.state in ("STANDBY", "OFF"):
+            self.get_logger().info("led_detector_node: STANDBY/OFF")
+            self.image_sub = None
+            self.info_sub = None
+            self.sync = None
+        
+        else:
+            self.get_logger().info("led_detector_node: ON")
+           
+            self.image_sub = message_filters.Subscriber(
+                self, Image, self.image_topic, qos_profile=qos_profile_sensor_data
+            )
+            self.info_sub = message_filters.Subscriber(
+                self, CameraInfo, self.camera_info_topic,
+                qos_profile=qos_profile_sensor_data
+            )
 
-        self.sync = message_filters.ApproximateTimeSynchronizer(
-            [self.image_sub, self.info_sub],
-            queue_size=10,
-            slop=self.sync_slop_sec,
-        )
-        self.sync.registerCallback(self.image_callback)
+            self.sync = message_filters.ApproximateTimeSynchronizer(
+                [self.image_sub, self.info_sub],
+                queue_size=10,
+                slop=self.sync_slop_sec,
+            )
+            self.sync.registerCallback(self.image_callback)
 
-        self.get_logger().info(
-            f"led_detector_node: {self.image_topic} + "
-            f"{self.camera_info_topic} -> {self.detections_topic} "
-            f"(brightness>={self.brightness_threshold}, "
-            f"area in [{self.min_blob_area_px}, {self.max_blob_area_px}] px, "
-            f"color_filter={self.enable_color_filter} "
-            f"(color_dominance>={self.min_color_dominance}))"
-        )
+            self.get_logger().info(
+                f"led_detector_node: {self.image_topic} + "
+                f"{self.camera_info_topic} -> {self.detections_topic} "
+                f"(brightness>={self.brightness_threshold}, "
+                f"area in [{self.min_blob_area_px}, {self.max_blob_area_px}] px, "
+                f"color_filter={self.enable_color_filter} "
+                f"(color_dominance>={self.min_color_dominance}))"
+            )
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():
