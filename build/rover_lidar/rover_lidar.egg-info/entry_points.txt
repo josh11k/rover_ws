@@ -1,4 +1,0 @@
-[console_scripts]
-fake_lidar_node = rover_lidar.fake_lidar_node:main
-lidar_processing_node = rover_lidar.lidar_processing_node:main
-
