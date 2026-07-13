@@ -1,0 +1,17 @@
+# colcon build artifacts -- regenerated locally by `colcon build`,
+# machine-/timestamp-specific (absolute paths, build logs, .pyc caches).
+# Never commit these; see chat/ARCHITECTURE.md for the git cleanup that
+# removed them from tracking.
+build/
+install/
+log/
+
+# Python bytecode / package metadata
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Editor / OS junk
+.vscode/
+.idea/
+.DS_Store
