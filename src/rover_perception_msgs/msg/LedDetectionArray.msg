@@ -6,4 +6,4 @@
 # valid message (no LEDs visible this frame) -- not an error condition.
 
 std_msgs/Header header
-LedDetection[] detections
+rover_perception_msgs/LedDetection[] detections
