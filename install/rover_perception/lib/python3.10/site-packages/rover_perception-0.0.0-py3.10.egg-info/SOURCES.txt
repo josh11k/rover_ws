@@ -22,6 +22,7 @@ rover_perception/mast_pose_node.py
 rover_perception/obstacle_grid_node.py
 rover_perception/pointcloud_filters.py
 rover_perception/pointcloud_preprocessing_node.py
+rover_perception/position_rover_node.py
 rover_perception/stereo_pointcloud_node.py
 rover_perception/terrain_analysis.py
 rover_perception/terrain_visualization_node.py

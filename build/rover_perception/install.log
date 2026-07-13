@@ -10,6 +10,7 @@
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/led_detector_node.py
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/frame_transform_node.py
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/terrain_visualization_node.py
+/home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/position_rover_node.py
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/stereo_pointcloud_node.py
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__init__.py
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__pycache__/pointcloud_preprocessing_node.cpython-310.pyc
@@ -24,6 +25,7 @@
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__pycache__/led_detector_node.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__pycache__/frame_transform_node.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__pycache__/terrain_visualization_node.cpython-310.pyc
+/home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__pycache__/position_rover_node.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__pycache__/stereo_pointcloud_node.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/__pycache__/__init__.cpython-310.pyc
 /home/joshua/rover_ws/install/rover_perception/share/ament_index/resource_index/packages/rover_perception
@@ -45,5 +47,6 @@
 /home/joshua/rover_ws/install/rover_perception/lib/rover_perception/mast_pose_node
 /home/joshua/rover_ws/install/rover_perception/lib/rover_perception/obstacle_grid_node
 /home/joshua/rover_ws/install/rover_perception/lib/rover_perception/pointcloud_preprocessing_node
+/home/joshua/rover_ws/install/rover_perception/lib/rover_perception/position_rover_node
 /home/joshua/rover_ws/install/rover_perception/lib/rover_perception/stereo_pointcloud_node
 /home/joshua/rover_ws/install/rover_perception/lib/rover_perception/terrain_visualization_node
