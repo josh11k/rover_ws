@@ -68,20 +68,22 @@ class CommandNode(Node):
     # Com to STM: Reads out the new operational mode requested by the STM32 
     def mode_feedback_callback(self, input):
         msg = CurrentOperationalMode()
-        msg.mode = input  # Assuming the message is a simple string for this example
+        msg.mode = input.mode  # Assuming the message is a simple string for this example
         #msg = input.mode  # If the message is a custom message type, adjust accordingly
 
         """Triggered whenever the bridge node publishes a feedback message"""
         self.get_logger().info(f"Feedback from STM: Current mode is '{msg.mode}'")
-        if msg.mode == "STANDBY":
+        # if msg.mode == "STANDBY":
+        if int(msg.mode) == 1:
             self.get_logger().info("STM32 requests to switch to STANDBY mode.")
             self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/current topic
-        elif msg.mode == "PERCEPTION":
+        # elif msg.mode == "PERCEPTION":
+        if msg.mode == 2:
             self.get_logger().info("STM32 requests to switch to PERCEPTION mode.")
             self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/current topic
-        elif msg.mode == "SAFE":
-            self.get_logger().info("STM32 requests to switch to SAFE mode.")
-            self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/currents topic
+        #elif msg.mode == "SAFE":
+         #   self.get_logger().info("STM32 requests to switch to SAFE mode.")
+          #  self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/currents topic
         else:
             self.get_logger().error(f"Unknown mode received: {msg.mode}")
         
@@ -100,14 +102,15 @@ def main(args=None):
     try:
         while rclpy.ok():
             # Warte auf Eingabe im Terminal
-            user_input = input("Target Mode: ").strip()
+            user_input = int(input("Target Mode: ").strip())
             
-            if user_input.lower() == 'exit':
-                break
+            #if user_input.lower() == 'exit':
+             #   break
                 
             # Hier rufst du die Funktion aktiv mit der Eingabe auf!
             # node.send_mode_change_request(user_input)
-            node.mode_feedback_callback(user_input)
+            # node.mode_feedback_callback(user_input)
+            node.send_mode_change_request(user_input)
             
     except KeyboardInterrupt:
         pass

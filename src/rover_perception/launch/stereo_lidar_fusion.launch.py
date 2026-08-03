@@ -89,7 +89,7 @@ regardless of which branches are on:
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
@@ -98,6 +98,7 @@ def generate_launch_description():
 
     use_lidar = LaunchConfiguration("use_lidar")
     use_stereo = LaunchConfiguration("use_stereo")
+    use_real_stereo = LaunchConfiguration("use_real_stereo")
     use_mono = LaunchConfiguration("use_mono")
 
     ld.add_action(DeclareLaunchArgument(
@@ -115,6 +116,10 @@ def generate_launch_description():
         "use_mono", default_value="true",
         description="Start the mono-cam/LED branch (fake_mono_camera_node, "
                      "its static TF, led_detector_node, position_rover_node).",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "use_real_stereo", default_value="false",
+        description="Start the real Stereo cam realsense2_camera_node",
     ))
     ld.add_action(DeclareLaunchArgument(
         "use_terrain_viz", default_value="true",
@@ -139,7 +144,27 @@ def generate_launch_description():
         package="rover_perception",
         executable="fake_stereo_camera_node",
         name="fake_stereo_camera_node",
-        condition=IfCondition(use_stereo),
+        condition=IfCondition(PythonExpression([
+           "'", use_stereo, "' == 'true' and '", use_real_stereo, "' == 'false'"
+        ])),
+    )
+
+    real_stereo = Node(
+        package="realsense2_camera",
+        executable="realsense2_camera_node",
+        name="real_stereo_camera_node",
+        parameters=[{
+            "enable_depth": True,
+            "enable_color": False,
+            "enable_gyro": True,
+            "enable_accel": True,
+            "unite_imu_method": 2,
+            "camera_name": "camera",
+            "camera_namespace": "",
+            }],
+        condition=IfCondition(PythonExpression([
+            "'", use_stereo, "' == 'true' and '", use_real_stereo, "' == 'true'"
+        ])),
     )
 
     fake_mono = Node(
@@ -180,7 +205,7 @@ def generate_launch_description():
         condition=IfCondition(use_lidar),
     )
 
-    stereo_static_tf = Node(
+    stereo_static_tf_fake = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
         name="stereo_to_mast_platform_link",
@@ -193,8 +218,28 @@ def generate_launch_description():
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "camera_depth_optical_frame",
         ],
-        condition=IfCondition(use_stereo),
+        condition=IfCondition(PythonExpression([
+           "'", use_stereo, "' == 'true' and '", use_real_stereo, "' == 'false'"
+        ])),
     )
+
+    stereo_static_tf_real = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="stereo_to_mast_platform_link",
+        arguments=[
+            "--x", "0.20", "--y", "0.0", "--z", "0.40",
+            # REP-103 optical rotation (camera body forward -> +Z optical)
+            # composed with a level (non-tilted) mount. Adjust once the
+            # camera's physical tilt on the platform is known.
+            "--roll", "-1.5708", "--pitch", "0.0", "--yaw", "-1.5708",
+            "--frame-id", "mast_platform_link",
+            "--child-frame-id", "camera_link",
+        ],
+        condition=IfCondition(PythonExpression([
+           "'", use_stereo, "' == 'true' and '", use_real_stereo, "' == 'true'"
+        ])),
+    )   
 
     mono_static_tf = Node(
         package="tf2_ros",
@@ -333,11 +378,11 @@ def generate_launch_description():
     for action in [
         fake_lidar, fake_stereo, fake_mono, fake_mast_hw,
         mast_pose,
-        lidar_static_tf, stereo_static_tf, mono_static_tf,
+        lidar_static_tf, stereo_static_tf_fake, stereo_static_tf_real, mono_static_tf,
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,
         fusion, obstacle_grid, terrain_viz,
-        led_detector, position_rover,
+        led_detector, position_rover, real_stereo,
     ]:
         ld.add_action(action)
 
