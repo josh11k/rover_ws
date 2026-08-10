@@ -12,7 +12,7 @@ expressed in the target frame.
 Run one instance per sensor via launch args, e.g.:
 
     frame_transform_node --ros-args \
-        -p input_topic:=/livox/points \
+        -p input_topic:=/livox/lidar \
         -p output_topic:=/lidar/points_mast_base_link \
         -p target_frame:=mast_base_link
 
@@ -71,7 +71,7 @@ from rover_control_msgs.msg import OperationalModeSettings
 
 
 DEFAULTS = {
-    "input_topic": "/livox/points",
+    "input_topic": "/livox/lidar",
     "output_topic": "/lidar/points_mast_base_link",
     "target_frame": "mast_base_link",
     "state_topic": "/operational_mode/settings",

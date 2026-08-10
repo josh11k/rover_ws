@@ -74,7 +74,7 @@ class CommandNode(Node):
         """Triggered whenever the bridge node publishes a feedback message"""
         self.get_logger().info(f"Feedback from STM: Current mode is '{msg.mode}'")
         # if msg.mode == "STANDBY":
-        if int(msg.mode) == 1:
+        if msg.mode == 1:
             self.get_logger().info("STM32 requests to switch to STANDBY mode.")
             self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/current topic
         # elif msg.mode == "PERCEPTION":

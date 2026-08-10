@@ -97,6 +97,7 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     use_lidar = LaunchConfiguration("use_lidar")
+    use_real_lidar = LaunchConfiguration("use_real_lidar")
     use_stereo = LaunchConfiguration("use_stereo")
     use_real_stereo = LaunchConfiguration("use_real_stereo")
     use_mono = LaunchConfiguration("use_mono")
@@ -105,6 +106,10 @@ def generate_launch_description():
         "use_lidar", default_value="true",
         description="Start the lidar branch (fake_lidar_node, its static "
                      "TF, frame_transform_node + pointcloud_preprocessing_node).",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "use_real_lidar", default_value="false",
+        description="Start the real lidar node: livox_ros_driver2_node",
     ))
     ld.add_action(DeclareLaunchArgument(
         "use_stereo", default_value="true",
@@ -137,7 +142,30 @@ def generate_launch_description():
         package="rover_lidar",
         executable="fake_lidar_node",
         name="fake_lidar_node",
-        condition=IfCondition(use_lidar),
+        condition=IfCondition(PythonExpression([
+            "'", use_lidar, "' == 'true' and '", use_real_lidar, "' == 'false'"
+        ])),
+    )
+
+    real_lidar = Node(
+        package="livox_ros_driver2",
+        executable="livox_ros_drivr2_node",
+        name="real_lidar_node",
+        output="screen",
+        parameters=[
+            {"xfer_format": 0},
+            {"multi_topic": 0},
+            {"data_src": 0},
+            {"publish_freq": 10.0},
+            {"output_data_type": 0},
+            {"frame_id": "lidar_frame"},
+            {"lvx_file_path": "/home/team/livox_test.lvx"},
+            {"user_config_path": "/home/team/ws_livox/src/livox_ros_driver2/config/MID360s_config_json"},
+            {"cmdline_input_bd_code": "livox0000000001"},
+        ],
+        condition=IfCondition(PythonExpression([
+                "'", use_lidar, "' == 'true' and '", use_real_lidar, "' == 'true'"
+        ])),
     )
 
     fake_stereo = Node(
@@ -267,7 +295,7 @@ def generate_launch_description():
         executable="frame_transform_node",
         name="lidar_frame_transform_node",
         parameters=[{
-            "input_topic": "/livox/points",
+            "input_topic": "/livox/lidar",
             "output_topic": "/lidar/points_mast_base_link",
             "target_frame": "mast_base_link",
         }],
@@ -382,7 +410,7 @@ def generate_launch_description():
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,
         fusion, obstacle_grid, terrain_viz,
-        led_detector, position_rover, real_stereo,
+        led_detector, position_rover, real_stereo, real_lidar,
     ]:
         ld.add_action(action)
 
