@@ -38,6 +38,7 @@ class FakeLidarNode(Node):
 
         super().__init__("fake_lidar_node")
 
+<<<<<<< HEAD
         self.state = "OFF"
 
         self.publisher = None
@@ -74,7 +75,7 @@ class FakeLidarNode(Node):
 
             self.publisher = self.create_publisher(
                 PointCloud2,
-                "/livox/points",
+                "/livox/lidar",
                 10
             )
 

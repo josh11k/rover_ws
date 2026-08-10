@@ -56,7 +56,7 @@ class STMBridgeNode(Node):
 
         # Kohärente Nutzung: Wir holen den Modus aus deiner Custom Message
         requested_mode = request.mode  # Angenommen, dein Feld in der .srv/.msg Datei heißt 'mode'
-        command = f"SET:{requested_mode}\n"
+        command = f"{requested_mode}\r\n"
         
         try:
             # 1. Befehl EINMALIG senden
@@ -64,15 +64,22 @@ class STMBridgeNode(Node):
             self.get_logger().info(f"Befehl gesendet: {command.strip()}")
             
             # 2. Warten, bis das 'OK' oder Feedback vom STM32 zurückkommt
-            feedback = self.ser.readline().decode('utf-8').strip()
+
+
+
+            feedback_raw = self.ser.readline().decode('utf-8').strip()
             feedback = feedback_raw.split(":")[-1].strip()
             
             if feedback == "STANDBY":
+
                 self.get_logger().info(f"STM32 hat den Modus bestätigt: {feedback}")
                 response.success = True
                 response.message = f"Modus erfolgreich geändert auf {requested_mode}"
 
+
+
             if feedback == "PERCEPTION":
+
                 self.get_logger().info(f"STM32 hat den Modus bestätigt: {feedback}")
                 response.success = True
                 response.message = f"Modus erfolgreich geändert auf {requested_mode}"
@@ -107,6 +114,7 @@ class STMBridgeNode(Node):
 
                 # Überprüfung, ob die Nachricht das richtige Präfix hat (z.B. "MODE:MANUAL")
                 # Isoaltes Message received. Message should be between 00-99
+
                 #if line.startswith("MODE:"):
                     # Schneidet das "MODE:" ab und isoliert den Modus-String (z.B. "MANUAL")
                  #   stm_mode = line.split(":")[1] 
@@ -116,6 +124,7 @@ class STMBridgeNode(Node):
                     # Nachricht für das ROS 2 Topic vorbereiten
                 msg = SetModeMsg()
                 msg.mode = line.split(":")[-1].strip()
+
                 self.get_logger().info(f"{msg.mode}")
                     
                 # Nachricht ins ROS-Netzwerk jagen (jetzt können es Kameras/CommandNode lesen)
@@ -123,6 +132,8 @@ class STMBridgeNode(Node):
 
         except Exception as e:
             self.get_logger().error(f"Error reading from serial port: {e}")
+
+        
 
 def main(args=None):
     rclpy.init(args=args)

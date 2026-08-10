@@ -1,1 +1,1 @@
-string mode
+int32 mode
