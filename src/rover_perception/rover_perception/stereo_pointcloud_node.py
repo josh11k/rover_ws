@@ -41,12 +41,14 @@ from std_msgs.msg import Float32
 import message_filters
 
 from rover_perception.pointcloud_filters import create_weighted_cloud
+from rover_control_msgs.msg import OperationalModeSettings
 
 
 DEFAULTS = {
     "depth_topic": "/camera/depth/image_rect_raw",
     "camera_info_topic": "/camera/depth/camera_info",
     "points_topic": "/stereo/points",
+    "state_topic": "/operational_mode/settings",
 
     # Skip every Nth pixel in each axis to bound point count / CPU load.
     # 1 = full resolution.
@@ -80,36 +82,28 @@ class StereoPointcloudNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "OFF"
 
+        # Cached per-(width,height) ray directions, rebuilt if intrinsics
+        # or resolution change.
+        self._cached_shape = None
+        self._ray_x = None
+        self._ray_y = None
         self._scene_confidence = 1.0
 
-        self.points_pub = self.create_publisher(
-            PointCloud2,
-            self.points_topic,
+        self.depth_sub = None
+        self.info_sub = None
+        self.sync = None
+        self.scene_confidence_sub = None
+        self.points_pub = None
+
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
             10,
         )
 
-        self.depth_sub = message_filters.Subscriber(
-            self, Image, self.depth_topic, qos_profile=qos_profile_sensor_data
-        )
-        self.info_sub = message_filters.Subscriber(
-            self, CameraInfo, self.camera_info_topic,
-            qos_profile=qos_profile_sensor_data
-        )
-
-        self.sync = message_filters.ApproximateTimeSynchronizer(
-            [self.depth_sub, self.info_sub],
-            queue_size=10,
-            slop=self.sync_slop_sec,
-        )
-        self.sync.registerCallback(self.depth_callback)
-
-        self.scene_confidence_sub = self.create_subscription(
-            Float32,
-            self.scene_confidence_topic,
-            self._scene_confidence_callback,
-            10,
-        )
 
         # Cached per-(width,height) ray directions, rebuilt if intrinsics
         # or resolution change.
@@ -117,12 +111,66 @@ class StereoPointcloudNode(Node):
         self._ray_x = None
         self._ray_y = None
 
-        self.get_logger().info(
-            f"stereo_pointcloud_node: {self.depth_topic} + "
-            f"{self.camera_info_topic} -> {self.points_topic} "
-            f"(weight = distance x scene_confidence, scene_confidence from "
-            f"{self.scene_confidence_topic}, default 1.0)"
-        )
+        
+    
+    def state_callback(self, msg):
+
+        self.state = msg.stereo_cam 
+
+        if self.state == "OFF":
+            self.get_logger().info(f"stereo_pointcloud_node: OFF")
+
+            self.destroy_subscription(self.depth_sub)
+            self.destroy_subscription(self.info_sub)
+            self.destroy_subscription(self.scene_confidence_sub)
+            self.destroy_publisher(self.points_pub)
+            
+            self.depth_sub = None
+            self.info_sub = None
+            self.sync = None
+            self.scene_confidence_sub = None
+            self.points_pub = None
+        
+        elif self.state in ("ON"):
+            self.get_logger().info(f"stereo_pointcloud_node: ON")
+
+            self.depth_sub = message_filters.Subscriber(
+                self, Image, self.depth_topic, qos_profile=qos_profile_sensor_data
+            )
+            self.info_sub = message_filters.Subscriber(
+                self, CameraInfo, self.camera_info_topic,
+                qos_profile=qos_profile_sensor_data
+            )
+
+            self.sync = message_filters.ApproximateTimeSynchronizer(
+                [self.depth_sub, self.info_sub],
+                queue_size=10,
+                slop=self.sync_slop_sec,
+            )
+            self.sync.registerCallback(self.depth_callback)
+
+            self.scene_confidence_sub = self.create_subscription(
+                Float32,
+                self.scene_confidence_topic,
+                self._scene_confidence_callback,
+                10,
+            )
+
+            self.points_pub = self.create_publisher(
+                PointCloud2,
+                self.points_topic,
+                10,
+            )    
+
+            self.get_logger().info(
+                f"stereo_pointcloud_node: {self.depth_topic} + "
+                f"{self.camera_info_topic} -> {self.points_topic} "
+                f"(weight = distance x scene_confidence, scene_confidence from "
+                f"{self.scene_confidence_topic}, default 1.0)"
+            )
+    
+
+
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():

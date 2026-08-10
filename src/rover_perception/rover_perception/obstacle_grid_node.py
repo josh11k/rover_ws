@@ -44,6 +44,7 @@ from nav_msgs.msg import OccupancyGrid, MapMetaData
 from geometry_msgs.msg import Pose
 
 from rover_perception_msgs.msg import TerrainGrid
+from rover_control_msgs.msg import OperationalModeSettings
 
 from rover_perception.pointcloud_filters import read_weighted_points
 from rover_perception.terrain_analysis import (
@@ -58,6 +59,7 @@ DEFAULTS = {
     "traversability_topic": "/terrain/traversability_grid",
     "terrain_stats_topic": "/terrain/terrain_grid_stats",
     "output_frame_id": "mast_base_link",
+    "state_topic": "/operational_mode/settings",
 
     "grid_resolution": 1.0,
     "grid_size_x": 10.0,
@@ -86,42 +88,77 @@ class ObstacleGridNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "OFF"
+
+        self.sub = None
+        self.pub = None
+        self.stats_pub = None
 
         self.grid_width = int(self.grid_size_x / self.grid_resolution)
         self.grid_height = int(self.grid_size_y / self.grid_resolution)
-
-        # Persistent per-cell point buffers: (ix, iy) -> deque of (x,y,z,weight)
-        # rows, capped at max_points_per_cell (oldest dropped first). This is
-        # what makes the published grid accumulate across callbacks instead
-        # of only reflecting the newest incoming cloud -- see module docstring.
-        self.cell_buffers: dict = {}
-
-        self.sub = self.create_subscription(
-            PointCloud2,
-            self.points_topic,
-            self.cloud_callback,
+        
+            
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
             10,
         )
 
-        self.pub = self.create_publisher(
-            OccupancyGrid,
-            self.traversability_topic,
-            10,
-        )
+    def state_callback(self, msg):
 
-        self.stats_pub = self.create_publisher(
-            TerrainGrid,
-            self.terrain_stats_topic,
-            10,
-        )
+        self.state = msg.make_global_pointcloud
 
-        self.get_logger().info(
-            f"obstacle_grid_node: {self.points_topic} -> "
-            f"{self.traversability_topic} + {self.terrain_stats_topic} "
-            f"({self.grid_width}x{self.grid_height} cells @ "
-            f"{self.grid_resolution} m, max {self.max_points_per_cell} "
-            f"buffered points/cell)"
-        )
+        if self.state == "OFF":
+
+            self.get_logger().info(f"obstacle_grid_node: OFF")
+
+            self.destroy_subscription(self.sub)
+            self.destroy_publisher(self.pub)
+            self.destroy_publisher(self.stats_pub)
+
+            self.sub = None
+            self.pub = None
+            self.stats_pub = None
+
+        elif self.state in ("ON"):
+
+            self.get_logger().info(f"obstacle_grid_node: ON")
+
+            self.sub = self.create_subscription(
+                PointCloud2,
+                self.points_topic,
+                self.cloud_callback,
+                10,
+            )
+
+            self.pub = self.create_publisher(
+                OccupancyGrid,
+                self.traversability_topic,
+                10,
+            )
+
+            self.stats_pub = self.create_publisher(
+                TerrainGrid,
+                self.terrain_stats_topic,
+                10,
+            )
+
+            # Persistent per-cell point buffers: (ix, iy) -> deque of (x,y,z,weight)
+            # rows, capped at max_points_per_cell (oldest dropped first). This is
+            # what makes the published grid accumulate across callbacks instead
+            # of only reflecting the newest incoming cloud -- see module docstring.
+            self.cell_buffers: dict = {}
+
+            
+
+            self.get_logger().info(
+                f"obstacle_grid_node: {self.points_topic} -> "
+                f"{self.traversability_topic} + {self.terrain_stats_topic} "
+                f"({self.grid_width}x{self.grid_height} cells @ "
+                f"{self.grid_resolution} m, max {self.max_points_per_cell} "
+                f"buffered points/cell)"
+            )
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():

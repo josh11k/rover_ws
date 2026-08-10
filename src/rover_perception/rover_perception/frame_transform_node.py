@@ -67,12 +67,14 @@ from sensor_msgs.msg import PointCloud2
 
 import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
+from rover_control_msgs.msg import OperationalModeSettings
 
 
 DEFAULTS = {
     "input_topic": "/livox/points",
     "output_topic": "/lidar/points_mast_base_link",
     "target_frame": "mast_base_link",
+    "state_topic": "/operational_mode/settings",
     # How long to wait for a transform before dropping a cloud, in seconds.
     # See module docstring -- must comfortably exceed mast_pose_node's
     # broadcast period (1/publish_rate_hz), not just be "small".
@@ -90,33 +92,69 @@ class FrameTransformNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "OFF"
 
-        self.tf_buffer = tf2_ros.Buffer()
-        # Default (spin_thread=False) -- concurrency is handled by running
-        # this whole node under a MultiThreadedExecutor in main() instead.
-        # See module docstring for why spin_thread=True was tried and
-        # reverted.
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        self.sub = None
+        self.pub = None
 
-        qos = qos_profile_sensor_data if self.use_sensor_data_qos else 10
-
-        self.sub = self.create_subscription(
-            PointCloud2,
-            self.input_topic,
-            self.cloud_callback,
-            qos,
-        )
-
-        self.pub = self.create_publisher(
-            PointCloud2,
-            self.output_topic,
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
             10,
         )
 
-        self.get_logger().info(
+
+    def state_callback(self, msg):
+
+        self.state = msg.stereo_cam
+
+        if self.state == "OFF":
+            self.get_logger().info(f"frame_transform_node: OFF")
+
+            self.destroy_subscription(self.sub)
+            self.destroy_publisher(self.pub)
+
+            self.sub = None
+            self.pub = None
+
+            # 1. Listener und Broadcaster deaktiveren (auf None)
+            self.tf_listener.unregister()
+            
+            self.tf_buffer = None
+            self.tf_listener = None
+
+        elif self.state in ("ON"):
+            self.get_logger().info(f"frame_transform_node: ON")
+
+            qos = qos_profile_sensor_data if self.use_sensor_data_qos else 10
+
+            self.sub = self.create_subscription(
+                PointCloud2,
+                self.input_topic,
+                self.cloud_callback,
+                qos,
+            )
+
+            self.pub = self.create_publisher(
+                PointCloud2,
+                self.output_topic,
+                10,
+            )
+
+            self.tf_buffer = tf2_ros.Buffer()
+            # Default (spin_thread=False) -- concurrency is handled by running
+            # this whole node under a MultiThreadedExecutor in main() instead.
+            # See module docstring for why spin_thread=True was tried and
+            # reverted.
+            self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
+            qos = qos_profile_sensor_data if self.use_sensor_data_qos else 10
+
+            self.get_logger().info(
             f"frame_transform_node: {self.input_topic} -> {self.output_topic} "
             f"(target_frame={self.target_frame})"
-        )
+            )
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():

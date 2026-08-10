@@ -10,8 +10,10 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import PointCloud2
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose
+from rover_control_msgs.msg import OperationalModeSettings
 
 import sensor_msgs_py.point_cloud2 as pc2
+
 
 
 # =========================
@@ -24,6 +26,7 @@ DEFAULTS = {
     "points_topic": "/livox/points",
     "traversability_topic": "/terrain/traversability_grid",
     "output_frame_id": "",  # leer = msg.header.frame_id der PointCloud übernehmen
+    "state_topic": "/operational_mode/settings",
 
     "grid_resolution": 0.25,   # meter pro grid cell
     "grid_size_x": 100.0,      # meter
@@ -56,23 +59,52 @@ class LidarProcessingNode(Node):
         self._declare_parameters()
         self._load_parameters()
 
-        self.pointcloud_sub = self.create_subscription(
-            PointCloud2,
-            self.points_topic,
-            self.pointcloud_callback,
-            qos_profile_sensor_data,  # passt zu typischen LiDAR-Treiber-QoS (BEST_EFFORT)
-        )
+        self.state = "OFF"
 
-        self.trav_pub = self.create_publisher(
-            OccupancyGrid,
-            self.traversability_topic,
-            10
-        )
+        self.pointcloud_sub = None
+        self.trav_pub = None    
 
-        self.grid_width = int(self.grid_size_x / self.grid_resolution)
-        self.grid_height = int(self.grid_size_y / self.grid_resolution)
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
+            10,
+        )   
 
-        self.get_logger().info("LiDAR Processing Node started")
+    def state_callback(self, msg):
+        
+        self.state = msg.lidar
+
+        if self.state == "OFF":
+            self.get_logger().info(f"Lidar Processing Node: OFF")
+
+            
+            self.destroy_subscription(self.pointcloud_sub)
+            self.destroy_publisher(self.trav_pub)
+
+            self.pointcloud_sub = None
+            self.trav_pub = None
+
+        elif self.state == "ON":
+            self.get_logger().info(f"Lidar Processing Node: ON")
+
+            self.pointcloud_sub = self.create_subscription(
+                PointCloud2,
+                self.points_topic,
+                self.pointcloud_callback,
+                qos_profile_sensor_data,  # passt zu typischen LiDAR-Treiber-QoS (BEST_EFFORT)
+            )
+
+            self.trav_pub = self.create_publisher(
+                OccupancyGrid,
+                self.traversability_topic,
+                10
+            )
+
+            self.grid_width = int(self.grid_size_x / self.grid_resolution)
+            self.grid_height = int(self.grid_size_y / self.grid_resolution)
+
+            self.get_logger().info("LiDAR Processing Node started")
 
     # =========================
     # PARAMETERS
