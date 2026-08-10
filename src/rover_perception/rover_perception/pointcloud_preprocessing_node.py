@@ -25,6 +25,7 @@ from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs_py.point_cloud2 as pc2
+from rover_control_msgs.msg import OperationalModeSettings
 
 from rover_perception.pointcloud_filters import (
     crop_filter,
@@ -38,6 +39,7 @@ from rover_perception.pointcloud_filters import (
 DEFAULTS = {
     "input_topic": "/lidar/points_mast_base_link",
     "output_topic": "/lidar/points_filtered",
+    "state_topic": "/operational_mode/settings",
 
     "enable_crop": True,
     "min_x": -50.0, "max_x": 50.0,
@@ -60,26 +62,53 @@ class PointcloudPreprocessingNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "OFF"
 
-        self.sub = self.create_subscription(
-            PointCloud2,
-            self.input_topic,
-            self.cloud_callback,
-            qos_profile_sensor_data,
-        )
-
-        self.pub = self.create_publisher(
-            PointCloud2,
-            self.output_topic,
+        self.sub = None
+        self.pub = None
+        
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
             10,
         )
 
-        self.get_logger().info(
-            f"pointcloud_preprocessing_node: {self.input_topic} -> "
-            f"{self.output_topic} "
-            f"(crop={self.enable_crop}, voxel={self.enable_voxel}, "
-            f"outlier={self.enable_outlier_removal})"
-        )
+        def state_callback(self, msg):
+
+            self.state = msg.stereo_cam
+
+            if self.state == "OFF":
+                self.get_logger().info(f"pointcloud_preprocessing_node: OFF")
+
+                self.destroy_subscription(self.sub)
+                self.destroy_publisher(self.pub)
+
+                self.sub = None
+                self.pub = None
+
+            elif self.state in ("ON"):
+                self.get_logger().info(f"pointcloud_preprocessing_node: ON")
+
+                self.sub = self.create_subscription(
+                    PointCloud2,
+                    self.input_topic,
+                    self.cloud_callback,
+                    qos_profile_sensor_data,
+                )
+
+                self.pub = self.create_publisher(
+                    PointCloud2,
+                    self.output_topic,
+                    10,
+                )
+
+                self.get_logger().info(
+                    f"pointcloud_preprocessing_node: {self.input_topic} -> "
+                    f"{self.output_topic} "
+                    f"(crop={self.enable_crop}, voxel={self.enable_voxel}, "
+                    f"outlier={self.enable_outlier_removal})"
+                )
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():

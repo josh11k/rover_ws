@@ -7,6 +7,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import PointField
 from sensor_msgs.msg import Imu
+from rover_control_msgs.msg import OperationalModeSettings
 
 from std_msgs.msg import Header
 
@@ -37,29 +38,63 @@ class FakeLidarNode(Node):
 
         super().__init__("fake_lidar_node")
 
-        self.publisher = self.create_publisher(
-            PointCloud2,
-            "/livox/points",
-            10
+        self.state = "OFF"
+
+        self.publisher = None
+        self.imu_publisher = None
+        self.timer = None
+
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            "/operational_mode/settings",
+            self.state_callback,
+            10,
         )
 
-        # Mid-360's built-in IMU -- matches the real livox_ros_driver2
-        # topic, so mast_pose_node's platform-IMU cross-check works
-        # unchanged once the real lidar is swapped in.
-        self.imu_publisher = self.create_publisher(
-            Imu,
-            "/livox/imu",
-            10
-        )
+    def state_callback(self, msg):
 
-        self.timer = self.create_timer(
-            1.0,
-            self.publish_fake_cloud
-        )
+        self.state = msg.lidar
 
-        self.get_logger().info(
-            "Fake LiDAR Node started"
-        )
+        if self.state == "OFF":
+            
+            self.get_logger().info(f"Fake LiDAR Node: OFF")
+
+            self.destroy_publisher(self.publisher)
+            self.destroy_publisher(self.imu_publisher)
+            self.destroy_timer(self.timer)
+
+            self.publisher = None
+            self.imu_publisher = None
+            self.timer = None
+
+        elif self.state == "ON":
+
+            self.get_logger().info(f"Fake LiDAR Node: ON")
+
+
+            self.publisher = self.create_publisher(
+                PointCloud2,
+                "/livox/points",
+                10
+            )
+
+            # Mid-360's built-in IMU -- matches the real livox_ros_driver2
+            # topic, so mast_pose_node's platform-IMU cross-check works
+            # unchanged once the real lidar is swapped in.
+            self.imu_publisher = self.create_publisher(
+                Imu,
+                "/livox/imu",
+                10
+            )
+
+            self.timer = self.create_timer(
+                1.0,
+                self.publish_fake_cloud
+            )
+
+            self.get_logger().info(
+                "Fake LiDAR Node started"
+            )
 
     def publish_fake_cloud(self):
 

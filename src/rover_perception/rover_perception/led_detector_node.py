@@ -101,29 +101,34 @@ class LedDetectorNode(Node):
         self._load_parameters()
         self.state = "STANDBY"
 
-        self.mode_sub = self.create_subscription(
+        self.image_sub = None
+        self.info_sub = None
+        self.sync = None
+        self.detections_pub = None
+
+        self.state_sub = self.create_subscription(
             OperationalModeSettings,
             self.state_topic,
             self.state_callback,
             10,
         )
         
-        self.detections_pub = self.create_publisher(
-            LedDetectionArray,
-            self.detections_topic,
-            10,
-        )
-        
     def state_callback(self, msg):
         self.state = msg.mono_cam
 
-        if self.state in ("STANDBY", "OFF"):
+        if self.state in ("OFF"):
             self.get_logger().info("led_detector_node: STANDBY/OFF")
+
+            self.destroy_subscription(self.image_sub.sub)
+            self.destroy_subscription(self.info_sub.sub)
+            self.destroy_publisher(self.detections_pub)
+
             self.image_sub = None
             self.info_sub = None
             self.sync = None
+            self.detections_pub = None
         
-        else:
+        elif self.state in ("ON"):
             self.get_logger().info("led_detector_node: ON")
            
             self.image_sub = message_filters.Subscriber(
@@ -140,6 +145,12 @@ class LedDetectorNode(Node):
                 slop=self.sync_slop_sec,
             )
             self.sync.registerCallback(self.image_callback)
+
+            self.detections_pub = self.create_publisher(
+                LedDetectionArray,
+                self.detections_topic,
+                10,
+            )
 
             self.get_logger().info(
                 f"led_detector_node: {self.image_topic} + "

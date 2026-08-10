@@ -1,4 +1,5 @@
 import rclpy
+import time
 from rclpy.node import Node
 from rover_control_msgs.msg import  OperationalModeSettings, CurrentOperationalMode
 
@@ -19,6 +20,7 @@ class OperationalModes(Node):
         self.declare_parameter('mono_cam', "OFF")
         self.declare_parameter('stereo_cam', "OFF")
         self.declare_parameter('lidar', "OFF")
+        self.declare_parameter('make_global_pointcloud', "OFF")
 
         self.subscription = self.create_subscription(
             CurrentOperationalMode, 
@@ -40,25 +42,29 @@ class OperationalModes(Node):
         mode = current_mode.mode
 
         if mode == "STANDBY":
-            msg.stereo_cam = "STANDBY"
-            msg.mono_cam = "STANDBY"
-            msg.lidar = "STANDBY"   
+            msg.stereo_cam = "OFF"
+            msg.mono_cam = "OFF"
+            msg.lidar = "OFF"   
+            msg.make_global_pointcloud = "OFF"
         
         elif mode == "PERCEPTION":
             msg.stereo_cam = "ON"
             msg.mono_cam = "ON"
-            msg.lidar = "ON"    
+            msg.lidar = "ON"
+            msg.make_global_pointcloud = "ON"   
         
         elif mode == "SAFE":
             msg.stereo_cam = "OFF"
             msg.mono_cam = "OFF"        
             msg.lidar = "OFF"
+            msg.make_global_pointcloud = "OFF"
 
         self.get_logger().info(f"Stereo camera set to: {msg.stereo_cam}")
         self.get_logger().info(f"Mono camera set to: {msg.mono_cam}")
         self.get_logger().info(f"LiDAR set to: {msg.lidar}")
 
         self.publisher.publish(msg)
+        time.sleep(1)
 
 def main(args=None):
 
