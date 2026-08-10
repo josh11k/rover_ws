@@ -64,15 +64,22 @@ class STMBridgeNode(Node):
             self.get_logger().info(f"Befehl gesendet: {command.strip()}")
             
             # 2. Warten, bis das 'OK' oder Feedback vom STM32 zurückkommt
+
+
+
             feedback_raw = self.ser.readline().decode('utf-8').strip()
             feedback = feedback_raw.split(":")[-1].strip()
             
-            if feedback == 1:
+            if feedback == "STANDBY":
+
                 self.get_logger().info(f"STM32 hat den Modus bestätigt: {feedback}")
                 response.success = True
                 response.message = f"Modus erfolgreich geändert auf {requested_mode}"
 
-            if feedback == 2:
+
+
+            if feedback == "PERCEPTION":
+
                 self.get_logger().info(f"STM32 hat den Modus bestätigt: {feedback}")
                 response.success = True
                 response.message = f"Modus erfolgreich geändert auf {requested_mode}"
@@ -107,15 +114,17 @@ class STMBridgeNode(Node):
 
                 # Überprüfung, ob die Nachricht das richtige Präfix hat (z.B. "MODE:MANUAL")
                 # Isoaltes Message received. Message should be between 00-99
-                # if line.startswith("MODE:"):
-                # Schneidet das "MODE:" ab und isoliert den Modus-String (z.B. "MANUAL")
-                # stm_mode = line.split(":")[1] 
+
+                #if line.startswith("MODE:"):
+                    # Schneidet das "MODE:" ab und isoliert den Modus-String (z.B. "MANUAL")
+                 #   stm_mode = line.split(":")[1] 
                     
-                # self.get_logger().info(f"STM32 reported active mode: {stm_mode}")
+                    #self.get_logger().info(f"STM32 reported active mode: {stm_mode}")
 
                     # Nachricht für das ROS 2 Topic vorbereiten
                 msg = SetModeMsg()
-                msg.mode = int(line.split(":")[-1].strip())
+                msg.mode = line.split(":")[-1].strip()
+
                 self.get_logger().info(f"{msg.mode}")
                     
                 # Nachricht ins ROS-Netzwerk jagen (jetzt können es Kameras/CommandNode lesen)

@@ -67,7 +67,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import Image, CameraInfo, Imu
-
+from rover_control_msgs.msg import OperationalModeSettings    
 
 # Shared ground-truth plane, expressed in mast_platform_link -- the common
 # rigid parent both lidar_frame and camera_depth_optical_frame are statically
@@ -90,6 +90,7 @@ DEFAULTS = {
     "camera_info_topic": "/camera/depth/camera_info",
     "imu_topic": "/camera/imu",
     "frame_id": "camera_depth_optical_frame",
+    "state_topic": "/operational_mode/settings",
 
     "width": 640,
     "height": 480,
@@ -220,8 +221,57 @@ class FakeStereoCameraNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "OFF"
 
-        self.interface = FakeStereoCameraInterface(
+        self.depth_pub = None
+        self.camera_info_pub = None
+        self.imu_pub = None
+
+        self.mode_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
+            10,
+        )
+    
+
+
+    def state_callback(self, msg):
+
+        if self.state == msg.stereo_cam:        
+            return  
+        
+        self.state = msg.stereo_cam
+
+        if self.state == "OFF":
+            self.get_logger().info(f"fake_stereo_camera_node: OFF")
+
+            # 1. Stop the timer if it exists
+            if hasattr(self, 'timer') and self.timer is not None:
+                self.timer.destroy()  # Löscht den Timer komplett aus ROS 2
+                self.timer = None     # Setzt die Variable auf None, damit du weißt, er ist weg
+                self.get_logger().info("Kameratimer wurde gestoppt.")
+
+            # 2. Clear the interface to free resources (if any)
+            if hasattr(self, 'interface'):
+                self.interface = None
+
+            # 3. Clear the old camera info message
+            self.camera_info_msg = None
+
+            self.destroy_publisher(self.depth_pub)
+            self.destroy_publisher(self.camera_info_pub)
+            self.destroy_publisher(self.imu_pub)
+            
+            self.depth_pub = None
+            self.camera_info_pub = None
+            self.imu_pub = None
+
+        elif self.state in ("ON"):
+
+            self.get_logger().info(f"fake_stereo_camera_node: ON")
+
+            self.interface = FakeStereoCameraInterface(
             width=self.width,
             height=self.height,
             fx=self.fx,
@@ -232,36 +282,36 @@ class FakeStereoCameraNode(Node):
             obstacle_distance_m=self.obstacle_distance_m,
             obstacle_half_width_m=self.obstacle_half_width_m,
             obstacle_half_height_m=self.obstacle_half_height_m,
-        )
+            )
 
-        self.depth_pub = self.create_publisher(
+            self.camera_info_msg = self._build_camera_info()
+
+            period = 1.0 / self.fps
+            self.timer = self.create_timer(period, self.timer_callback)
+
+            self.depth_pub = self.create_publisher(
             Image,
             self.depth_topic,
             qos_profile_sensor_data,
-        )
+            )
 
-        self.camera_info_pub = self.create_publisher(
-            CameraInfo,
-            self.camera_info_topic,
-            qos_profile_sensor_data,
-        )
+            self.camera_info_pub = self.create_publisher(
+                CameraInfo,
+                self.camera_info_topic,
+                qos_profile_sensor_data,
+            )
 
-        self.imu_pub = self.create_publisher(
-            Imu,
-            self.imu_topic,
-            qos_profile_sensor_data,
-        )
+            self.imu_pub = self.create_publisher(
+                Imu,
+                self.imu_topic,
+                qos_profile_sensor_data,
+            )
 
-        self.camera_info_msg = self._build_camera_info()
-
-        period = 1.0 / self.fps
-        self.timer = self.create_timer(period, self.timer_callback)
-
-        self.get_logger().info(
-            f"Fake stereo camera started: {self.width}x{self.height} "
-            f"@ {self.fps} FPS, publishing to {self.depth_topic}"
-        )
-
+            self.get_logger().info(
+                f"Fake stereo camera started: {self.width}x{self.height} "
+                f"@ {self.fps} FPS, publishing to {self.depth_topic}"
+                )
+            
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():
             self.declare_parameter(name, value)

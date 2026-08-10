@@ -52,6 +52,7 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2
+from rover_control_msgs.msg import OperationalModeSettings
 
 from rover_perception.pointcloud_filters import (
     create_weighted_cloud,
@@ -64,6 +65,7 @@ DEFAULTS = {
     "stereo_points_topic": "/stereo/points_filtered",
     "output_topic": "/perception/global_points",
     "output_frame_id": "mast_base_link",
+    "state_topic": "/operational_mode/settings",
     # Independent of either sensor's own publish rate -- see module
     # docstring. Fires periodically and fuses whatever is currently cached.
     "publish_rate_hz": 10.0,
@@ -80,40 +82,75 @@ class GlobalPointcloudFusionNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "OFF"
 
-        self.pub = self.create_publisher(
-            PointCloud2,
-            self.output_topic,
+        self.pub = None
+        self.lidar_sub = None
+        self.stereo_sub = None  
+
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
             10,
         )
 
-        # Independent subscribers -- no message_filters, no requirement that
-        # both fire together. Each just remembers the latest message.
-        self._latest_lidar = None
-        self._latest_stereo = None
+    def state_callback(self, msg):
 
-        self.lidar_sub = self.create_subscription(
-            PointCloud2,
-            self.lidar_points_topic,
-            self._lidar_callback,
-            10,
-        )
-        self.stereo_sub = self.create_subscription(
-            PointCloud2,
-            self.stereo_points_topic,
-            self._stereo_callback,
-            10,
-        )
+        self.state = msg.make_global_pointcloud
 
-        period = 1.0 / self.publish_rate_hz
-        self.timer = self.create_timer(period, self._publish_fused)
+        if self.state == "OFF":
+            self.get_logger().info(f"global_pointcloud_fusion_node: OFF")
 
-        self.get_logger().info(
-            f"global_pointcloud_fusion_node: {self.lidar_points_topic} + "
-            f"{self.stereo_points_topic} -> {self.output_topic} "
-            f"(independent cache + {self.publish_rate_hz}Hz timer, "
-            f"max_input_age_sec={self.max_input_age_sec})"
-        )
+            self.destroy_subscription(self.lidar_sub)
+            self.destroy_subscription(self.stereo_sub)
+            self.destroy_publisher(self.pub)
+
+            self.lidar_sub = None
+            self.stereo_sub = None  
+            self.pub = None
+
+            self.timer.destroy()  # Löscht den Timer komplett aus ROS 2
+            self.timer = None
+
+        elif self.state == "ON":
+            self.get_logger().info(f"global_pointcloud_fusion_node: ON")
+
+
+
+            self.pub = self.create_publisher(
+                PointCloud2,
+                self.output_topic,
+                10,
+            )
+
+            # Independent subscribers -- no message_filters, no requirement that
+            # both fire together. Each just remembers the latest message.
+            self._latest_lidar = None
+            self._latest_stereo = None
+
+            self.lidar_sub = self.create_subscription(
+                PointCloud2,
+                self.lidar_points_topic,
+                self._lidar_callback,
+                10,
+            )
+            self.stereo_sub = self.create_subscription(
+                PointCloud2,
+                self.stereo_points_topic,
+                self._stereo_callback,
+                10,
+            )
+
+            period = 1.0 / self.publish_rate_hz
+            self.timer = self.create_timer(period, self._publish_fused)
+
+            self.get_logger().info(
+                f"global_pointcloud_fusion_node: {self.lidar_points_topic} + "
+                f"{self.stereo_points_topic} -> {self.output_topic} "
+                f"(independent cache + {self.publish_rate_hz}Hz timer, "
+                f"max_input_age_sec={self.max_input_age_sec})"
+            )
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():

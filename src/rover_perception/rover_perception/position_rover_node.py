@@ -96,12 +96,14 @@ from scipy.spatial.transform import Rotation
 from scipy.optimize import least_squares
 
 from rover_perception_msgs.msg import LedDetectionArray
+from rover_control_msgs.msg import OperationalModeSettings  
 
 
 DEFAULTS = {
     "detections_topic": "/mono_cam/led_detections",
     "pose_topic": "/rover/estimated_pose",
     "world_frame": "world",
+    "state_topic": "/operational_mode/settings",
     # TF child frame this node broadcasts for the solved rover pose, purely
     # for RViz2 visualization -- not consumed by any other node (yet).
     "rover_frame": "rover_estimated_link",
@@ -177,73 +179,114 @@ class PositionRoverNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state = "OFF"  # default 
 
-        self._local_points = _build_panel_local_points(
-            self.panel_base_m, self.panel_leg_m, self.panel_extra_led_fraction
+        self.sub = None
+        self.pose_pub = None
+
+        self.state_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
+            10,
         )
+ 
 
-        # Per-panel mounting extrinsics relative to the rover center --
-        # MUST match fake_mono_camera_node's panel definitions (mount
-        # offsets AND right_axis/up_axis/normal triples) exactly.
-        self._panel_extrinsics = {
-            "roof": {
-                "mount_offset": np.array([0.0, self.roof_height_offset_m, 0.0]),
-                "R_mount": _mount_rotation(
-                    np.array([1.0, 0.0, 0.0]),
-                    np.array([0.0, 0.0, -1.0]),
-                    np.array([0.0, 1.0, 0.0]),
-                ),
-            },
-            "left": {
-                "mount_offset": np.array([-self.side_offset_m, self.side_height_offset_m, 0.0]),
-                "R_mount": _mount_rotation(
-                    np.array([0.0, 0.0, 1.0]),
-                    np.array([0.0, 1.0, 0.0]),
-                    np.array([-1.0, 0.0, 0.0]),
-                ),
-            },
-            "right": {
-                "mount_offset": np.array([self.side_offset_m, self.side_height_offset_m, 0.0]),
-                "R_mount": _mount_rotation(
-                    np.array([0.0, 0.0, -1.0]),
-                    np.array([0.0, 1.0, 0.0]),
-                    np.array([1.0, 0.0, 0.0]),
-                ),
-            },
-        }
+  
+    def state_callback(self, msg):
+        if self.state == msg.mono_cam:
+            return
+        
+        self.state = msg.mono_cam
 
-        self._seed_rotvecs = [
-            Rotation.from_euler("y", deg, degrees=True).as_rotvec()
-            for deg in _SEED_YAW_DEG
-        ]
+        if self.state == "OFF":
+            self.get_logger().info(f"position_rover_node: OFF")
 
-        # All 4! = 24 possible pairings between (ordered) detected bearings
-        # and the panel's 4 local points -- see module docstring point 2.
-        self._correspondence_perms = list(itertools.permutations(range(4)))
+            self.destroy_subscription(self.sub)
+            self.destroy_publisher(self.pose_pub)
 
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
+            self.sub = None
+            self.pose_pub = None
 
-        self.sub = self.create_subscription(
+            # 1. Listener und Broadcaster deaktivieren (auf None setzen)
+            self.tf_listener.unregister()
+            self.tf_broadcaster.destroy()
+            
+            self.tf_listener = None
+            self.tf_buffer = None
+            self.tf_broadcaster = None
+        
+        elif self.state in ("ON"):
+            self.get_logger().info(f"position_rover_node: ON")
+            
+            self._local_points = _build_panel_local_points(
+            self.panel_base_m, self.panel_leg_m, self.panel_extra_led_fraction
+            )
+
+            # Per-panel mounting extrinsics relative to the rover center --
+            # MUST match fake_mono_camera_node's panel definitions (mount
+            # offsets AND right_axis/up_axis/normal triples) exactly.
+            self._panel_extrinsics = {
+                "roof": {
+                    "mount_offset": np.array([0.0, self.roof_height_offset_m, 0.0]),
+                    "R_mount": _mount_rotation(
+                        np.array([1.0, 0.0, 0.0]),
+                        np.array([0.0, 0.0, -1.0]),
+                        np.array([0.0, 1.0, 0.0]),
+                    ),
+                },
+                "left": {
+                    "mount_offset": np.array([-self.side_offset_m, self.side_height_offset_m, 0.0]),
+                    "R_mount": _mount_rotation(
+                        np.array([0.0, 0.0, 1.0]),
+                        np.array([0.0, 1.0, 0.0]),
+                        np.array([-1.0, 0.0, 0.0]),
+                    ),
+                },
+                "right": {
+                    "mount_offset": np.array([self.side_offset_m, self.side_height_offset_m, 0.0]),
+                    "R_mount": _mount_rotation(
+                        np.array([0.0, 0.0, -1.0]),
+                        np.array([0.0, 1.0, 0.0]),
+                        np.array([1.0, 0.0, 0.0]),
+                    ),
+                },
+            }
+
+            self._seed_rotvecs = [
+                Rotation.from_euler("y", deg, degrees=True).as_rotvec()
+                for deg in _SEED_YAW_DEG
+            ]
+
+            self.sub = self.create_subscription(
             LedDetectionArray,
             self.detections_topic,
             self.detections_callback,
             10,
-        )
+            )
 
-        self.pose_pub = self.create_publisher(
+            self.pose_pub = self.create_publisher(
             PoseStamped,
             self.pose_topic,
             10,
-        )
+            )
 
-        self.get_logger().info(
-            f"position_rover_node: {self.detections_topic} -> "
-            f"{self.pose_topic} (world_frame={self.world_frame}, "
-            f"3 panels [roof=green, left=red, right=blue], "
-            f"panel_base_m={self.panel_base_m}, panel_leg_m={self.panel_leg_m})"
-        )
+            # All 4! = 24 possible pairings between (ordered) detected bearings
+            # and the panel's 4 local points -- see module docstring point 2.
+            self._correspondence_perms = list(itertools.permutations(range(4)))
+
+            self.tf_buffer = tf2_ros.Buffer()
+            self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+            self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
+
+            self.get_logger().info(
+                f"position_rover_node: {self.detections_topic} -> "
+                f"{self.pose_topic} (world_frame={self.world_frame}, "
+                f"3 panels [roof=green, left=red, right=blue], "
+                f"panel_base_m={self.panel_base_m}, panel_leg_m={self.panel_leg_m})"
+            )
+
+
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():

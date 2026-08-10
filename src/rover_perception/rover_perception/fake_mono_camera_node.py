@@ -76,12 +76,14 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import Image, CameraInfo
+from rover_control_msgs.msg import OperationalModeSettings
 
 
 DEFAULTS = {
     "image_topic": "/mono_cam/image_raw",
     "camera_info_topic": "/mono_cam/camera_info",
     "frame_id": "mono_cam_optical_frame",
+    "state_topic": "/operational_mode/settings",
 
     # 1920x1080 is one of the B0497's 3 native USB3.0 modes (see module
     # docstring); 30fps is a deliberately conservative choice (native max
@@ -190,7 +192,8 @@ class FakeMonoCameraInterface:
         rover_lateral_period_s, rover_height_m, rover_yaw_period_s,
         led_apparent_radius_px_at_1m, min_led_radius_px, max_led_radius_px,
         background_noise_std,
-    ):
+    ):  
+        
         self.width = width
         self.height = height
         self.fx = fx
@@ -344,8 +347,55 @@ class FakeMonoCameraNode(Node):
 
         self._declare_parameters()
         self._load_parameters()
+        self.state ="OFF"
 
-        self.interface = FakeMonoCameraInterface(
+        self.camera_info_pub = None
+        self.image_pub = None 
+
+        self.mode_sub = self.create_subscription(
+            OperationalModeSettings,
+            self.state_topic,
+            self.state_callback,
+            10,
+        )
+
+
+    def state_callback(self, msg):
+
+        if self.state == msg.mono_cam:
+            return
+        
+        self.state = msg.mono_cam
+
+        if self.state in ("OFF"):
+            self.get_logger().info(f"fake_mono_camera_node: OFF")
+            
+            # 1. Timer stoppen, damit 'timer_callback' NICHT mehr aufgerufen wird
+            # Im STANDBY / OFF Block:
+            # Im STANDBY / OFF Block:
+            if hasattr(self, 'timer') and self.timer is not None:
+                self.timer.destroy()  # Löscht den Timer komplett aus ROS 2
+                self.timer = None     # Setzt die Variable auf None, damit du weißt, er ist weg
+                self.get_logger().info("Kameratimer wurde gestoppt.")
+
+            # 2. Das Interface auf None setzen, damit es keinen Speicher mehr verbraucht
+            if hasattr(self, 'interface'):
+                self.interface = None
+            
+            # 3. Die alten Kamera-Infos löschen
+            self.camera_info_msg = None
+
+            # 4. Publisher auf None setzen, damit sie nicht mehr verwendet werden
+            self.destroy_publisher(self.camera_info_pub)
+            self.destroy_publisher(self.image_pub)
+
+            self.camera_info_pub = None
+            self.image_pub = None   
+        
+        elif self.state in ("ON"):
+            self.get_logger().info(f"fake_mono_camera_node: ON")
+
+            self.interface = FakeMonoCameraInterface(
             width=self.width,
             height=self.height,
             fx=self.fx,
@@ -373,32 +423,34 @@ class FakeMonoCameraNode(Node):
             min_led_radius_px=self.min_led_radius_px,
             max_led_radius_px=self.max_led_radius_px,
             background_noise_std=self.background_noise_std,
-        )
+            )
 
-        self.image_pub = self.create_publisher(
-            Image,
-            self.image_topic,
-            qos_profile_sensor_data,
-        )
+            self.image_pub = self.create_publisher(
+                Image,
+                self.image_topic,
+                qos_profile_sensor_data,
+            )
 
-        self.camera_info_pub = self.create_publisher(
-            CameraInfo,
-            self.camera_info_topic,
-            qos_profile_sensor_data,
-        )
+            self.camera_info_pub = self.create_publisher(
+                CameraInfo,
+                self.camera_info_topic,
+                qos_profile_sensor_data,
+            )
 
-        self.camera_info_msg = self._build_camera_info()
-        self._start_time = self.get_clock().now()
+            self.camera_info_msg = self._build_camera_info()
+            self._start_time = self.get_clock().now()
 
-        period = 1.0 / self.fps
-        self.timer = self.create_timer(period, self.timer_callback)
+            period = 1.0 / self.fps
+            self.timer = self.create_timer(period, self.timer_callback)
 
-        self.get_logger().info(
-            f"Fake mono camera started: {self.width}x{self.height} "
-            f"@ {self.fps} FPS, simulating 3 LED panels (roof/left/right) "
-            f"at ~{self.rover_center_distance_m}m, publishing to "
-            f"{self.image_topic}"
-        )
+            self.get_logger().info(
+                f"Fake mono camera started: {self.width}x{self.height} "
+                f"@ {self.fps} FPS, simulating 3 LED panels (roof/left/right) "
+                f"at ~{self.rover_center_distance_m}m, publishing to "
+                f"{self.image_topic}"
+            )
+
+
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():
@@ -428,6 +480,11 @@ class FakeMonoCameraNode(Node):
         return info
 
     def timer_callback(self):
+        # --- SICHERHEITSPRÜFUNG ---
+        # Falls der Timer kurz nach dem Ausschalten noch einmal feuert:
+        if self.interface is None:
+            return
+        # ---------------------------
         elapsed = (self.get_clock().now() - self._start_time).nanoseconds * 1e-9
         frame = self.interface.get_frame(elapsed)
         stamp = self.get_clock().now().to_msg()
