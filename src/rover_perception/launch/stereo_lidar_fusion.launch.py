@@ -149,7 +149,7 @@ def generate_launch_description():
 
     real_lidar = Node(
         package="livox_ros_driver2",
-        executable="livox_ros_drivr2_node",
+        executable="livox_ros_driver2_node",
         name="real_lidar_node",
         output="screen",
         parameters=[
@@ -160,7 +160,7 @@ def generate_launch_description():
             {"output_data_type": 0},
             {"frame_id": "lidar_frame"},
             {"lvx_file_path": "/home/team/livox_test.lvx"},
-            {"user_config_path": "/home/team/ws_livox/src/livox_ros_driver2/config/MID360s_config_json"},
+            {"user_config_path": "/home/team/ws_livox/src/livox_ros_driver2/config/MID360s_config.json"},
             {"cmdline_input_bd_code": "livox0000000001"},
         ],
         condition=IfCondition(PythonExpression([
