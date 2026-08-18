@@ -216,7 +216,7 @@ class PositionRoverNode(Node):
             self.tf_buffer = None
             self.tf_broadcaster = None
         
-        elif self.state in ("ON"):
+        elif self.state == "ON":
             self.get_logger().info(f"position_rover_node: ON")
             
             self._local_points = _build_panel_local_points(

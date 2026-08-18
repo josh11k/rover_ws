@@ -128,7 +128,7 @@ class LedDetectorNode(Node):
             self.sync = None
             self.detections_pub = None
         
-        elif self.state in ("ON"):
+        elif self.state == "ON":
             self.get_logger().info("led_detector_node: ON")
            
             self.image_sub = message_filters.Subscriber(

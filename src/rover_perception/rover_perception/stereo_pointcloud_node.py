@@ -131,7 +131,7 @@ class StereoPointcloudNode(Node):
             self.scene_confidence_sub = None
             self.points_pub = None
         
-        elif self.state in ("ON"):
+        elif self.state == "ON":
             self.get_logger().info(f"stereo_pointcloud_node: ON")
 
             self.depth_sub = message_filters.Subscriber(

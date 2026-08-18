@@ -392,7 +392,7 @@ class FakeMonoCameraNode(Node):
             self.camera_info_pub = None
             self.image_pub = None   
         
-        elif self.state in ("ON"):
+        elif self.state == "ON":
             self.get_logger().info(f"fake_mono_camera_node: ON")
 
             self.interface = FakeMonoCameraInterface(

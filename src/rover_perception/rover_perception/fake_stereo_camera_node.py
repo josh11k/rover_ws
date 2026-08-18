@@ -267,7 +267,7 @@ class FakeStereoCameraNode(Node):
             self.camera_info_pub = None
             self.imu_pub = None
 
-        elif self.state in ("ON"):
+        elif self.state == "ON":
 
             self.get_logger().info(f"fake_stereo_camera_node: ON")
 
