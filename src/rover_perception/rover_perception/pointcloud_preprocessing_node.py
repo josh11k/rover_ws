@@ -141,8 +141,22 @@ class PointcloudPreprocessingNode(Node):
         if "weight" in field_names:
             return read_weighted_points(msg)
 
-        xyz = pc2.read_points_numpy(
+        # Deliberately not read_points_numpy(): it asserts that every
+        # requested field shares the exact same datatype as the message's
+        # *first* field overall (not just among x/y/z) -- see its own
+        # error message "All fields need to have the same datatype. Use
+        # `read_points()` otherwise." That assumption breaks on real
+        # sensor drivers whose PointCloud2 field order/dtypes don't
+        # happen to put x first (e.g. Livox clouds, which interleave
+        # intensity/tag/line/timestamp fields of other dtypes). read_points()
+        # has no such restriction -- it returns each field in its own
+        # native dtype via a structured array, which we then cast down
+        # ourselves.
+        structured = pc2.read_points(
             msg, field_names=("x", "y", "z"), skip_nans=True
+        )
+        xyz = np.column_stack(
+            [structured["x"], structured["y"], structured["z"]]
         ).astype(np.float32)
 
         weight = np.ones((len(xyz), 1), dtype=np.float32)
