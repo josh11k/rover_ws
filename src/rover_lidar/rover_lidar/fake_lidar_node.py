@@ -38,7 +38,6 @@ class FakeLidarNode(Node):
 
         super().__init__("fake_lidar_node")
 
-<<<<<<< HEAD
         self.state = "OFF"
 
         self.publisher = None
@@ -57,7 +56,7 @@ class FakeLidarNode(Node):
         self.state = msg.lidar
 
         if self.state == "OFF":
-            
+
             self.get_logger().info(f"Fake LiDAR Node: OFF")
 
             self.destroy_publisher(self.publisher)

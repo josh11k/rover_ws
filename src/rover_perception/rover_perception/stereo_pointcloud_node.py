@@ -45,8 +45,8 @@ from rover_control_msgs.msg import OperationalModeSettings
 
 
 DEFAULTS = {
-    "depth_topic": "/camera/depth/image_rect_raw",
-    "camera_info_topic": "/camera/depth/camera_info",
+    "depth_topic": "/camera/real_stereo_camera_node/depth/image_rect_raw",
+    "camera_info_topic": "/camera/real_stereo_camera_node/depth/camera_info",
     "points_topic": "/stereo/points",
     "state_topic": "/operational_mode/settings",
 
