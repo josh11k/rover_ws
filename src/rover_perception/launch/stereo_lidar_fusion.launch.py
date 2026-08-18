@@ -298,6 +298,7 @@ def generate_launch_description():
             "input_topic": "/livox/lidar",
             "output_topic": "/lidar/points_mast_base_link",
             "target_frame": "mast_base_link",
+            "state_field": "lidar",
         }],
         condition=IfCondition(use_lidar),
     )
@@ -312,6 +313,7 @@ def generate_launch_description():
             "voxel_size": 0.20,
             "outlier_radius": 2.0,
             "min_neighbors": 1,
+            "state_field": "lidar",
         }],
         condition=IfCondition(use_lidar),
     )
@@ -331,6 +333,7 @@ def generate_launch_description():
             "input_topic": "/stereo/points",
             "output_topic": "/stereo/points_mast_base_link",
             "target_frame": "mast_base_link",
+            "state_field": "stereo_cam",
         }],
         condition=IfCondition(use_stereo),
     )
@@ -345,6 +348,7 @@ def generate_launch_description():
             "voxel_size": 0.20,
             "outlier_radius": 2.0,
             "min_neighbors": 1,
+            "state_field": "stereo_cam",
         }],
         condition=IfCondition(use_stereo),
     )

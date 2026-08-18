@@ -40,6 +40,11 @@ DEFAULTS = {
     "input_topic": "/lidar/points_mast_base_link",
     "output_topic": "/lidar/points_filtered",
     "state_topic": "/operational_mode/settings",
+    # Which field of OperationalModeSettings this instance follows -- see
+    # frame_transform_node.py's DEFAULTS for the full explanation. Empty by
+    # default (fails closed); MUST be set per instance in the launch file
+    # ("lidar" for the lidar branch, "stereo_cam" for the stereo branch).
+    "state_field": "",
 
     "enable_crop": True,
     "min_x": -50.0, "max_x": 50.0,
@@ -74,41 +79,53 @@ class PointcloudPreprocessingNode(Node):
             10,
         )
 
-        def state_callback(self, msg):
+    def state_callback(self, msg):
+        if not self.state_field:
+            self.get_logger().error(
+                "state_field parameter is not set -- this "
+                "pointcloud_preprocessing_node instance doesn't know which "
+                "OperationalModeSettings field to follow (lidar / stereo_cam "
+                "/ mono_cam / make_global_pointcloud). Staying OFF. Set "
+                "'state_field' explicitly in the launch file for this node "
+                "instance.",
+                throttle_duration_sec=10.0,
+            )
+            return
 
-            self.state = msg.stereo_cam
+        self.state = getattr(msg, self.state_field, "OFF")
 
-            if self.state == "OFF":
-                self.get_logger().info(f"pointcloud_preprocessing_node: OFF")
+        if self.state == "OFF":
+            self.get_logger().info(f"pointcloud_preprocessing_node: OFF")
 
+            if self.sub is not None:
                 self.destroy_subscription(self.sub)
-                self.destroy_publisher(self.pub)
-
                 self.sub = None
+            if self.pub is not None:
+                self.destroy_publisher(self.pub)
                 self.pub = None
 
-            elif self.state in ("ON"):
-                self.get_logger().info(f"pointcloud_preprocessing_node: ON")
+        elif self.state == "ON":
+            self.get_logger().info(f"pointcloud_preprocessing_node: ON")
 
-                self.sub = self.create_subscription(
-                    PointCloud2,
-                    self.input_topic,
-                    self.cloud_callback,
-                    qos_profile_sensor_data,
-                )
+            self.sub = self.create_subscription(
+                PointCloud2,
+                self.input_topic,
+                self.cloud_callback,
+                qos_profile_sensor_data,
+            )
 
-                self.pub = self.create_publisher(
-                    PointCloud2,
-                    self.output_topic,
-                    10,
-                )
+            self.pub = self.create_publisher(
+                PointCloud2,
+                self.output_topic,
+                10,
+            )
 
-                self.get_logger().info(
-                    f"pointcloud_preprocessing_node: {self.input_topic} -> "
-                    f"{self.output_topic} "
-                    f"(crop={self.enable_crop}, voxel={self.enable_voxel}, "
-                    f"outlier={self.enable_outlier_removal})"
-                )
+            self.get_logger().info(
+                f"pointcloud_preprocessing_node: {self.input_topic} -> "
+                f"{self.output_topic} "
+                f"(crop={self.enable_crop}, voxel={self.enable_voxel}, "
+                f"outlier={self.enable_outlier_removal})"
+            )
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():

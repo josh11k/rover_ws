@@ -75,6 +75,17 @@ DEFAULTS = {
     "output_topic": "/lidar/points_mast_base_link",
     "target_frame": "mast_base_link",
     "state_topic": "/operational_mode/settings",
+    # Which field of OperationalModeSettings this particular instance of
+    # frame_transform_node should follow -- required, since this node is
+    # instantiated once per sensor (lidar_transform, stereo_transform) and
+    # OperationalModeSettings has a separate ON/OFF string per branch
+    # (stereo_cam / mono_cam / lidar / make_global_pointcloud). Left empty
+    # by default on purpose (fails closed -- getattr() falls back to "OFF"
+    # rather than silently defaulting to some other branch's field) --
+    # MUST be set explicitly per instance in the launch file, e.g.
+    # "state_field": "lidar" for the lidar instance, "state_field":
+    # "stereo_cam" for the stereo instance.
+    "state_field": "",
     # How long to wait for a transform before dropping a cloud, in seconds.
     # See module docstring -- must comfortably exceed mast_pose_node's
     # broadcast period (1/publish_rate_hz), not just be "small".
@@ -96,6 +107,8 @@ class FrameTransformNode(Node):
 
         self.sub = None
         self.pub = None
+        self.tf_buffer = None
+        self.tf_listener = None
 
         self.state_sub = self.create_subscription(
             OperationalModeSettings,
@@ -107,24 +120,37 @@ class FrameTransformNode(Node):
 
     def state_callback(self, msg):
 
-        self.state = msg.stereo_cam
+        if not self.state_field:
+            self.get_logger().error(
+                "state_field parameter is not set -- this frame_transform_node "
+                "instance doesn't know which OperationalModeSettings field to "
+                "follow (lidar / stereo_cam / mono_cam / make_global_pointcloud). "
+                "Staying OFF. Set 'state_field' explicitly in the launch file "
+                "for this node instance.",
+                throttle_duration_sec=10.0,
+            )
+            return
+
+        self.state = getattr(msg, self.state_field, "OFF")
 
         if self.state == "OFF":
             self.get_logger().info(f"frame_transform_node: OFF")
 
-            self.destroy_subscription(self.sub)
-            self.destroy_publisher(self.pub)
-
-            self.sub = None
-            self.pub = None
-
-            # 1. Listener und Broadcaster deaktiveren (auf None)
-            self.tf_listener.unregister()
-            
+            # Guard against the very first message being "OFF" (or two
+            # "OFF"s in a row) -- sub/pub/tf_listener may still be None,
+            # nothing to tear down yet.
+            if self.sub is not None:
+                self.destroy_subscription(self.sub)
+                self.sub = None
+            if self.pub is not None:
+                self.destroy_publisher(self.pub)
+                self.pub = None
+            if self.tf_listener is not None:
+                self.tf_listener.unregister()
+                self.tf_listener = None
             self.tf_buffer = None
-            self.tf_listener = None
 
-        elif self.state in ("ON"):
+        elif self.state == "ON":
             self.get_logger().info(f"frame_transform_node: ON")
 
             qos = qos_profile_sensor_data if self.use_sensor_data_qos else 10
