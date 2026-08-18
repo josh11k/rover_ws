@@ -121,7 +121,7 @@ class ObstacleGridNode(Node):
             self.pub = None
             self.stats_pub = None
 
-        elif self.state in ("ON"):
+        elif self.state == "ON":
 
             self.get_logger().info(f"obstacle_grid_node: ON")
 
