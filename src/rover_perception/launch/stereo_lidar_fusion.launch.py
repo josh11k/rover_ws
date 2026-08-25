@@ -210,6 +210,17 @@ def generate_launch_description():
         name="fake_mast_hw_node",
     )
 
+    # Real hardware-box IMU (Adafruit ICM-20649 over I2C) -- always on, no
+    # fake fallback anymore. If it isn't plugged in, the node just stays
+    # up without publishing (see imu_icm20649_node's module docstring);
+    # mast_pose_node degrades gracefully to a level mast_base transform.
+    real_imu = Node(
+        package="rover_perception",
+        executable="imu_icm20649_node",
+        name="imu_icm20649_node",
+        output="screen",
+    )
+
     mast_pose = Node(
         package="rover_perception",
         executable="mast_pose_node",
@@ -414,7 +425,7 @@ def generate_launch_description():
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,
         fusion, obstacle_grid, terrain_viz,
-        led_detector, position_rover, real_stereo, real_lidar,
+        led_detector, position_rover, real_stereo, real_lidar, real_imu,
     ]:
         ld.add_action(action)
 
