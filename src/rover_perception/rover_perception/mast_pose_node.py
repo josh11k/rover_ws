@@ -45,7 +45,10 @@ Design decisions (see chat history for the reasoning):
   "orientation not provided", any other value means it's valid).
 
 Placeholder topics (rename via parameters once real drivers exist):
-  /hardware_box/imu   -- not built yet
+  /hardware_box/imu   -- real now: Adafruit ICM-20649 over I2C, see
+                         imu_icm20649_node.py. No fake fallback -- if it's
+                         not connected, this topic just has no data and
+                         _publish_base_transform() falls back to level.
   /camera/imu          -- real realsense2_camera publishes this; fake_stereo_camera_node now fakes it too
   /livox/imu            -- real livox_ros_driver2 publishes this; fake_lidar_node now fakes it too
   /mast/joint_states    -- not built yet (motor controller interface)
