@@ -1,0 +1,56 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from rover_perception_msgs/msg/TerrainGrid.msg
+// generated code does not contain a copyright notice
+
+#include "nav_msgs/msg/MapMetaData.idl"
+#include "std_msgs/msg/Header.idl"
+
+module rover_perception_msgs {
+  module msg {
+    @verbatim (language="comment", text=
+      "Per-cell terrain statistics, published alongside the collapsed" "\n"
+      "traversability cost already available on nav_msgs/OccupancyGrid" "\n"
+      "(rover_perception's /terrain/traversability_grid)." "\n"
+      "" "\n"
+      "Same grid layout as that OccupancyGrid: row-major, index = iy * width + ix," "\n"
+      "same `info` (resolution/width/height/origin), so cells line up 1:1 and can" "\n"
+      "be correlated by index between the two topics." "\n"
+      "" "\n"
+      "Cells with less than `min_points_per_cell` *effective* points (see" "\n"
+      "total_weight below) use NaN for every float field and 0 for point_count /" "\n"
+      "total_weight -- this mirrors the OccupancyGrid's -1 (\"unknown\") convention" "\n"
+      "for that same cell, but with a per-field \"no data\" marker instead of one" "\n"
+      "shared sentinel value, since these are continuous quantities rather than a" "\n"
+      "bounded 0-100 cost.")
+    struct TerrainGrid {
+      std_msgs::msg::Header header;
+
+      nav_msgs::msg::MapMetaData info;
+
+      @verbatim (language="comment", text=
+        "same values/semantics as OccupancyGrid.data")
+      sequence<int8> traversability;
+
+      sequence<float> min_z;
+
+      sequence<float> max_z;
+
+      sequence<float> mean_z;
+
+      sequence<float> roughness;
+
+      sequence<float> plane_slope_deg;
+
+      @verbatim (language="comment", text=
+        "raw number of points that fell in the cell")
+      sequence<int32> point_count;
+
+      @verbatim (language="comment", text=
+        "sum of per-point weight/confidence in the" "\n"
+        "cell -- this (not point_count) is what gates" "\n"
+        "whether a cell counts as \"known\" terrain," "\n"
+        "see rover_perception/terrain_analysis.py")
+      sequence<float> total_weight;
+    };
+  };
+};

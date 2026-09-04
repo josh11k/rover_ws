@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "rover_control_msgs__py",
+		"source" : "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs/rover_control_msgs__py"
+	}
+}

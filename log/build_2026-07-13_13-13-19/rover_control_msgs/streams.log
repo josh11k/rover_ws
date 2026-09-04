@@ -1,0 +1,350 @@
+[0.909s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs -DCMAKE_INSTALL_PREFIX=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs
+[1.145s] -- The C compiler identification is GNU 11.4.0
+[1.307s] -- The CXX compiler identification is GNU 11.4.0
+[1.334s] -- Detecting C compiler ABI info
+[1.604s] -- Detecting C compiler ABI info - done
+[1.630s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.634s] -- Detecting C compile features
+[1.636s] -- Detecting C compile features - done
+[1.656s] -- Detecting CXX compiler ABI info
+[2.051s] -- Detecting CXX compiler ABI info - done
+[2.098s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[2.100s] -- Detecting CXX compile features
+[2.103s] -- Detecting CXX compile features - done
+[2.133s] -- Found ament_cmake: 1.3.14 (/opt/ros/humble/share/ament_cmake/cmake)
+[2.501s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[2.859s] -- Found rosidl_default_generators: 1.2.1 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[2.862s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[2.877s] -- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[2.986s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[3.098s] -- Found std_msgs: 4.9.1 (/opt/ros/humble/share/std_msgs/cmake)
+[3.180s] -- Found nav_msgs: 4.9.1 (/opt/ros/humble/share/nav_msgs/cmake)
+[3.748s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[4.243s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[4.771s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[4.803s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[4.806s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[4.846s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[4.850s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[4.850s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[4.851s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[4.876s] -- Found PythonExtra: .so  
+[5.099s] -- Found ament_lint_auto: 0.12.15 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[5.218s] -- Added test 'copyright' to check source files copyright and LICENSE
+[5.259s] -- Added test 'lint_cmake' to check CMake code style
+[5.279s] -- Added test 'xmllint' to check XML markup files
+[5.350s] -- Configuring done
+[6.288s] -- Generating done
+[6.658s] -- Build files have been written to: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs
+[6.680s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs -DCMAKE_INSTALL_PREFIX=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs
+[6.690s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs -- -j12 -l12
+[6.803s] [  1%] [34m[1mGenerating C code for ROS interfaces[0m
+[6.833s] [  5%] [34m[1mGenerating Rust code for ROS interfaces[0m
+[6.837s] [  5%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[6.858s] [  5%] Built target ament_cmake_python_copy_rover_control_msgs
+[7.572s] running egg_info
+[7.577s] creating rover_control_msgs.egg-info
+[7.579s] writing rover_control_msgs.egg-info/PKG-INFO
+[7.581s] writing dependency_links to rover_control_msgs.egg-info/dependency_links.txt
+[7.585s] writing top-level names to rover_control_msgs.egg-info/top_level.txt
+[7.590s] writing manifest file 'rover_control_msgs.egg-info/SOURCES.txt'
+[7.616s] reading manifest file 'rover_control_msgs.egg-info/SOURCES.txt'
+[7.623s] writing manifest file 'rover_control_msgs.egg-info/SOURCES.txt'
+[7.679s] [  5%] Built target rover_control_msgs__rs
+[7.699s] [  5%] Built target ament_cmake_python_build_rover_control_msgs_egg
+[8.193s] [  5%] Built target rover_control_msgs__cpp
+[8.239s] [  7%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[8.244s] [  8%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+[8.247s] [ 10%] [34m[1mGenerating C++ type support dispatch for ROS interfaces[0m
+[8.284s] [ 12%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_c.dir/rosidl_generator_c/rover_control_msgs/srv/detail/set_operational_mode__functions.c.o[0m
+[8.294s] [ 14%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_c.dir/rosidl_generator_c/rover_control_msgs/msg/detail/current_operational_mode__functions.c.o[0m
+[8.309s] [ 17%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_c.dir/rosidl_generator_c/rover_control_msgs/msg/detail/set_operational_mode__functions.c.o[0m
+[8.317s] [ 16%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_c.dir/rosidl_generator_c/rover_control_msgs/msg/detail/operational_mode_settings__functions.c.o[0m
+[8.611s] [ 19%] [32m[1mLinking C shared library librover_control_msgs__rosidl_generator_c.so[0m
+[8.811s] [ 19%] Built target rover_control_msgs__rosidl_generator_c
+[8.864s] [ 21%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[8.876s] [ 23%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[8.891s] [ 25%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[9.314s] [ 30%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/rover_control_msgs/srv/set_operational_mode__type_support.cpp.o[0m
+[9.319s] [ 32%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/rover_control_msgs/msg/set_operational_mode__type_support.cpp.o[0m
+[9.321s] [ 32%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/rover_control_msgs/msg/operational_mode_settings__type_support.cpp.o[0m
+[9.324s] [ 32%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/rover_control_msgs/msg/current_operational_mode__type_support.cpp.o[0m
+[9.591s] [ 37%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/rover_control_msgs/msg/detail/dds_fastrtps/set_operational_mode__type_support.cpp.o[0m
+[9.597s] [ 41%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/rover_control_msgs/msg/detail/dds_fastrtps/current_operational_mode__type_support.cpp.o[0m
+[9.601s] [ 41%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/rover_control_msgs/srv/detail/dds_fastrtps/set_operational_mode__type_support.cpp.o[0m
+[9.608s] [ 41%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/rover_control_msgs/msg/detail/dds_fastrtps/operational_mode_settings__type_support.cpp.o[0m
+[9.616s] [ 41%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/rover_control_msgs/srv/detail/set_operational_mode__type_support.cpp.o[0m
+[9.845s] [ 42%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/rover_control_msgs/srv/set_operational_mode__type_support.cpp.o[0m
+[9.985s] [ 44%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/rover_control_msgs/msg/set_operational_mode__type_support.cpp.o[0m
+[10.119s] [ 46%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/rover_control_msgs/srv/detail/set_operational_mode__type_support.c.o[0m
+[10.143s] [ 48%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/rover_control_msgs/msg/operational_mode_settings__type_support.cpp.o[0m
+[10.290s] [ 50%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/rover_control_msgs/msg/current_operational_mode__type_support.cpp.o[0m
+[10.326s] [ 51%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/rover_control_msgs/srv/detail/set_operational_mode__type_support_c.cpp.o[0m
+[10.360s] [ 53%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/rover_control_msgs/msg/detail/set_operational_mode__type_support.c.o[0m
+[10.475s] [ 55%] [32m[1mLinking CXX shared library librover_control_msgs__rosidl_typesupport_c.so[0m
+[10.584s] [ 57%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/rover_control_msgs/msg/detail/set_operational_mode__type_support_c.cpp.o[0m
+[10.607s] [ 58%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/rover_control_msgs/msg/detail/operational_mode_settings__type_support_c.cpp.o[0m
+[10.654s] [ 60%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/rover_control_msgs/msg/detail/set_operational_mode__type_support.cpp.o[0m
+[10.818s] [ 62%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/rover_control_msgs/msg/detail/operational_mode_settings__type_support.c.o[0m
+[10.889s] [ 62%] Built target rover_control_msgs__rosidl_typesupport_c
+[10.974s] [ 64%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/rover_control_msgs/msg/detail/operational_mode_settings__type_support.cpp.o[0m
+[11.077s] [ 66%] [32m[1mLinking CXX shared library librover_control_msgs__rosidl_typesupport_cpp.so[0m
+[11.293s] [ 67%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/rover_control_msgs/msg/detail/current_operational_mode__type_support.c.o[0m
+[11.398s] [ 67%] Built target rover_control_msgs__rosidl_typesupport_cpp
+[11.458s] [ 69%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/rover_control_msgs/msg/detail/current_operational_mode__type_support.cpp.o[0m
+[11.697s] [ 71%] [32mBuilding CXX object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/rover_control_msgs/msg/detail/current_operational_mode__type_support_c.cpp.o[0m
+[11.838s] [ 73%] [32m[1mLinking C shared library librover_control_msgs__rosidl_typesupport_introspection_c.so[0m
+[12.153s] [ 73%] Built target rover_control_msgs__rosidl_typesupport_introspection_c
+[12.536s] [ 75%] [32m[1mLinking CXX shared library librover_control_msgs__rosidl_typesupport_fastrtps_cpp.so[0m
+[12.974s] [ 75%] Built target rover_control_msgs__rosidl_typesupport_fastrtps_cpp
+[13.241s] [ 76%] [32m[1mLinking CXX shared library librover_control_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[13.246s] [ 78%] [32m[1mLinking CXX shared library librover_control_msgs__rosidl_typesupport_fastrtps_c.so[0m
+[13.562s] [ 78%] Built target rover_control_msgs__rosidl_typesupport_introspection_cpp
+[13.605s] [ 78%] Built target rover_control_msgs__rosidl_typesupport_fastrtps_c
+[13.659s] [ 78%] Built target rover_control_msgs
+[13.733s] [ 80%] [34m[1mGenerating Python code for ROS interfaces[0m
+[15.890s] [ 80%] Built target rover_control_msgs__py
+[15.997s] [ 82%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_py.dir/rosidl_generator_py/rover_control_msgs/srv/_set_operational_mode_s.c.o[0m
+[16.009s] [ 83%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_py.dir/rosidl_generator_py/rover_control_msgs/msg/_current_operational_mode_s.c.o[0m
+[16.023s] [ 87%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_py.dir/rosidl_generator_py/rover_control_msgs/msg/_operational_mode_settings_s.c.o[0m
+[16.030s] [ 87%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_generator_py.dir/rosidl_generator_py/rover_control_msgs/msg/_set_operational_mode_s.c.o[0m
+[16.954s] [ 89%] [32m[1mLinking C shared library rosidl_generator_py/rover_control_msgs/librover_control_msgs__rosidl_generator_py.so[0m
+[17.112s] [ 89%] Built target rover_control_msgs__rosidl_generator_py
+[17.191s] [ 92%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_typesupport_introspection_c__pyext.dir/rosidl_generator_py/rover_control_msgs/_rover_control_msgs_s.ep.rosidl_typesupport_introspection_c.c.o[0m
+[17.194s] [ 92%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_typesupport_fastrtps_c__pyext.dir/rosidl_generator_py/rover_control_msgs/_rover_control_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o[0m
+[17.207s] [ 94%] [32mBuilding C object CMakeFiles/rover_control_msgs__rosidl_typesupport_c__pyext.dir/rosidl_generator_py/rover_control_msgs/_rover_control_msgs_s.ep.rosidl_typesupport_c.c.o[0m
+[17.659s] [ 96%] [32m[1mLinking C shared library rosidl_generator_py/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so[0m
+[17.678s] [ 98%] [32m[1mLinking C shared library rosidl_generator_py/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so[0m
+[17.701s] [100%] [32m[1mLinking C shared library rosidl_generator_py/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so[0m
+[17.792s] [100%] Built target rover_control_msgs__rosidl_typesupport_c__pyext
+[17.808s] [100%] Built target rover_control_msgs__rosidl_typesupport_fastrtps_c__pyext
+[17.826s] [100%] Built target rover_control_msgs__rosidl_typesupport_introspection_c__pyext
+[17.907s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs -- -j12 -l12
+[17.945s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs
+[17.962s] -- Install configuration: ""
+[17.974s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/ament_index/resource_index/rosidl_interfaces/rover_control_msgs
+[17.984s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs
+[17.992s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg
+[17.999s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/rosidl_generator_c__visibility_control.h
+[18.012s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/set_operational_mode.h
+[18.025s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail
+[18.032s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__functions.h
+[18.046s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__struct.h
+[18.058s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__type_support.h
+[18.069s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__functions.h
+[18.081s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__type_support.h
+[18.090s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__functions.h
+[18.100s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__functions.c
+[18.110s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__struct.h
+[18.122s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__struct.h
+[18.132s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__type_support.h
+[18.143s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__functions.c
+[18.168s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__functions.c
+[18.178s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/current_operational_mode.h
+[18.190s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/operational_mode_settings.h
+[18.202s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv
+[18.213s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/set_operational_mode.h
+[18.222s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail
+[18.227s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__struct.h
+[18.241s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__functions.h
+[18.251s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__type_support.h
+[18.261s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__functions.c
+[18.275s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/library_path.sh
+[18.283s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/library_path.dsv
+[18.296s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_generator_c.so
+[18.314s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_generator_c.so" to ""
+[18.316s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs
+[18.318s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg
+[18.319s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail
+[18.322s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__rosidl_typesupport_fastrtps_c.h
+[18.332s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__rosidl_typesupport_fastrtps_c.h
+[18.344s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__rosidl_typesupport_fastrtps_c.h
+[18.354s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[18.363s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv
+[18.366s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail
+[18.367s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__rosidl_typesupport_fastrtps_c.h
+[18.378s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_fastrtps_c.so
+[18.394s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_fastrtps_c.so" to ""
+[18.396s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs
+[18.397s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg
+[18.399s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail
+[18.402s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__rosidl_typesupport_introspection_c.h
+[18.412s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__rosidl_typesupport_introspection_c.h
+[18.422s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__type_support.c
+[18.433s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__rosidl_typesupport_introspection_c.h
+[18.444s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__type_support.c
+[18.454s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__type_support.c
+[18.465s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[18.475s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv
+[18.477s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail
+[18.480s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__rosidl_typesupport_introspection_c.h
+[18.499s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__type_support.c
+[18.513s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_introspection_c.so
+[18.529s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_introspection_c.so" to ""
+[18.532s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_c.so
+[18.548s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_c.so" to ""
+[18.550s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs
+[18.552s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg
+[18.556s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/current_operational_mode.hpp
+[18.571s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/set_operational_mode.hpp
+[18.579s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail
+[18.583s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__traits.hpp
+[18.597s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__type_support.hpp
+[18.611s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__type_support.hpp
+[18.618s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__traits.hpp
+[18.629s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__struct.hpp
+[18.642s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__builder.hpp
+[18.655s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__struct.hpp
+[18.665s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__builder.hpp
+[18.678s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__struct.hpp
+[18.692s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__builder.hpp
+[18.705s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__traits.hpp
+[18.723s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__type_support.hpp
+[18.736s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+[18.745s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/operational_mode_settings.hpp
+[18.755s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv
+[18.758s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/set_operational_mode.hpp
+[18.770s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail
+[18.773s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__type_support.hpp
+[18.786s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__struct.hpp
+[18.796s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__builder.hpp
+[18.806s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__traits.hpp
+[18.818s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs
+[18.820s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg
+[18.823s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[18.835s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail
+[18.839s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__rosidl_typesupport_fastrtps_cpp.hpp
+[18.852s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__rosidl_typesupport_fastrtps_cpp.hpp
+[18.867s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__rosidl_typesupport_fastrtps_cpp.hpp
+[18.882s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/dds_fastrtps
+[18.887s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv
+[18.889s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail
+[18.890s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__rosidl_typesupport_fastrtps_cpp.hpp
+[18.898s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/dds_fastrtps
+[18.901s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_fastrtps_cpp.so
+[18.923s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""
+[18.926s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs
+[18.928s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg
+[18.931s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail
+[18.936s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__type_support.cpp
+[18.974s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/operational_mode_settings__rosidl_typesupport_introspection_cpp.hpp
+[18.990s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__rosidl_typesupport_introspection_cpp.hpp
+[19.004s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__rosidl_typesupport_introspection_cpp.hpp
+[19.020s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/current_operational_mode__type_support.cpp
+[19.032s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/msg/detail/set_operational_mode__type_support.cpp
+[19.042s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv
+[19.044s] -- Up-to-date: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail
+[19.047s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__rosidl_typesupport_introspection_cpp.hpp
+[19.060s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/include/rover_control_msgs/rover_control_msgs/srv/detail/set_operational_mode__type_support.cpp
+[19.080s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_introspection_cpp.so
+[19.098s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_introspection_cpp.so" to ""
+[19.100s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_cpp.so
+[19.115s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_typesupport_cpp.so" to ""
+[19.117s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/pythonpath.sh
+[19.126s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/pythonpath.dsv
+[19.134s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs-0.0.0-py3.10.egg-info
+[19.141s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs-0.0.0-py3.10.egg-info/PKG-INFO
+[19.150s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs-0.0.0-py3.10.egg-info/SOURCES.txt
+[19.158s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs-0.0.0-py3.10.egg-info/top_level.txt
+[19.168s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs-0.0.0-py3.10.egg-info/dependency_links.txt
+[19.181s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs
+[19.189s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[19.201s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/_rover_control_msgs_s.ep.rosidl_typesupport_introspection_c.c
+[19.215s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg
+[19.220s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_operational_mode_settings_s.c
+[19.233s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_current_operational_mode.py
+[19.243s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_set_operational_mode_s.c
+[19.253s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_set_operational_mode.py
+[19.263s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/__init__.py
+[19.272s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_current_operational_mode_s.c
+[19.280s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_operational_mode_settings.py
+[19.288s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/_rover_control_msgs_s.ep.rosidl_typesupport_c.c
+[19.296s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/_rover_control_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+[19.307s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/__init__.py
+[19.315s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[19.324s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[19.335s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/librover_control_msgs__rosidl_generator_py.so
+[19.345s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/srv
+[19.350s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/srv/_set_operational_mode_s.c
+[19.360s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/srv/_set_operational_mode.py
+[19.372s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/srv/__init__.py
+[19.489s] Listing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs'...
+[19.490s] Compiling '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/__init__.py'...
+[19.491s] Listing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg'...
+[19.492s] Compiling '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/__init__.py'...
+[19.493s] Compiling '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_current_operational_mode.py'...
+[19.498s] Compiling '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_operational_mode_settings.py'...
+[19.500s] Compiling '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/msg/_set_operational_mode.py'...
+[19.501s] Listing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/srv'...
+[19.502s] Compiling '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/srv/__init__.py'...
+[19.503s] Compiling '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/srv/_set_operational_mode.py'...
+[19.504s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[19.521s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" to ""
+[19.526s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[19.545s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so" to ""
+[19.550s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[19.570s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/local/lib/python3.10/dist-packages/rover_control_msgs/rover_control_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so" to ""
+[19.575s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_generator_py.so
+[19.608s] -- Set runtime path of "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/librover_control_msgs__rosidl_generator_py.so" to ""
+[19.611s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/ament_index/resource_index/rust_packages/rover_control_msgs
+[19.619s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust
+[19.625s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/Cargo.toml
+[19.638s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/build.rs
+[19.651s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src
+[19.655s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src/msg
+[19.661s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src/msg/rmw.rs
+[19.672s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src/lib.rs
+[19.686s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src/srv.rs
+[19.695s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src/msg.rs
+[19.700s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src/srv
+[19.705s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/rust/src/srv/rmw.rs
+[19.716s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/srv/SetOperationalMode.idl
+[19.728s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/msg/SetOperationalMode.idl
+[19.737s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/msg/OperationalModeSettings.idl
+[19.745s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/msg/CurrentOperationalMode.idl
+[19.756s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/srv/SetOperationalMode.srv
+[19.764s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/srv/SetOperationalMode_Request.msg
+[19.775s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/srv/SetOperationalMode_Response.msg
+[19.784s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/msg/SetOperationalMode.msg
+[19.792s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/msg/OperationalModeSettings.msg
+[19.799s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/msg/CurrentOperationalMode.msg
+[19.813s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/ament_index/resource_index/package_run_dependencies/rover_control_msgs
+[19.824s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/ament_index/resource_index/parent_prefix_path/rover_control_msgs
+[19.832s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/ament_prefix_path.sh
+[19.838s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/ament_prefix_path.dsv
+[19.845s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/path.sh
+[19.852s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/environment/path.dsv
+[19.859s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/local_setup.bash
+[19.868s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/local_setup.sh
+[19.877s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/local_setup.zsh
+[19.885s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/local_setup.dsv
+[19.894s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.dsv
+[19.905s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/ament_index/resource_index/packages/rover_control_msgs
+[19.919s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_generator_cExport.cmake
+[19.928s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_generator_cExport-noconfig.cmake
+[19.938s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+[19.948s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[19.957s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_introspection_cExport.cmake
+[19.967s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[19.977s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_cExport.cmake
+[19.986s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_cExport-noconfig.cmake
+[19.996s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_generator_cppExport.cmake
+[20.003s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+[20.011s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[20.021s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_introspection_cppExport.cmake
+[20.030s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[20.039s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_cppExport.cmake
+[20.048s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+[20.057s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_generator_pyExport.cmake
+[20.066s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/export_rover_control_msgs__rosidl_generator_pyExport-noconfig.cmake
+[20.077s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rosidl_cmake-extras.cmake
+[20.085s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+[20.095s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+[20.104s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/ament_cmake_export_targets-extras.cmake
+[20.113s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[20.123s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+[20.131s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[20.139s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgsConfig.cmake
+[20.147s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/cmake/rover_control_msgsConfig-version.cmake
+[20.155s] -- Installing: /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.xml
+[20.171s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs

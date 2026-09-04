@@ -1,0 +1,6 @@
+msg/LedDetection.idl
+msg/LedDetection.msg
+msg/LedDetectionArray.idl
+msg/LedDetectionArray.msg
+msg/TerrainGrid.idl
+msg/TerrainGrid.msg

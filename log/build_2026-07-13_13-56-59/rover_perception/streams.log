@@ -1,0 +1,35 @@
+[1.387s] Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception': AMENT_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs LD_LIBRARY_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_perception build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/install.log --single-version-externally-managed install_data
+[1.904s] running egg_info
+[1.907s] writing ../../build/rover_perception/rover_perception.egg-info/PKG-INFO
+[1.910s] writing dependency_links to ../../build/rover_perception/rover_perception.egg-info/dependency_links.txt
+[1.914s] writing entry points to ../../build/rover_perception/rover_perception.egg-info/entry_points.txt
+[1.917s] writing requirements to ../../build/rover_perception/rover_perception.egg-info/requires.txt
+[1.919s] writing top-level names to ../../build/rover_perception/rover_perception.egg-info/top_level.txt
+[1.935s] reading manifest file '../../build/rover_perception/rover_perception.egg-info/SOURCES.txt'
+[1.940s] writing manifest file '../../build/rover_perception/rover_perception.egg-info/SOURCES.txt'
+[1.942s] running build
+[1.943s] running build_py
+[1.947s] copying rover_perception/led_detector_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/build/lib/rover_perception
+[1.956s] running install
+[1.957s] running install_lib
+[1.963s] copying /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/build/lib/rover_perception/led_detector_node.py -> /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception
+[1.974s] byte-compiling /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception/led_detector_node.py to led_detector_node.cpython-310.pyc
+[1.983s] running install_data
+[1.986s] running install_egg_info
+[1.991s] removing '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception-0.0.0-py3.10.egg-info' (and everything under it)
+[1.998s] Copying ../../build/rover_perception/rover_perception.egg-info to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages/rover_perception-0.0.0-py3.10.egg-info
+[2.037s] running install_scripts
+[2.068s] Installing fake_mast_hw_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.072s] Installing fake_mono_camera_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.074s] Installing fake_stereo_camera_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.076s] Installing frame_transform_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.080s] Installing global_pointcloud_fusion_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.083s] Installing led_detector_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.086s] Installing mast_pose_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.088s] Installing obstacle_grid_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.091s] Installing pointcloud_preprocessing_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.093s] Installing position_rover_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.095s] Installing stereo_pointcloud_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.097s] Installing terrain_visualization_node script to /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/rover_perception
+[2.102s] writing list of installed files to '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/install.log'
+[2.146s] Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception' returned '0': AMENT_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs LD_LIBRARY_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_perception build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/install.log --single-version-externally-managed install_data

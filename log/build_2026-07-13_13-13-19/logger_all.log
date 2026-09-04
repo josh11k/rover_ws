@@ -1,0 +1,403 @@
+[0.164s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.165s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=12, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x7f49d3e9b8e0>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x7f49d3e9b430>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x7f49d3e9b430>>, mixin_verb=('build',))
+[0.436s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.437s] INFO:colcon.colcon_metadata.package_discovery.colcon_meta:Using configuration from '/root/.colcon/metadata/default/Gazebo.meta'
+[0.438s] INFO:colcon.colcon_metadata.package_discovery.colcon_meta:Using configuration from '/root/.colcon/metadata/default/fastdds.meta'
+[0.439s] INFO:colcon.colcon_metadata.package_discovery.colcon_meta:Using configuration from '/root/.colcon/metadata/default/fastrtps.meta'
+[0.439s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.440s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.440s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.440s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.440s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.440s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws'
+[0.442s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.442s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.442s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.443s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.443s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.443s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.444s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.444s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.444s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.460s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[0.460s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[0.461s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[0.461s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[0.461s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[0.462s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.463s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[0.463s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[0.464s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.464s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[0.464s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[0.465s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.466s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[0.466s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[0.467s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.467s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore'
+[0.467s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore_ament_install'
+[0.468s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_pkg']
+[0.468s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_pkg'
+[0.468s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_meta']
+[0.468s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_meta'
+[0.469s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ros']
+[0.469s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ros'
+[0.470s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['cmake', 'python']
+[0.470s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'cmake'
+[0.470s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python'
+[0.471s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['python_setup_py']
+[0.471s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python_setup_py'
+[0.473s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extensions ['ignore', 'ignore_ament_install']
+[0.473s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'ignore'
+[0.474s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'ignore_ament_install'
+[0.474s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extensions ['colcon_pkg']
+[0.474s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'colcon_pkg'
+[0.475s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extensions ['colcon_meta']
+[0.475s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'colcon_meta'
+[0.475s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extensions ['ros']
+[0.475s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'ros'
+[0.476s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extensions ['cmake', 'python']
+[0.476s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'cmake'
+[0.477s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'python'
+[0.477s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extensions ['python_setup_py']
+[0.477s] Level 1:colcon.colcon_core.package_identification:_identify(src/build) by extension 'python_setup_py'
+[0.478s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extensions ['ignore', 'ignore_ament_install']
+[0.479s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extension 'ignore'
+[0.479s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extension 'ignore_ament_install'
+[0.480s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extensions ['colcon_pkg']
+[0.480s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extension 'colcon_pkg'
+[0.480s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extensions ['colcon_meta']
+[0.480s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extension 'colcon_meta'
+[0.480s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extensions ['ros']
+[0.481s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control) by extension 'ros'
+[0.485s] DEBUG:colcon.colcon_core.package_identification:Package 'src/rover_control' with type 'ros.ament_python' and name 'rover_control'
+[0.486s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extensions ['ignore', 'ignore_ament_install']
+[0.486s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extension 'ignore'
+[0.486s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extension 'ignore_ament_install'
+[0.487s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extensions ['colcon_pkg']
+[0.487s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extension 'colcon_pkg'
+[0.487s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extensions ['colcon_meta']
+[0.488s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extension 'colcon_meta'
+[0.488s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extensions ['ros']
+[0.488s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_control_msgs) by extension 'ros'
+[0.489s] DEBUG:colcon.colcon_core.package_identification:Package 'src/rover_control_msgs' with type 'ros.ament_cmake' and name 'rover_control_msgs'
+[0.490s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extensions ['ignore', 'ignore_ament_install']
+[0.490s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extension 'ignore'
+[0.491s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extension 'ignore_ament_install'
+[0.491s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extensions ['colcon_pkg']
+[0.492s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extension 'colcon_pkg'
+[0.492s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extensions ['colcon_meta']
+[0.492s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extension 'colcon_meta'
+[0.492s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extensions ['ros']
+[0.492s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_lidar) by extension 'ros'
+[0.495s] DEBUG:colcon.colcon_core.package_identification:Package 'src/rover_lidar' with type 'ros.ament_python' and name 'rover_lidar'
+[0.496s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extensions ['ignore', 'ignore_ament_install']
+[0.496s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extension 'ignore'
+[0.496s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extension 'ignore_ament_install'
+[0.497s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extensions ['colcon_pkg']
+[0.497s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extension 'colcon_pkg'
+[0.497s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extensions ['colcon_meta']
+[0.497s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extension 'colcon_meta'
+[0.498s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extensions ['ros']
+[0.498s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception) by extension 'ros'
+[0.501s] DEBUG:colcon.colcon_core.package_identification:Package 'src/rover_perception' with type 'ros.ament_python' and name 'rover_perception'
+[0.501s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extensions ['ignore', 'ignore_ament_install']
+[0.502s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extension 'ignore'
+[0.502s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extension 'ignore_ament_install'
+[0.502s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extensions ['colcon_pkg']
+[0.503s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extension 'colcon_pkg'
+[0.503s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extensions ['colcon_meta']
+[0.503s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extension 'colcon_meta'
+[0.503s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extensions ['ros']
+[0.503s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_perception_msgs) by extension 'ros'
+[0.505s] DEBUG:colcon.colcon_core.package_identification:Package 'src/rover_perception_msgs' with type 'ros.ament_cmake' and name 'rover_perception_msgs'
+[0.506s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extensions ['ignore', 'ignore_ament_install']
+[0.506s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'ignore'
+[0.506s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'ignore_ament_install'
+[0.506s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extensions ['colcon_pkg']
+[0.507s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'colcon_pkg'
+[0.507s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extensions ['colcon_meta']
+[0.507s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'colcon_meta'
+[0.507s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extensions ['ros']
+[0.507s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'ros'
+[0.508s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extensions ['cmake', 'python']
+[0.508s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'cmake'
+[0.508s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'python'
+[0.509s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extensions ['python_setup_py']
+[0.509s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_stereocam) by extension 'python_setup_py'
+[0.509s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.509s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.509s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.510s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.510s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.534s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'cmake_args' from command line to 'None'
+[0.535s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'cmake_target' from command line to 'None'
+[0.535s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.535s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'cmake_clean_cache' from command line to 'False'
+[0.535s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'cmake_clean_first' from command line to 'False'
+[0.535s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'cmake_force_configure' from command line to 'False'
+[0.536s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'ament_cmake_args' from command line to 'None'
+[0.536s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'catkin_cmake_args' from command line to 'None'
+[0.536s] Level 5:colcon.colcon_core.verb:set package 'rover_control' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.536s] DEBUG:colcon.colcon_core.verb:Building package 'rover_control' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control', 'merge_install': False, 'path': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control', 'symlink_install': False, 'test_result_base': None}
+[0.537s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'cmake_args' from command line to 'None'
+[0.537s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'cmake_target' from command line to 'None'
+[0.537s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.537s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'cmake_clean_cache' from command line to 'False'
+[0.537s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'cmake_clean_first' from command line to 'False'
+[0.537s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'cmake_force_configure' from command line to 'False'
+[0.537s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'ament_cmake_args' from command line to 'None'
+[0.538s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'catkin_cmake_args' from command line to 'None'
+[0.538s] Level 5:colcon.colcon_core.verb:set package 'rover_control_msgs' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.538s] DEBUG:colcon.colcon_core.verb:Building package 'rover_control_msgs' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs', 'merge_install': False, 'path': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs', 'symlink_install': False, 'test_result_base': None}
+[0.538s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'cmake_args' from command line to 'None'
+[0.539s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'cmake_target' from command line to 'None'
+[0.539s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.539s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'cmake_clean_cache' from command line to 'False'
+[0.539s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'cmake_clean_first' from command line to 'False'
+[0.539s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'cmake_force_configure' from command line to 'False'
+[0.539s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'ament_cmake_args' from command line to 'None'
+[0.540s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'catkin_cmake_args' from command line to 'None'
+[0.540s] Level 5:colcon.colcon_core.verb:set package 'rover_lidar' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.540s] DEBUG:colcon.colcon_core.verb:Building package 'rover_lidar' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar', 'merge_install': False, 'path': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_lidar', 'symlink_install': False, 'test_result_base': None}
+[0.540s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'cmake_args' from command line to 'None'
+[0.540s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'cmake_target' from command line to 'None'
+[0.541s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.541s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'cmake_clean_cache' from command line to 'False'
+[0.541s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'cmake_clean_first' from command line to 'False'
+[0.541s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'cmake_force_configure' from command line to 'False'
+[0.541s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'ament_cmake_args' from command line to 'None'
+[0.541s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'catkin_cmake_args' from command line to 'None'
+[0.541s] Level 5:colcon.colcon_core.verb:set package 'rover_perception_msgs' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.542s] DEBUG:colcon.colcon_core.verb:Building package 'rover_perception_msgs' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs', 'merge_install': False, 'path': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs', 'symlink_install': False, 'test_result_base': None}
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'cmake_args' from command line to 'None'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'cmake_target' from command line to 'None'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.543s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'cmake_clean_cache' from command line to 'False'
+[0.543s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'cmake_clean_first' from command line to 'False'
+[0.543s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'cmake_force_configure' from command line to 'False'
+[0.543s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'ament_cmake_args' from command line to 'None'
+[0.543s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'catkin_cmake_args' from command line to 'None'
+[0.543s] Level 5:colcon.colcon_core.verb:set package 'rover_perception' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.544s] DEBUG:colcon.colcon_core.verb:Building package 'rover_perception' with the following arguments: {'ament_cmake_args': None, 'build_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception', 'merge_install': False, 'path': '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception', 'symlink_install': False, 'test_result_base': None}
+[0.544s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.545s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.546s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_lidar' with build type 'ament_python'
+[0.546s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_lidar', 'ament_prefix_path')
+[0.548s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.548s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/hook/ament_prefix_path.ps1'
+[0.552s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/hook/ament_prefix_path.dsv'
+[0.554s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/hook/ament_prefix_path.sh'
+[0.557s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.557s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.565s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs' with build type 'ament_cmake'
+[0.565s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs'
+[0.566s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.566s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.575s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control' with build type 'ament_python'
+[0.575s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_control', 'ament_prefix_path')
+[0.576s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/hook/ament_prefix_path.ps1'
+[0.580s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/hook/ament_prefix_path.dsv'
+[0.584s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/hook/ament_prefix_path.sh'
+[0.589s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.590s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.601s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs' with build type 'ament_cmake'
+[0.602s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs'
+[0.603s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.603s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[1.082s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_lidar'
+[1.083s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[1.083s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[1.108s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs -DCMAKE_INSTALL_PREFIX=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs
+[1.473s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control'
+[1.475s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[1.475s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[1.512s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs -DCMAKE_INSTALL_PREFIX=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs
+[2.294s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data
+[2.312s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_lidar': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_lidar build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/install.log --single-version-externally-managed install_data
+[3.246s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_lidar' returned '0': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_lidar build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_lidar/install.log --single-version-externally-managed install_data
+[3.293s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar' for CMake module files
+[3.308s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar' for CMake config files
+[3.338s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib'
+[3.341s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/bin'
+[3.345s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/pkgconfig/rover_lidar.pc'
+[3.347s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages'
+[3.347s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_lidar', 'pythonpath')
+[3.348s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/hook/pythonpath.ps1'
+[3.354s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/hook/pythonpath.dsv'
+[3.362s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/hook/pythonpath.sh'
+[3.373s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/bin'
+[3.374s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_lidar)
+[3.377s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/package.ps1'
+[3.393s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/package.dsv'
+[3.399s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/package.sh'
+[3.407s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/package.bash'
+[3.413s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/rover_lidar/package.zsh'
+[3.421s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/share/colcon-core/packages/rover_lidar)
+[3.435s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control' for CMake module files
+[3.446s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control' returned '0': PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_control build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control/install.log --single-version-externally-managed install_data
+[3.448s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control' for CMake config files
+[3.466s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib'
+[3.467s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/bin'
+[3.468s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/pkgconfig/rover_control.pc'
+[3.469s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/lib/python3.10/site-packages'
+[3.469s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_control', 'pythonpath')
+[3.470s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/hook/pythonpath.ps1'
+[3.474s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/hook/pythonpath.dsv'
+[3.478s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/hook/pythonpath.sh'
+[3.483s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/bin'
+[3.485s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_control)
+[3.487s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/package.ps1'
+[3.491s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/package.dsv'
+[3.495s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/package.sh'
+[3.500s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/package.bash'
+[3.505s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/rover_control/package.zsh'
+[3.510s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control/share/colcon-core/packages/rover_control)
+[7.270s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs -DCMAKE_INSTALL_PREFIX=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs
+[7.280s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs -- -j12 -l12
+[10.751s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs -DCMAKE_INSTALL_PREFIX=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs
+[10.766s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs -- -j12 -l12
+[18.497s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs -- -j12 -l12
+[18.535s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs
+[20.759s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_control_msgs)
+[20.760s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs' for CMake module files
+[20.761s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_control_msgs
+[20.768s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs' for CMake config files
+[20.790s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_control_msgs', 'cmake_prefix_path')
+[20.791s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/cmake_prefix_path.ps1'
+[20.794s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/cmake_prefix_path.dsv'
+[20.799s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/cmake_prefix_path.sh'
+[20.803s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib'
+[20.805s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_control_msgs', 'ld_library_path_lib')
+[20.805s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/ld_library_path_lib.ps1'
+[20.812s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/ld_library_path_lib.dsv'
+[20.818s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/ld_library_path_lib.sh'
+[20.821s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/bin'
+[20.821s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/pkgconfig/rover_control_msgs.pc'
+[20.823s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/python3.10/site-packages'
+[20.825s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/bin'
+[20.827s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.ps1'
+[20.831s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.dsv'
+[20.834s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.sh'
+[20.839s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.bash'
+[20.842s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.zsh'
+[20.846s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/colcon-core/packages/rover_control_msgs)
+[20.854s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_control_msgs)
+[20.855s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs' for CMake module files
+[20.865s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs' for CMake config files
+[20.893s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_control_msgs', 'cmake_prefix_path')
+[20.894s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/cmake_prefix_path.ps1'
+[20.898s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/cmake_prefix_path.dsv'
+[20.900s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/cmake_prefix_path.sh'
+[20.905s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib'
+[20.907s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_control_msgs', 'ld_library_path_lib')
+[20.908s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/ld_library_path_lib.ps1'
+[20.910s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/ld_library_path_lib.dsv'
+[20.912s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/hook/ld_library_path_lib.sh'
+[20.914s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/bin'
+[20.914s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/pkgconfig/rover_control_msgs.pc'
+[20.916s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/lib/python3.10/site-packages'
+[20.918s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/bin'
+[20.921s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.ps1'
+[20.924s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.dsv'
+[20.926s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.sh'
+[20.928s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.bash'
+[20.930s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/rover_control_msgs/package.zsh'
+[20.931s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_control_msgs/share/colcon-core/packages/rover_control_msgs)
+[22.160s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs -- -j12 -l12
+[22.170s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs
+[23.517s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_perception_msgs)
+[23.518s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs' for CMake module files
+[23.519s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception_msgs
+[23.529s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs' for CMake config files
+[23.549s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_perception_msgs', 'cmake_prefix_path')
+[23.550s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/cmake_prefix_path.ps1'
+[23.553s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/cmake_prefix_path.dsv'
+[23.555s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/cmake_prefix_path.sh'
+[23.558s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib'
+[23.559s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_perception_msgs', 'ld_library_path_lib')
+[23.560s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/ld_library_path_lib.ps1'
+[23.562s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/ld_library_path_lib.dsv'
+[23.565s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/ld_library_path_lib.sh'
+[23.567s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/bin'
+[23.568s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib/pkgconfig/rover_perception_msgs.pc'
+[23.569s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib/python3.10/site-packages'
+[23.570s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/bin'
+[23.571s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.ps1'
+[23.574s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.dsv'
+[23.576s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.sh'
+[23.579s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.bash'
+[23.581s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.zsh'
+[23.584s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/colcon-core/packages/rover_perception_msgs)
+[23.591s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_perception_msgs)
+[23.592s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs' for CMake module files
+[23.601s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs' for CMake config files
+[23.619s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_perception_msgs', 'cmake_prefix_path')
+[23.620s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/cmake_prefix_path.ps1'
+[23.622s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/cmake_prefix_path.dsv'
+[23.624s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/cmake_prefix_path.sh'
+[23.627s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib'
+[23.628s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_perception_msgs', 'ld_library_path_lib')
+[23.628s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/ld_library_path_lib.ps1'
+[23.630s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/ld_library_path_lib.dsv'
+[23.632s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/hook/ld_library_path_lib.sh'
+[23.634s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/bin'
+[23.635s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib/pkgconfig/rover_perception_msgs.pc'
+[23.636s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib/python3.10/site-packages'
+[23.637s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/bin'
+[23.638s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.ps1'
+[23.640s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.dsv'
+[23.643s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.sh'
+[23.646s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.bash'
+[23.648s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/rover_perception_msgs/package.zsh'
+[23.650s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/share/colcon-core/packages/rover_perception_msgs)
+[23.652s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception' with build type 'ament_python'
+[23.653s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_perception', 'ament_prefix_path')
+[23.654s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/hook/ament_prefix_path.ps1'
+[23.660s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/hook/ament_prefix_path.dsv'
+[23.662s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/hook/ament_prefix_path.sh'
+[23.667s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[23.667s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[24.154s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception'
+[24.155s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[24.155s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[24.726s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception': AMENT_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs LD_LIBRARY_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_perception build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/install.log --single-version-externally-managed install_data
+[25.667s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception' for CMake module files
+[25.669s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception' returned '0': AMENT_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs LD_LIBRARY_PATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception_msgs/local/lib/python3.10/dist-packages:/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_lidar/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rover_perception build --build-base /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/build install --record /workspaces/IRS_Rover_ROS2_Workspace/rover_ws/build/rover_perception/install.log --single-version-externally-managed install_data
+[25.677s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception' for CMake config files
+[25.692s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib'
+[25.693s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/bin'
+[25.694s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/pkgconfig/rover_perception.pc'
+[25.694s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/lib/python3.10/site-packages'
+[25.695s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_perception', 'pythonpath')
+[25.695s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/hook/pythonpath.ps1'
+[25.697s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/hook/pythonpath.dsv'
+[25.700s] INFO:colcon.colcon_core.shell:Creating environment hook '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/hook/pythonpath.sh'
+[25.704s] Level 1:colcon.colcon_core.environment:checking '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/bin'
+[25.704s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_perception)
+[25.705s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/package.ps1'
+[25.708s] INFO:colcon.colcon_core.shell:Creating package descriptor '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/package.dsv'
+[25.711s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/package.sh'
+[25.716s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/package.bash'
+[25.720s] INFO:colcon.colcon_core.shell:Creating package script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/rover_perception/package.zsh'
+[25.723s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/rover_perception/share/colcon-core/packages/rover_perception)
+[25.729s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[25.729s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[25.730s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[25.731s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[25.751s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.notify_send': Could not find 'notify-send'
+[25.752s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[25.752s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[25.755s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[25.756s] DEBUG:colcon.colcon_notification.desktop_notification.notify2:Failed to initialize notify2: org.freedesktop.DBus.Error.NotSupported: Unable to autolaunch a dbus-daemon without a $DISPLAY for X11
+[25.757s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[25.758s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/local_setup.ps1'
+[25.768s] INFO:colcon.colcon_core.shell:Creating prefix util module '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/_local_setup_util_ps1.py'
+[25.778s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/setup.ps1'
+[25.785s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/local_setup.sh'
+[25.791s] INFO:colcon.colcon_core.shell:Creating prefix util module '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/_local_setup_util_sh.py'
+[25.795s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/setup.sh'
+[25.801s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/local_setup.bash'
+[25.806s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/setup.bash'
+[25.814s] INFO:colcon.colcon_core.shell:Creating prefix script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/local_setup.zsh'
+[25.819s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/install/setup.zsh'

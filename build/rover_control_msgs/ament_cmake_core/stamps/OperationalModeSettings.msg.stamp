@@ -1,0 +1,4 @@
+string stereo_cam
+string mono_cam
+string lidar
+string make_global_pointcloud
