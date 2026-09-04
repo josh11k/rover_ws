@@ -1,9 +1,0 @@
-{
-  "package_name": "rover_control_msgs",
-  "non_idl_tuples": [
-    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs:srv/SetOperationalMode.srv",
-    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs:msg/SetOperationalMode.msg",
-    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs:msg/OperationalModeSettings.msg",
-    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_control_msgs:msg/CurrentOperationalMode.msg"
-  ]
-}

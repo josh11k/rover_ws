@@ -1,8 +1,0 @@
-{
-  "package_name": "rover_perception_msgs",
-  "non_idl_tuples": [
-    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs:msg/TerrainGrid.msg",
-    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs:msg/LedDetection.msg",
-    "/workspaces/IRS_Rover_ROS2_Workspace/rover_ws/src/rover_perception_msgs:msg/LedDetectionArray.msg"
-  ]
-}
