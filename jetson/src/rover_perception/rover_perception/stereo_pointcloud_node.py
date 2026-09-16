@@ -45,8 +45,15 @@ from rover_control_msgs.msg import OperationalModeSettings
 
 
 DEFAULTS = {
-    "depth_topic": "/camera/real_stereo_camera_node/depth/image_rect_raw",
-    "camera_info_topic": "/camera/real_stereo_camera_node/depth/camera_info",
+    # Fixed 2026-09: used to say "/camera/real_stereo_camera_node/depth/..."
+    # -- doesn't match realsense2_camera_node's actual output. That node's
+    # topic namespace comes from its camera_name/camera_namespace params
+    # (set to "camera"/"" in the launch file), not from its ROS node name,
+    # so real topics are just /camera/depth/... -- confirmed against
+    # `ros2 topic list` on the real hardware. fake_stereo_camera_node
+    # already published on this same corrected path.
+    "depth_topic": "/camera/depth/image_rect_raw",
+    "camera_info_topic": "/camera/depth/camera_info",
     "points_topic": "/stereo/points",
     "state_topic": "/operational_mode/settings",
 

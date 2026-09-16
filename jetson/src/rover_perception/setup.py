@@ -32,6 +32,7 @@ setup(
             'frame_transform_node = rover_perception.frame_transform_node:main',
             'pointcloud_preprocessing_node = rover_perception.pointcloud_preprocessing_node:main',
             'global_pointcloud_fusion_node = rover_perception.global_pointcloud_fusion_node:main',
+            'ground_segmentation_node = rover_perception.ground_segmentation_node:main',
             'obstacle_grid_node = rover_perception.obstacle_grid_node:main',
             'fake_mono_camera_node = rover_perception.fake_mono_camera_node:main',
             'led_detector_node = rover_perception.led_detector_node:main',
@@ -40,6 +41,7 @@ setup(
             'imu_icm20649_node = rover_perception.imu_icm20649_node:main',
             'terrain_visualization_node = rover_perception.terrain_visualization_node:main',
             'position_rover_node = rover_perception.position_rover_node:main',
+            'terrain_map_server_node = rover_perception.terrain_map_server_node:main',
         ],
     },
 )

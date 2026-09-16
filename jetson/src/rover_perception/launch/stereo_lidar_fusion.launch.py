@@ -4,7 +4,7 @@ Wires together (see ARCHITECTURE.md for the full picture):
 
   livox_ros_driver2_node (lidar)  --\\
                                        >-- frame_transform_node --> pointcloud_preprocessing_node --\\
-  realsense2_camera_node (stereo) --/     (x2, one per sensor)      (x2, one per sensor)             >-- global_pointcloud_fusion_node --> obstacle_grid_node
+  realsense2_camera_node (stereo) --/     (x2, one per sensor)      (x2, one per sensor)             >-- global_pointcloud_fusion_node --> ground_segmentation_node --> obstacle_grid_node
        |                                                                                            /
        v                                                                                           /
   stereo_pointcloud_node  -----------------------------------------------------------------------/
@@ -61,6 +61,24 @@ Launch arguments -- run branches separately
                                     led_detector_node, position_rover_node
     use_terrain_viz (default: true) -- terrain_visualization_node (RViz2
                                     elevation-grid PointCloud2)
+    enable_filters (default: true) -- crop+voxel+outlier-removal in both
+                                    pointcloud_preprocessing_node instances
+    grid_resolution (default: 0.20) -- shared tile/cell size (m) for
+                                    ground_segmentation_node and
+                                    obstacle_grid_node
+    grid_size (default: 60.0) -- shared mapped area (m, square: grid_size x
+                                    grid_size) for the same two nodes.
+                                    Raised from the original 10.0 test value
+                                    to the ~60x60m intended for the real
+                                    detailed pre-deployment scan -- see chat.
+    map_save_path (default: see below) -- where obstacle_grid_node's
+                                    save_terrain_map service writes the
+                                    finished map (.npz); also the default
+                                    terrain_map_server_node reads from when
+                                    reloading it later (that node is NOT
+                                    started by this launch file -- run it
+                                    standalone after switching perception
+                                    off, see its own module docstring).
 
 Examples:
     ros2 launch rover_perception stereo_lidar_fusion.launch.py use_stereo:=false
@@ -87,12 +105,12 @@ regardless of which branches are on:
     this" every time you toggle a flag. Simpler to just always have them
     there; if you need a mode without the mast chain at all, comment these
     out by hand for now.
-  - global_pointcloud_fusion_node + obstacle_grid_node. Since
-    global_pointcloud_fusion_node was made robust to either input being
-    absent/stale (see that node's docstring), there's no reason to gate it
-    either -- with use_stereo:=false it will just publish lidar-only (and
-    vice versa), which is exactly the "test one branch alone" behavior we
-    want, without a third on/off flag to track.
+  - global_pointcloud_fusion_node + ground_segmentation_node +
+    obstacle_grid_node. Since global_pointcloud_fusion_node was made robust
+    to either input being absent/stale (see that node's docstring), there's
+    no reason to gate it either -- with use_stereo:=false it will just
+    publish lidar-only (and vice versa), which is exactly the "test one
+    branch alone" behavior we want, without a third on/off flag to track.
 """
 
 from launch import LaunchDescription
@@ -100,6 +118,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -108,6 +127,10 @@ def generate_launch_description():
     use_lidar = LaunchConfiguration("use_lidar")
     use_stereo = LaunchConfiguration("use_stereo")
     use_mono = LaunchConfiguration("use_mono")
+    enable_filters = LaunchConfiguration("enable_filters")
+    grid_resolution = LaunchConfiguration("grid_resolution")
+    grid_size = LaunchConfiguration("grid_size")
+    map_save_path = LaunchConfiguration("map_save_path")
 
     ld.add_action(DeclareLaunchArgument(
         "use_lidar", default_value="true",
@@ -129,6 +152,36 @@ def generate_launch_description():
         "use_terrain_viz", default_value="true",
         description="Start terrain_visualization_node (publishes the "
                      "elevation grid as a colored PointCloud2 for RViz2).",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "enable_filters", default_value="true",
+        description="Enable/disable crop+voxel+outlier-removal filtering in "
+                     "both pointcloud_preprocessing_node instances (lidar "
+                     "and stereo) at once -- set to false to compare "
+                     "filtered vs. raw output while testing.",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "grid_resolution", default_value="0.20",
+        description="Shared cell size (m) for ground_segmentation_node's "
+                     "tiles and obstacle_grid_node's elevation-grid cells. "
+                     "Passed to both so they can't drift out of sync -- see "
+                     "ground_segmentation_node's module docstring for why "
+                     "they need to match.",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "grid_size", default_value="60.0",
+        description="Shared mapped area (m, square) for "
+                     "ground_segmentation_node and obstacle_grid_node -- "
+                     "raised from the original 10.0 test value to the "
+                     "~60x60m intended for the real pre-deployment scan. "
+                     "Passed to both so they can't drift out of sync.",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "map_save_path", default_value="/home/team/rover_maps/terrain_map.npz",
+        description="Where obstacle_grid_node's save_terrain_map service "
+                     "writes the finished map. Adjust to an actual writable "
+                     "path on your machine (e.g. on the SSD) before using "
+                     "the service -- the directory must already exist.",
     ))
 
     # ------------------------------------------------------------------
@@ -228,12 +281,26 @@ def generate_launch_description():
         name="stereo_to_mast_platform_link",
         arguments=[
             "--x", "0.022", "--y", "0.01958", "--z", "-0.03",
-            # REP-103 optical rotation (camera body forward -> +Z optical)
-            # composed with a level (non-tilted) mount. Adjust once the
-            # camera's physical tilt on the platform is known. Targets
-            # camera_link (physical pose) -- realsense2_camera_node
-            # publishes camera_link -> camera_depth_optical_frame itself.
-            "--roll", "-1.5708", "--pitch", "0.0", "--yaw", "-1.5708",
+            # Fixed 2026-09: this used to carry the REP-103 optical rotation
+            # (-1.5708/0.0/-1.5708), left over from when this block targeted
+            # camera_depth_optical_frame directly (pre fake/real split). That
+            # was wrong here -- realsense2_camera_node already publishes its
+            # own camera_link -> camera_depth_optical_frame internally (see
+            # module docstring), so baking the optical rotation in again on
+            # this mast_platform_link -> camera_link static TF was double-
+            # applying it, which is likely why the point cloud looked
+            # rotated wrong in RViz.
+            #
+            # camera_link uses body convention (X forward/Y left/Z up, same
+            # as mast_platform_link), NOT optical convention -- this static
+            # TF should only encode the physical mounting pose. The stereo
+            # camera has to be mounted upside-down on the platform (physical
+            # constraint), which -- assuming it still looks the same
+            # direction, just flipped over -- is a pure 180 deg roll about
+            # its own forward axis. Adjust pitch/yaw too if the mount turns
+            # out to also be tilted or facing a different direction than
+            # assumed here.
+            "--roll", "3.14159", "--pitch", "0.0", "--yaw", "0.0",
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "camera_link",
         ],
@@ -285,6 +352,14 @@ def generate_launch_description():
             "outlier_radius": 2.0,
             "min_neighbors": 1,
             "state_field": "lidar",
+            # Driven by the shared enable_filters launch arg -- see its
+            # DeclareLaunchArgument above. ParameterValue(..., value_type=bool)
+            # is needed because a LaunchConfiguration resolves to a plain
+            # string ("true"/"false") otherwise, which rclpy would reject
+            # for a parameter declared with a bool default.
+            "enable_crop": ParameterValue(enable_filters, value_type=bool),
+            "enable_voxel": ParameterValue(enable_filters, value_type=bool),
+            "enable_outlier_removal": ParameterValue(enable_filters, value_type=bool),
         }],
         condition=IfCondition(use_lidar),
     )
@@ -320,6 +395,9 @@ def generate_launch_description():
             "outlier_radius": 2.0,
             "min_neighbors": 1,
             "state_field": "stereo_cam",
+            "enable_crop": ParameterValue(enable_filters, value_type=bool),
+            "enable_voxel": ParameterValue(enable_filters, value_type=bool),
+            "enable_outlier_removal": ParameterValue(enable_filters, value_type=bool),
         }],
         condition=IfCondition(use_stereo),
     )
@@ -338,12 +416,37 @@ def generate_launch_description():
         }],
     )
 
+    # Splits the fused cloud into ground vs. obstacle points, per tile,
+    # before gridding -- see ground_segmentation_node's module docstring
+    # for the full design (walls/ceilings/slopes handling, etc., discussed
+    # at length in chat). grid_resolution/grid_size are shared with
+    # obstacle_grid_node below so tiles line up 1:1 with the final
+    # elevation-grid cells and both cover the same area.
+    ground_segmentation = Node(
+        package="rover_perception",
+        executable="ground_segmentation_node",
+        name="ground_segmentation_node",
+        parameters=[{
+            "grid_resolution": ParameterValue(grid_resolution, value_type=float),
+            "grid_size_x": ParameterValue(grid_size, value_type=float),
+            "grid_size_y": ParameterValue(grid_size, value_type=float),
+        }],
+    )
+
     obstacle_grid = Node(
         package="rover_perception",
         executable="obstacle_grid_node",
         name="obstacle_grid_node",
         parameters=[{
-            "points_topic": "/perception/global_points",
+            # Fixed 2026-09: now consumes ground_segmentation_node's output
+            # instead of the raw fused cloud, so ceiling/shelf/wall points
+            # no longer corrupt the elevation-grid stats for a cell -- see
+            # chat and ground_segmentation_node's module docstring.
+            "points_topic": "/perception/ground_points",
+            "grid_resolution": ParameterValue(grid_resolution, value_type=float),
+            "grid_size_x": ParameterValue(grid_size, value_type=float),
+            "grid_size_y": ParameterValue(grid_size, value_type=float),
+            "map_save_path": map_save_path,
         }],
     )
 
@@ -384,7 +487,7 @@ def generate_launch_description():
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,
-        fusion, obstacle_grid, terrain_viz,
+        fusion, ground_segmentation, obstacle_grid, terrain_viz,
         led_detector, position_rover,
     ]:
         ld.add_action(action)
