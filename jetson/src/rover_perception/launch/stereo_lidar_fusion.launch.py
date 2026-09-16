@@ -221,6 +221,7 @@ def generate_launch_description():
             "unite_imu_method": 2,
             "camera_name": "camera",
             "camera_namespace": "",
+            "diagnostics_period": 1.0,
             }],
         condition=IfCondition(use_stereo),
     )
@@ -234,11 +235,7 @@ def generate_launch_description():
 
     # Mast TF chain -- always on, see module docstring for why this isn't
     # gated by use_lidar/use_stereo/use_mono.
-    fake_mast_hw = Node(
-        package="rover_perception",
-        executable="fake_mast_hw_node",
-        name="fake_mast_hw_node",
-    )
+
 
     # Real hardware-box IMU (Adafruit ICM-20649 over I2C) -- always on, no
     # fake fallback anymore. If it isn't plugged in, the node just stays
@@ -482,7 +479,7 @@ def generate_launch_description():
     )
 
     for action in [
-        lidar, stereo, fake_mono, fake_mast_hw, imu,
+        lidar, stereo, fake_mono, imu,
         mast_pose,
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,

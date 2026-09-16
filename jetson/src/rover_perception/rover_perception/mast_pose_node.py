@@ -44,6 +44,33 @@ Design decisions (see chat history for the reasoning):
   (per sensor_msgs/Imu convention: orientation_covariance[0] == -1 means
   "orientation not provided", any other value means it's valid).
 
+Graceful degradation, both dynamic transforms (added/extended 2026-09)
+-----------------------------------------------------------------------------
+Neither half of the TF chain ever goes missing just because its input
+hasn't arrived yet -- both _publish_base_transform() and
+_publish_platform_transform() always publish *something* every tick, so
+mast_platform_link (and therefore every sensor statically mounted on it)
+never loses its place in the TF tree:
+
+- world -> mast_base_link: falls back to a level (identity rotation)
+  transform if no hardware-box IMU data has arrived -- see
+  imu_icm20649_node.py, which has no fake fallback of its own; if it's not
+  plugged in, this is simply what "no lean data" degrades to.
+- mast_base_link -> mast_platform_link: falls back to pan=0, tilt=0 (mast
+  upright, stationary) if no JointState has arrived on joint_state_topic
+  yet, or if it's missing the expected pan_joint_name/tilt_joint_name
+  entries. fake_mast_hw_node (the old placeholder JointState source that
+  simulated a slow back-and-forth pan/tilt sweep) was removed from the
+  launch file 2026-09 -- pan/tilt now comes from a real, external
+  motor-controller node, published on this same joint_state_topic (default
+  /mast/joint_states; remap via that parameter if the real source uses a
+  different topic/joint names). Until that source is wired up and
+  publishing, this placeholder keeps the platform TF sane (upright,
+  unmoving) rather than omitting it -- omitting it would otherwise leave
+  every sensor mounted on mast_platform_link with no TF at all, breaking
+  frame_transform_node's lookups outright instead of just being
+  "obviously not the real orientation".
+
 Placeholder topics (rename via parameters once real drivers exist):
   /hardware_box/imu   -- real now: Adafruit ICM-20649 over I2C, see
                          imu_icm20649_node.py. No fake fallback -- if it's
@@ -51,7 +78,11 @@ Placeholder topics (rename via parameters once real drivers exist):
                          _publish_base_transform() falls back to level.
   /camera/imu          -- real realsense2_camera publishes this; fake_stereo_camera_node now fakes it too
   /livox/imu            -- real livox_ros_driver2 publishes this; fake_lidar_node now fakes it too
-  /mast/joint_states    -- not built yet (motor controller interface)
+  /mast/joint_states    -- real, external motor-controller source expected
+                         here (not started by this package's launch file).
+                         No fake fallback anymore -- if it's not connected,
+                         _publish_platform_transform() falls back to an
+                         upright/stationary (pan=0, tilt=0) placeholder.
 """
 
 import math
@@ -230,27 +261,41 @@ class MastPoseNode(Node):
     def _publish_platform_transform(self, stamp):
         """mast_base_link -> mast_platform_link: pan + tilt from JointState
         (authoritative). Platform IMUs are only cross-checked against each
-        other for a rigidity/fault warning, not fused into this transform."""
+        other for a rigidity/fault warning, not fused into this transform.
+
+        Falls back to pan=0, tilt=0 (mast upright, stationary) if no
+        JointState has arrived yet, or if it's missing the expected joint
+        names -- e.g. the real external motor-controller source isn't
+        connected yet. Mirrors _publish_base_transform's IMU fallback:
+        publish something sane rather than silently omitting the
+        transform, which would otherwise leave mast_platform_link -- and
+        every sensor statically mounted on it -- without a TF at all. See
+        module docstring "Graceful degradation" section.
+        """
 
         if self._latest_joint_state is None:
             self.get_logger().warn(
-                f"No {self.joint_state_topic} data yet -- not publishing "
-                f"{self.mast_base_frame}->{self.mast_platform_frame}.",
+                f"No {self.joint_state_topic} data yet -- publishing "
+                f"{self.mast_base_frame}->{self.mast_platform_frame} as "
+                "an upright/stationary placeholder (pan=0, tilt=0).",
                 throttle_duration_sec=5.0,
             )
-            return
+            pan_angle = 0.0
+            tilt_angle = 0.0
+        else:
+            pan_angle = self._joint_position(self._latest_joint_state, self.pan_joint_name)
+            tilt_angle = self._joint_position(self._latest_joint_state, self.tilt_joint_name)
 
-        pan_angle = self._joint_position(self._latest_joint_state, self.pan_joint_name)
-        tilt_angle = self._joint_position(self._latest_joint_state, self.tilt_joint_name)
-
-        if pan_angle is None or tilt_angle is None:
-            self.get_logger().warn(
-                f"{self.joint_state_topic} is missing '{self.pan_joint_name}' "
-                f"or '{self.tilt_joint_name}' -- not publishing "
-                f"{self.mast_base_frame}->{self.mast_platform_frame}.",
-                throttle_duration_sec=5.0,
-            )
-            return
+            if pan_angle is None or tilt_angle is None:
+                self.get_logger().warn(
+                    f"{self.joint_state_topic} is missing '{self.pan_joint_name}' "
+                    f"or '{self.tilt_joint_name}' -- publishing "
+                    f"{self.mast_base_frame}->{self.mast_platform_frame} as "
+                    "an upright/stationary placeholder (pan=0, tilt=0).",
+                    throttle_duration_sec=5.0,
+                )
+                pan_angle = 0.0
+                tilt_angle = 0.0
 
         self._check_platform_imu_agreement()
 
