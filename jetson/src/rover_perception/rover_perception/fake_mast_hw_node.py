@@ -82,12 +82,8 @@ class FakeMastHwNode(Node):
         stamp = self.get_clock().now().to_msg()
         elapsed = (self.get_clock().now() - self._start_time).nanoseconds * 1e-9
 
-        pan_rad = math.radians(self.pan_amplitude_deg) * math.sin(
-            2.0 * math.pi * elapsed / max(self.pan_period_s, 1e-3)
-        )
-        tilt_rad = math.radians(self.tilt_amplitude_deg) * math.sin(
-            2.0 * math.pi * elapsed / max(self.tilt_period_s, 1e-3)
-        )
+        pan_rad = 0
+        tilt_rad = 0
 
         joint_msg = JointState()
         joint_msg.header.stamp = stamp

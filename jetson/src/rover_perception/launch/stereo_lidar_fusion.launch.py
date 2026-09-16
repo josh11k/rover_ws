@@ -221,6 +221,7 @@ def generate_launch_description():
             "unite_imu_method": 2,
             "camera_name": "camera",
             "camera_namespace": "",
+            "diagnostics_period": 1.0,
             }],
         condition=IfCondition(use_stereo),
     )
@@ -300,7 +301,7 @@ def generate_launch_description():
             # its own forward axis. Adjust pitch/yaw too if the mount turns
             # out to also be tilted or facing a different direction than
             # assumed here.
-            "--roll", "3.14159", "--pitch", "0.0", "--yaw", "0.0",
+            "--roll", "0.0", "--pitch", "0.0", "--yaw", "0.0",
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "camera_link",
         ],
