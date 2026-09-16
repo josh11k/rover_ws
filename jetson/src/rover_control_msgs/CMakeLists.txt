@@ -15,7 +15,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetOperationalMode.srv"
   "msg/SetOperationalMode.msg"
   "msg/OperationalModeSettings.msg"
-  "msg/CurrentOperationalMode.msg"
+  "msg/OperationalMode.msg"
+  "msg/LogMessage.msg"
+  "msg/Housekeeping.msg"
+  "msg/SystemRequest.msg"
 )
 
 if(BUILD_TESTING)

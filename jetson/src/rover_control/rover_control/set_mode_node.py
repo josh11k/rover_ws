@@ -1,7 +1,7 @@
 import rclpy
 import time
 from rclpy.node import Node
-from rover_control_msgs.msg import  OperationalModeSettings, CurrentOperationalMode
+from rover_control_msgs.msg import  OperationalModeSettings, OperationalMode
 
 
 
@@ -23,7 +23,7 @@ class OperationalModes(Node):
         self.declare_parameter('make_global_pointcloud', "OFF")
 
         self.subscription = self.create_subscription(
-            CurrentOperationalMode, 
+            OperationalMode, 
             '/operational_mode/current', 
             self.set_operational_mode_callback,
               10)
