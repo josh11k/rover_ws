@@ -1,4 +1,3 @@
-from build.rover_control_msgs.ament_cmake_python.rover_control_msgs.rover_control_msgs import msg
 import rclpy
 from rclpy.node import Node
 import serial
@@ -16,6 +15,10 @@ class STMBridgeNode(Node):
         # 1. Parameter für die Hardware
         self.port = '/dev/ttyACM0'  # Für Jetson ggf. anpassen (z.B. /dev/ttyUSB0)
         self.baudrate = 115200
+
+        # Puffer für empfangene, noch nicht vollständig geparste Daten vom
+        # STM32 -- von receive_message() befüllt, sobald das angeschlossen wird.
+        self.buffer = ""
 
         # 2. Incoming Messages
         # message beinhaltet task und ruft send_message auf
@@ -51,10 +54,6 @@ class STMBridgeNode(Node):
             '/log/housekeeping',
             50
             )
-
-
-
-        self.timer = self.create_timer(0.01, self.set_mode_on_Jetson)
 
         # 3. Serielle Verbindung zum STM32 EINMALIG öffnen
         try:
@@ -131,8 +130,6 @@ class STMBridgeNode(Node):
   
 
 
-            
-        
 
     def receive_message(self, task):
 
@@ -282,8 +279,6 @@ class STMBridgeNode(Node):
             self.publish_operational_log.publish(msg)
             self.publish_com_stm_log.publish(msg)
 
-    
-       
 
 def main(args=None):
     rclpy.init(args=args)

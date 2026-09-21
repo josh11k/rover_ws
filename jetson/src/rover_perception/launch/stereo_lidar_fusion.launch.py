@@ -478,9 +478,42 @@ def generate_launch_description():
         condition=IfCondition(use_mono),
     )
 
+    # ------------------------------------------------------------------
+    # Rover control / command chain -- always on, analog zur Mast-TF-Chain
+    # ------------------------------------------------------------------
+    command = Node(
+        package="rover_control",
+        executable="command_node",
+        name="command_node",
+    )
+
+    set_mode = Node(
+        package="rover_control",
+        executable="set_mode_node",
+        name="set_mode_node",
+    )
+
+    wifi = Node(
+        package="rover_control",
+        executable="wifi_node",
+        name="wifi_node",
+    )
+
+    rover_pose = Node(
+        package="rover_control",
+        executable="rover_pose_node",
+        name="rover_pose_node",
+    )
+
+    logger = Node(
+        package="rover_control",
+        executable="logger_node",
+        name="logger_node",
+    )
+
     for action in [
         lidar, stereo, fake_mono, imu,
-        mast_pose,
+        mast_pose, command, set_mode, wifi, rover_pose, logger,
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,

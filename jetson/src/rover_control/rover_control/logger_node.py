@@ -3,7 +3,7 @@ from rclpy.node import Node
 
 from rover_control_msgs.msg import LogMessage, Housekeeping
 
-from . import log #(aufrufen der funktion durch logger.<function_name>)
+from . import log as logger   #(aufrufen der funktion durch logger.<function_name>)
 
 
 class LoggerNode(Node):
