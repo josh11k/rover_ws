@@ -6,7 +6,7 @@ import time
 # Hier nutzen wir deine eigene Custom Message für den Service und das Topic
 from rover_control_msgs.srv import SetOperationalMode as SetModeSrv
 from rover_control_msgs.msg import SetOperationalMode as SetModeMsg
-from rover_control_msgs.msg import LogMessage, OperationalMode, SystemRequest, Housekeeping
+from rover_control_msgs.msg import LogMessage, OperationalMode, SystemRequest, Housekeeping, MotorPosition
 
 class STMBridgeNode(Node):
     def __init__(self):
@@ -26,6 +26,13 @@ class STMBridgeNode(Node):
             SystemRequest,
             '/command/system_request',
             self.prep_message_callback,
+            10
+        )
+
+        self.motor_position_subscription = self.create_subscription(
+            MotorPosition,
+            '/motor_position/new',
+            self.send_motor_position_callback,
             10
         )
         
@@ -53,6 +60,12 @@ class STMBridgeNode(Node):
             Housekeeping,
             '/log/housekeeping',
             50
+            )
+
+        self.publish_motor_position = self.create_publisher(
+            MotorPosition,
+            '/motor_position/current',
+            10
             )
 
         # 3. Serielle Verbindung zum STM32 EINMALIG öffnen
@@ -94,14 +107,17 @@ class STMBridgeNode(Node):
             self.publish_operational_log.publish(msg_log)
             self.publish_com_stm_log.publish(msg_log)
 
-        if msg.task == "SET_MOTOR":
-            msg_log.source = "JETSON"
-            msg_log.event = "INFO"
-            msg_log.details = f"Motor command sent: {msg.message}"
-            self.publish_operational_log.publish(msg_log)
-            self.publish_com_stm_log.publish(msg_log)
+    def send_motor_position_callback(self, msg):
+        msg_log = LogMessage()
+        msg_log.source = "JETSON"
+        msg_log.event = "INFO"
+        msg_log.details = f"Motor command sent: Motor 1 {msg.motor1}, Motor 2 {msg.motor2}, Motor 3 {msg.motor3}, Motor 4 {msg.motor4}, Motor 5 {msg.motor5}"
 
-        command = f">>{msg.task} {msg.message}<<"
+        self.publish_operational_log.publish(msg_log)
+        self.publish_com_stm_log.publish(msg_log)
+
+        msg.task = "SET_MOTOR:"
+        command = f">>{msg.task} {msg.motor1}, {msg.motor2}, {msg.motor3}, {msg.motor4}, {msg.motor5}<<"
         self.send_message(command)
 
 
@@ -278,6 +294,19 @@ class STMBridgeNode(Node):
             
             self.publish_operational_log.publish(msg)
             self.publish_com_stm_log.publish(msg)
+
+            # Make Motor Values:
+            msg_motor = MotorPosition()
+            msg_motor.motor1 = int(parts[23])
+            msg_motor.motor2 = int(parts[25])
+            msg_motor.motor3 = int(parts[27])
+            msg_motor.motor4 = int(parts[29])
+            msg_motor.motor5 = int(parts[31])
+
+            self.publish_motor_position.publish(msg_motor)    
+
+
+
 
 
 def main(args=None):
