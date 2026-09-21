@@ -297,7 +297,7 @@ def generate_launch_description():
             # its own forward axis. Adjust pitch/yaw too if the mount turns
             # out to also be tilted or facing a different direction than
             # assumed here.
-            "--roll", "0.0", "--pitch", "0.0", "--yaw", "0.0",
+            "--roll", "0.0", "--pitch", "1.5708", "--yaw", "0.0",
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "camera_link",
         ],
