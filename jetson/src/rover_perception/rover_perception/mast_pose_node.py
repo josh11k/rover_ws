@@ -12,30 +12,26 @@ nothing else -- the sensor-to-platform offsets stay where they already are
 mechanical design, not something a motor or IMU reports:
 
     world --[orientation only, from hardware-box IMU]--> mast_base_link
-    mast_base_link --[pan+tilt, from JointState]--> mast_platform_link
+    mast_base_link --[pan+tilt, from MotorPosition]--> mast_platform_link
 
 Output is a normal dynamic TF broadcast (tf2_ros.TransformBroadcaster), not
 a custom "pose" message -- frame_transform_node (and anything else using
 tf2's lookup_transform) already consumes whatever is in the TF tree, static
-or dynamic, without needing to know this node exists. That's the whole
-point of using TF2 instead of hand-rolling a pose topic that every consumer
-has to subscribe to and transform with manually (see ARCHITECTURE.md for
-why that pattern was replaced early on).
+or dynamic, without needing to know this node exists.
 
 Design decisions (see chat history for the reasoning):
 
 - Yaw (pan) is not observable from accelerometer/gyroscope alone (gravity
   doesn't change under pure rotation about the vertical axis) -- so pan
-  comes from the motor's JointState only, never "corrected" by an IMU here.
+  comes from the motor's reported position only, never "corrected" by an
+  IMU here.
 - Tilt (mast lean, platform tilt) IS observable via the gravity vector, but
-  the motor encoder is treated as the primary/authoritative source (typic-
-  ally low-noise, high-precision) for the actually-published transform.
-  The two platform IMUs (stereo + lidar) are used purely as a mutual
-  plausibility check -- since they're bolted to the same rigid platform,
-  they should report the same orientation; if they disagree beyond
-  imu_disagreement_warn_deg, that's logged as a fault/rigidity warning, not
-  silently averaged into the transform. A real Kalman-style fusion could
-  replace this later once the actual noise characteristics are known.
+  the motor encoder is treated as the primary/authoritative source for the
+  actually-published transform. The two platform IMUs (stereo + lidar) are
+  used purely as a mutual plausibility check -- since they're bolted to the
+  same rigid platform, they should report the same orientation; if they
+  disagree beyond imu_disagreement_warn_deg, that's logged as a
+  fault/rigidity warning, not silently averaged into the transform.
 - world -> mast_base_link's *position* is deliberately left at (0, 0, 0):
   determining the electronics box's actual position is explicitly a later
   task. Only its orientation (lean) is computed here.
@@ -44,7 +40,17 @@ Design decisions (see chat history for the reasoning):
   (per sensor_msgs/Imu convention: orientation_covariance[0] == -1 means
   "orientation not provided", any other value means it's valid).
 
-Graceful degradation, both dynamic transforms (added/extended 2026-09)
+Pan/tilt source: MotorPosition (added 2026-09)
+-----------------------------------------------------------------------------
+Pan and tilt now come from stm_bridge_node's /motor_position/current
+(rover_control_msgs/msg/MotorPosition, fields motor1..motor5 -- raw Dynamixel-
+style servo positions, one field per physical motor on the rover, not all of
+which are the mast). Per the servo datasheet: motor1 = mast tilt, motor5 =
+mast pan. Raw range is 0..1023, center (i.e. 0 deg) at 512, resolution
+motor_raw_to_deg (default 0.325) deg/unit -- see motor_raw_center /
+motor_raw_to_deg parameters below if your hardware differs.
+
+Graceful degradation, both dynamic transforms
 -----------------------------------------------------------------------------
 Neither half of the TF chain ever goes missing just because its input
 hasn't arrived yet -- both _publish_base_transform() and
@@ -57,32 +63,27 @@ never loses its place in the TF tree:
   imu_icm20649_node.py, which has no fake fallback of its own; if it's not
   plugged in, this is simply what "no lean data" degrades to.
 - mast_base_link -> mast_platform_link: falls back to pan=0, tilt=0 (mast
-  upright, stationary) if no JointState has arrived on joint_state_topic
-  yet, or if it's missing the expected pan_joint_name/tilt_joint_name
-  entries. fake_mast_hw_node (the old placeholder JointState source that
-  simulated a slow back-and-forth pan/tilt sweep) was removed from the
-  launch file 2026-09 -- pan/tilt now comes from a real, external
-  motor-controller node, published on this same joint_state_topic (default
-  /mast/joint_states; remap via that parameter if the real source uses a
-  different topic/joint names). Until that source is wired up and
-  publishing, this placeholder keeps the platform TF sane (upright,
-  unmoving) rather than omitting it -- omitting it would otherwise leave
-  every sensor mounted on mast_platform_link with no TF at all, breaking
-  frame_transform_node's lookups outright instead of just being
-  "obviously not the real orientation".
+  upright, stationary) if no MotorPosition message has arrived yet on
+  motor_position_topic -- e.g. stm_bridge_node isn't connected to the STM32
+  yet. Until that source is wired up and publishing, this placeholder keeps
+  the platform TF sane (upright, unmoving) rather than omitting it --
+  omitting it would otherwise leave every sensor mounted on
+  mast_platform_link with no TF at all, breaking frame_transform_node's
+  lookups outright instead of just being "obviously not the real
+  orientation".
 
 Placeholder topics (rename via parameters once real drivers exist):
-  /hardware_box/imu   -- real now: Adafruit ICM-20649 over I2C, see
-                         imu_icm20649_node.py. No fake fallback -- if it's
-                         not connected, this topic just has no data and
-                         _publish_base_transform() falls back to level.
-  /camera/imu          -- real realsense2_camera publishes this; fake_stereo_camera_node now fakes it too
-  /livox/imu            -- real livox_ros_driver2 publishes this; fake_lidar_node now fakes it too
-  /mast/joint_states    -- real, external motor-controller source expected
-                         here (not started by this package's launch file).
-                         No fake fallback anymore -- if it's not connected,
-                         _publish_platform_transform() falls back to an
-                         upright/stationary (pan=0, tilt=0) placeholder.
+  /hardware_box/imu     -- real now: Adafruit ICM-20649 over I2C, see
+                          imu_icm20649_node.py. No fake fallback -- if it's
+                          not connected, this topic just has no data and
+                          _publish_base_transform() falls back to level.
+  /camera/imu            -- real realsense2_camera publishes this; fake_stereo_camera_node now fakes it too
+  /livox/imu              -- real livox_ros_driver2 publishes this; fake_lidar_node now fakes it too
+  /motor_position/current -- real now: stm_bridge_node reads this from the
+                          STM32's housekeeping telemetry. No fake fallback
+                          -- if it's not connected, _publish_platform_
+                          transform() falls back to an upright/stationary
+                          (pan=0, tilt=0) placeholder.
 """
 
 import math
@@ -94,8 +95,9 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
-from sensor_msgs.msg import Imu, JointState
+from sensor_msgs.msg import Imu
 from geometry_msgs.msg import TransformStamped
+from rover_control_msgs.msg import MotorPosition
 
 import tf2_ros
 
@@ -104,14 +106,28 @@ DEFAULTS = {
     "hardware_box_imu_topic": "/hardware_box/imu",
     "stereo_imu_topic": "/camera/imu",
     "lidar_imu_topic": "/livox/imu",
-    "joint_state_topic": "/mast/joint_states",
+    "motor_position_topic": "/motor_position/current",
 
     "world_frame": "world",
     "mast_base_frame": "mast_base_link",
     "mast_platform_frame": "mast_platform_link",
 
-    "pan_joint_name": "mast_pan_joint",
-    "tilt_joint_name": "platform_tilt_joint",
+    # Which MotorPosition field is which mast axis -- per the servo
+    # datasheet: motor1 = tilt, motor5 = pan. The other three fields belong
+    # to other motors on the rover (drive, etc.), not the mast.
+    "pan_motor_field": "motor5",
+    "tilt_motor_field": "motor1",
+
+    # Pan-Motor: Dynamixel AX-12A (siehe Datenblatt) -- 0..1023 -> 0..300 deg,
+    # Mitte (geradeaus) bei raw=512=150 deg absolut, hier relativ zur Mitte
+    # gerechnet: grad = (raw - center) * deg_per_unit.
+    "pan_motor_raw_center": 512,
+    "pan_motor_raw_to_deg": 0.29,
+
+    # Tilt-Motor: anderes Modell als der Pan-Motor (siehe Chat) -- eigene
+    # Kalibrierung, ebenfalls relativ zur Mitte.
+    "tilt_motor_raw_center": 512,
+    "tilt_motor_raw_to_deg": 0.325,
 
     # Fixed height of the platform's tilt-joint pivot above mast_base_link,
     # along the (untilted) mast's own Z axis. Placeholder -- replace with
@@ -179,7 +195,7 @@ class MastPoseNode(Node):
         self._latest_hardware_box_imu = None
         self._latest_stereo_imu = None
         self._latest_lidar_imu = None
-        self._latest_joint_state = None
+        self._latest_motor_position = None
 
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
 
@@ -195,9 +211,9 @@ class MastPoseNode(Node):
             Imu, self.lidar_imu_topic,
             self._lidar_imu_callback, qos_profile_sensor_data,
         )
-        self.joint_state_sub = self.create_subscription(
-            JointState, self.joint_state_topic,
-            self._joint_state_callback, 10,
+        self.motor_position_sub = self.create_subscription(
+            MotorPosition, self.motor_position_topic,
+            self._motor_position_callback, 10,
         )
 
         self.timer = self.create_timer(
@@ -207,7 +223,8 @@ class MastPoseNode(Node):
         self.get_logger().info(
             f"mast_pose_node: {self.hardware_box_imu_topic} -> "
             f"{self.world_frame}->{self.mast_base_frame}; "
-            f"{self.joint_state_topic} (+ {self.stereo_imu_topic}/"
+            f"{self.motor_position_topic} ({self.pan_motor_field}=pan, "
+            f"{self.tilt_motor_field}=tilt, + {self.stereo_imu_topic}/"
             f"{self.lidar_imu_topic} cross-check) -> "
             f"{self.mast_base_frame}->{self.mast_platform_frame}"
         )
@@ -229,8 +246,22 @@ class MastPoseNode(Node):
     def _lidar_imu_callback(self, msg: Imu):
         self._latest_lidar_imu = msg
 
-    def _joint_state_callback(self, msg: JointState):
-        self._latest_joint_state = msg
+    def _motor_position_callback(self, msg: MotorPosition):
+        self._latest_motor_position = msg
+
+    def _raw_to_radians(self, raw: int) -> float:
+        """Dynamixel-style raw position (0..1023, center 512) -> radians.
+
+        degree = (raw - motor_raw_center) * motor_raw_to_deg. Note: the
+        servo datasheet's caption literally says "Degree = Position Raw
+        Data x 0.325" without an offset, but the accompanying diagram only
+        makes sense with the center offset (raw=512 sits at the middle of
+        the dial, i.e. 0 deg; raw=0/1023 sit at roughly +-166.7 deg, which
+        only matches (raw-512)*0.325, not raw*0.325 alone). Flag if your
+        servo actually wants the literal no-offset formula instead.
+        """
+        degrees = (raw - self.motor_raw_center) * self.motor_raw_to_deg
+        return math.radians(degrees)
 
     def _publish_transforms(self):
         try:
@@ -259,23 +290,20 @@ class MastPoseNode(Node):
         self._broadcast(stamp, self.world_frame, self.mast_base_frame, (0.0, 0.0, 0.0), rot)
 
     def _publish_platform_transform(self, stamp):
-        """mast_base_link -> mast_platform_link: pan + tilt from JointState
-        (authoritative). Platform IMUs are only cross-checked against each
-        other for a rigidity/fault warning, not fused into this transform.
+        """mast_base_link -> mast_platform_link: pan + tilt from the
+        STM32's MotorPosition feedback (authoritative). Platform IMUs are
+        only cross-checked against each other for a rigidity/fault
+        warning, not fused into this transform.
 
         Falls back to pan=0, tilt=0 (mast upright, stationary) if no
-        JointState has arrived yet, or if it's missing the expected joint
-        names -- e.g. the real external motor-controller source isn't
-        connected yet. Mirrors _publish_base_transform's IMU fallback:
-        publish something sane rather than silently omitting the
-        transform, which would otherwise leave mast_platform_link -- and
-        every sensor statically mounted on it -- without a TF at all. See
-        module docstring "Graceful degradation" section.
+        MotorPosition message has arrived yet -- e.g. stm_bridge_node
+        isn't connected to the STM32 yet. See module docstring "Graceful
+        degradation" section.
         """
 
-        if self._latest_joint_state is None:
+        if self._latest_motor_position is None:
             self.get_logger().warn(
-                f"No {self.joint_state_topic} data yet -- publishing "
+                f"No {self.motor_position_topic} data yet -- publishing "
                 f"{self.mast_base_frame}->{self.mast_platform_frame} as "
                 "an upright/stationary placeholder (pan=0, tilt=0).",
                 throttle_duration_sec=5.0,
@@ -283,19 +311,11 @@ class MastPoseNode(Node):
             pan_angle = 0.0
             tilt_angle = 0.0
         else:
-            pan_angle = self._joint_position(self._latest_joint_state, self.pan_joint_name)
-            tilt_angle = self._joint_position(self._latest_joint_state, self.tilt_joint_name)
+            pan_raw = getattr(self._latest_motor_position, self.pan_motor_field)
+            tilt_raw = getattr(self._latest_motor_position, self.tilt_motor_field)
 
-            if pan_angle is None or tilt_angle is None:
-                self.get_logger().warn(
-                    f"{self.joint_state_topic} is missing '{self.pan_joint_name}' "
-                    f"or '{self.tilt_joint_name}' -- publishing "
-                    f"{self.mast_base_frame}->{self.mast_platform_frame} as "
-                    "an upright/stationary placeholder (pan=0, tilt=0).",
-                    throttle_duration_sec=5.0,
-                )
-                pan_angle = 0.0
-                tilt_angle = 0.0
+            pan_angle = self._raw_to_radians(pan_raw)
+            tilt_angle = self._raw_to_radians(tilt_raw)
 
         self._check_platform_imu_agreement()
 
@@ -345,18 +365,6 @@ class MastPoseNode(Node):
         t.transform.rotation.w = float(qw)
 
         self.tf_broadcaster.sendTransform(t)
-
-    @staticmethod
-    def _joint_position(joint_state_msg: JointState, name: str):
-        try:
-            idx = joint_state_msg.name.index(name)
-        except ValueError:
-            return None
-
-        if idx >= len(joint_state_msg.position):
-            return None
-
-        return joint_state_msg.position[idx]
 
 
 def main(args=None):
