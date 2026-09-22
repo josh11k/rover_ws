@@ -1,4 +1,3 @@
-from build.rover_control_msgs.ament_cmake_python.rover_control_msgs.rover_control_msgs import msg
 import rclpy
 from rclpy.node import Node
 import serial
@@ -7,7 +6,7 @@ import time
 # Hier nutzen wir deine eigene Custom Message für den Service und das Topic
 from rover_control_msgs.srv import SetOperationalMode as SetModeSrv
 from rover_control_msgs.msg import SetOperationalMode as SetModeMsg
-from rover_control_msgs.msg import LogMessage, OperationalMode, SystemRequest, Housekeeping
+from rover_control_msgs.msg import LogMessage, OperationalMode, SystemRequest, Housekeeping, MotorPosition
 
 class STMBridgeNode(Node):
     def __init__(self):
@@ -17,12 +16,23 @@ class STMBridgeNode(Node):
         self.port = '/dev/ttyACM0'  # Für Jetson ggf. anpassen (z.B. /dev/ttyUSB0)
         self.baudrate = 115200
 
+        # Puffer für empfangene, noch nicht vollständig geparste Daten vom
+        # STM32 -- von receive_message() befüllt, sobald das angeschlossen wird.
+        self.buffer = ""
+
         # 2. Incoming Messages
         # message beinhaltet task und ruft send_message auf
         self.subscription = self.create_subscription(
             SystemRequest,
             '/command/system_request',
             self.prep_message_callback,
+            10
+        )
+
+        self.motor_position_subscription = self.create_subscription(
+            MotorPosition,
+            '/motor_position/new',
+            self.send_motor_position_callback,
             10
         )
         
@@ -52,9 +62,11 @@ class STMBridgeNode(Node):
             50
             )
 
-
-
-        self.timer = self.create_timer(0.01, self.set_mode_on_Jetson)
+        self.publish_motor_position = self.create_publisher(
+            MotorPosition,
+            '/motor_position/current',
+            10
+            )
 
         # 3. Serielle Verbindung zum STM32 EINMALIG öffnen
         try:
@@ -95,14 +107,17 @@ class STMBridgeNode(Node):
             self.publish_operational_log.publish(msg_log)
             self.publish_com_stm_log.publish(msg_log)
 
-        if msg.task == "SET_MOTOR":
-            msg_log.source = "JETSON"
-            msg_log.event = "INFO"
-            msg_log.details = f"Motor command sent: {msg.message}"
-            self.publish_operational_log.publish(msg_log)
-            self.publish_com_stm_log.publish(msg_log)
+    def send_motor_position_callback(self, msg):
+        msg_log = LogMessage()
+        msg_log.source = "JETSON"
+        msg_log.event = "INFO"
+        msg_log.details = f"Motor command sent: Motor 1 {msg.motor1}, Motor 2 {msg.motor2}, Motor 3 {msg.motor3}, Motor 4 {msg.motor4}, Motor 5 {msg.motor5}"
 
-        command = f">>{msg.task} {msg.message}<<"
+        self.publish_operational_log.publish(msg_log)
+        self.publish_com_stm_log.publish(msg_log)
+
+        msg.task = "SET_MOTOR:"
+        command = f">>{msg.task} {msg.motor1}, {msg.motor2}, {msg.motor3}, {msg.motor4}, {msg.motor5}<<"
         self.send_message(command)
 
 
@@ -131,8 +146,6 @@ class STMBridgeNode(Node):
   
 
 
-            
-        
 
     def receive_message(self, task):
 
@@ -282,8 +295,19 @@ class STMBridgeNode(Node):
             self.publish_operational_log.publish(msg)
             self.publish_com_stm_log.publish(msg)
 
-    
-       
+            # Make Motor Values:
+            msg_motor = MotorPosition()
+            msg_motor.motor1 = int(parts[23])
+            msg_motor.motor2 = int(parts[25])
+            msg_motor.motor3 = int(parts[27])
+            msg_motor.motor4 = int(parts[29])
+            msg_motor.motor5 = int(parts[31])
+
+            self.publish_motor_position.publish(msg_motor)    
+
+
+
+
 
 def main(args=None):
     rclpy.init(args=args)

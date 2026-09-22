@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LogMessage.msg"
   "msg/Housekeeping.msg"
   "msg/SystemRequest.msg"
+  "msg/MotorPosition.msg"
 )
 
 if(BUILD_TESTING)
