@@ -37,6 +37,7 @@ setup(
             'fake_mono_camera_node = rover_perception.fake_mono_camera_node:main',
             'led_detector_node = rover_perception.led_detector_node:main',
             'mast_pose_node = rover_perception.mast_pose_node:main',
+            'wedge_combiner_node = rover_perception.wedge_combiner_node:main',
             'fake_mast_hw_node = rover_perception.fake_mast_hw_node:main',
             'imu_icm20649_node = rover_perception.imu_icm20649_node:main',
             'terrain_visualization_node = rover_perception.terrain_visualization_node:main',
