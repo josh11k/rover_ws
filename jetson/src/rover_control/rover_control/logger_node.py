@@ -52,10 +52,10 @@ class LoggerNode(Node):
 
     def log_operations_callback(self, msg):
 
-        filename = 'log_operations.csv'
+        filename = '~/rover_log/log_operations.csv'
 
         # Nachricht an logger.py weitergeben
-        logger.write_log(
+        log.write_log(
             filename,
             msg.source,
             msg.event,
@@ -64,10 +64,10 @@ class LoggerNode(Node):
 
     def log_sensors_callback(self, msg):
 
-        filename = 'log_sensors.csv'
+        filename = '~/rover_log/log_sensors.csv'
 
         # Nachricht an logger.py weitergeben
-        logger.write_log(
+        log.write_log(
             filename,
             msg.source,
             msg.event,
@@ -76,10 +76,10 @@ class LoggerNode(Node):
 
     def log_housekeeping_callback(self, msg):
 
-        filename = 'log_housekeeping.csv'
+        filename = '~/rover_log/log_housekeeping.csv'
 
         # Nachricht an logger.py weitergeben
-        logger.write_log(
+        log.write_log(
             filename,
             msg.source,
             msg.component,
@@ -88,10 +88,10 @@ class LoggerNode(Node):
 
     def log_wifi_callback(self, msg):
 
-        filename = 'log_wifi.csv'
+        filename = '~/rover_log/log_wifi.csv'
 
         # Nachricht an logger.py weitergeben
-        logger.write_log(
+        log .write_log(
             filename,
             msg.source,
             msg.event,
@@ -100,10 +100,10 @@ class LoggerNode(Node):
 
     def log_com_stm_callback(self, msg):
 
-        filename = 'log_com_stm.csv'
+        filename = '~/rover_log/log_com_stm.csv'
 
         # Nachricht an logger.py weitergeben
-        logger.write_log(
+        log.write_log(
             filename,
             msg.source,
             msg.event,

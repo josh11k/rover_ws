@@ -30,7 +30,6 @@ class CommandNode(Node):
             self.bridge_node_callback,
             10)  
 
-
         # 3. Publishers
         self.publish_operational_mode = self.create_publisher(
             OperationalMode, 
@@ -49,11 +48,6 @@ class CommandNode(Node):
             10
         )
 
-        self.publish_wifi_log = self.create_publisher(
-            LogMessage,
-            '/log/wifi',
-            10
-        )
 
         self.publish_com_stm_log = self.create_publisher(
             LogMessage,
@@ -79,6 +73,10 @@ class CommandNode(Node):
 
         self.alive_timer = self.create_timer(
             5.0, self.send_alive_message
+        )
+
+        self.check_system_timer = self.create_timer(
+            10.0, self.check_system_status
         )
 
     def bridge_node_callback(self, msg):
@@ -136,60 +134,11 @@ class CommandNode(Node):
 
         self.publish_operational_log.publish(msg_log)
         self.publish_system_request.publish(msg_system)
+        self.publish_wifi.publish(String(data="get_status"))
 
-    # Com to STM: Sends a request to the STMBridgeNode to change the operational mode of the STM32
-    '''def send_mode_change_request(self, target_mode):
-        """Sends an asynchronous service request to the bridge node"""
-        # 1. Instantiate and fill the request object
-        request = SetModeSrv.Request()
-        request.mode = target_mode
-        
-        self.get_logger().info(f"Sending mode change request: '{target_mode}'")
-        
-        # 2. Asynchronous call to prevent freezing the executor thread
-        future = self.client.call_async(request)
-        
-        # 3. Register a callback that fires once the bridge responds
-        future.add_done_callback(self.mode_response_callback)
+    def check_system_status(self):
+        i=1
 
-    # Com to STM:Checks if mode change was successful
-    def mode_response_callback(self, future):
-        """Triggered automatically when the bridge node returns the hardware feedback"""
-        try:
-            response = future.result()
-            
-            if response.success:
-                self.get_logger().info(f"SUCCESS: {response.message}")
-                # PLACE YOUR CAMERA TRIGGER LOGIC HERE
-            else:
-                self.get_logger().error(f"FAILED: {response.message}")
-                
-        except Exception as e:
-            self.get_logger().error(f"Service call failed with exception: {e}")
-   
-    # Com to STM: Reads out the new operational mode requested by the STM32 
-    def mode_feedback_callback(self, input):
-        msg = OperationalMode()
-        msg.mode = input #.mode  # Assuming the message is a simple string for this example
-        #msg = input.mode  # If the message is a custom message type, adjust accordingly
-
-        """Triggered whenever the bridge node publishes a feedback message"""
-        self.get_logger().info(f"Feedback from STM: Current mode is '{msg.mode}'")
-        if msg.mode == "STANDBY":
-        
-            self.get_logger().info("STM32 requests to switch to STANDBY mode.")
-            self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/current topic
-        elif msg.mode == "PERCEPTION":
-
-            self.get_logger().info("STM32 requests to switch to PERCEPTION mode.")
-            self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/current topic
-        #elif msg.mode == "SAFE":
-         #   self.get_logger().info("STM32 requests to switch to SAFE mode.")
-          #  self.publisher.publish(msg)  # Publish the feedback to the /operational_mode/currents topic
-        else:
-            self.get_logger().error(f"Unknown mode received: {msg.mode}")
-        
-'''
 
 def main(args=None):
     rclpy.init(args=args)
