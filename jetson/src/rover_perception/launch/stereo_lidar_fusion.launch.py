@@ -252,6 +252,9 @@ def generate_launch_description():
         package="rover_perception",
         executable="mast_pose_node",
         name="mast_pose_node",
+        parameters=[{
+        "joint_state_topic": "/motor_position/current",
+        }],
     )
 
     # ------------------------------------------------------------------
