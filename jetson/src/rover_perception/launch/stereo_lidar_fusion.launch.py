@@ -221,8 +221,11 @@ def generate_launch_description():
             "unite_imu_method": 2,
             "camera_name": "camera",
             "camera_namespace": "",
-            "diagnostics_period": 1.0,
+            "diagnostics_period": 5.0,
             }],
+        remappings=[
+            ('diagnostics', '/stereo/diagnostics'),
+            ],
         condition=IfCondition(use_stereo),
     )
 

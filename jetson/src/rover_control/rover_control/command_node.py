@@ -72,12 +72,13 @@ class CommandNode(Node):
         )
 
         self.check_system_timer = self.create_timer(
-            10.0, self.check_system_status
+            10.0, self.check_system_status)
+        
         self.get_logger().info(
             "command_node bereit -- Steuerung ausschliesslich ueber "
             "/bridge_node/system_request (SET_STATE / REBOOT / SHUTDOWN)."
         )
-
+    # triggert by stm message
     def bridge_node_callback(self, msg):
 
         if msg.task == "SET_STATE":
@@ -106,7 +107,7 @@ class CommandNode(Node):
                 subprocess.Popen(['systemctl', 'poweroff'])
             except Exception as e:
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", details=f"Shutdown failed: {e}"))
-
+    # triggert by timer
     def trigger_housekeeping(self):
 
         msg = LogMessage()
@@ -116,7 +117,7 @@ class CommandNode(Node):
 
         self.publish_operational_log.publish(msg)
         self.publish_trigger_hkd.publish(String(data="trigger"))
-
+    # triggert by timer
     def send_alive_message(self):
 
         msg_log = LogMessage()
@@ -132,9 +133,42 @@ class CommandNode(Node):
         self.publish_operational_log.publish(msg_log)
         self.publish_system_request.publish(msg_system)
         self.publish_wifi.publish(String(data="get_status"))
-
+    # triggert by timer
     def check_system_status(self):
         i=1
+
+    def check_state(self, state):
+       '''if state not in ["STANDBY", "MAPPING", "SAFE", "ASSEMBLY_MAP", "TRACKING", "HOT_SWAP", "MAST_DEPLOYMENT"]:
+            self.get_logger().error(f"Invalid state: {state}")
+            return False
+        return True 
+
+        if state == "MAPPING": 
+
+            schick new operational settings
+            start timer 
+                  def timer 
+                  schickt signal nach periode ab zum speichern
+                  macht mapping aus -> wie bennen ich das? mast move
+                  call. mast rotation mode 
+                         warte auf antwort bis rotieret. 
+                        self.slices = self.slices + 1
+                        if self.slices >= self.max_slices:  
+                        self.state = "MAP_ASSEMLY"
+                        publish opertional_mode
+
+    def timer_mapping(self):
+        msg = LogMessage()
+        msg.source = "JETSON"
+        msg.event = "INFO"
+        msg.details = "Mapping timer triggered. Requesting to save current map slice."
+
+        self.publish_operational_log.publish(msg)
+        self.publish_'''
+
+                
+            
+
 
 
 

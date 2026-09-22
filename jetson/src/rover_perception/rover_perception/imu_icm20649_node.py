@@ -46,6 +46,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import Imu
+from rover_control_msgs.msg import HousekeepingLog
 
 import board
 import busio
@@ -80,10 +81,18 @@ class ImuIcm20649Node(Node):
         self._declare_parameters()
         self._load_parameters()
 
+        self.values = None  # most recent sensor values, for logging
+
         self.imu = None  # None until _try_connect() succeeds
 
         self.pub = self.create_publisher(
             Imu, self.imu_topic, qos_profile_sensor_data,
+        )
+
+        self.publish_hkd = self.create_publisher(
+            HousekeepingLog, 
+            "/log/housekeeping", 
+            10
         )
 
         self._try_connect()
@@ -93,6 +102,7 @@ class ImuIcm20649Node(Node):
         self.reconnect_timer = self.create_timer(
             self.reconnect_period_sec, self._try_connect
         )
+        self.log_timer = self.create_timer(30.0, self.timer_log)
 
         self.get_logger().info(
             f"imu_icm20649_node: I2C 0x{self.i2c_address:02x} -> "
@@ -182,6 +192,19 @@ class ImuIcm20649Node(Node):
         ]
 
         self.pub.publish(msg)
+
+        temp = self.imu.temperature  # °C
+        self.values = {ax, ay, az, gx, gy, gz, temp}
+
+    def timer_log(self):
+        fields = ["ACCEL_X", "ACCEL_Y", "ACCEL_Z", "GYRO_X", "GYRO_Y", "GYRO_Z", "TEMP"]
+        for name, val in zip(fields, self.values):
+            msg = HousekeepingLog()
+            msg.source = "JETSON"
+            msg.component = "IMU"
+            msg.type = name
+            msg.value = str(val)
+            self.publish_hkd.publish(msg)
 
 
 def main(args=None):
