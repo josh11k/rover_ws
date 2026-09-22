@@ -14,8 +14,8 @@ class WifiNode(Node):
     def __init__(self):
         super().__init__("wifi_node")
 
-        self.source_path_map = "/home/jetson/rover_ws/jetson/src/rover_control/rover_control/maps/"
-        self.source_path_hkd = "/home/jetson/rover_ws/jetson/src/rover_control/rover_control/housekeeping/"
+        self.source_path_map = "~/map"
+        self.source_path_hkd = "~/rover_log"
         self.target_user = "user"  # Ersetzen Sie dies durch den tatsächlichen
         self.target_ip = "192.168.1.100"
         self.target_dir = "~/rover_data/"
