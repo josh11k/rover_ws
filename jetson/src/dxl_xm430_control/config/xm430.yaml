@@ -1,0 +1,11 @@
+xm430_node:
+  ros__parameters:
+    port: /dev/u2d2              # oder /dev/ttyUSB0, falls keine udev-Regel
+    baudrate: 2000000              # Werkseinstellung XM430
+    dxl_id: 6                    # Werkseinstellung XM430
+    joint_name: xm430_joint
+    operating_mode: position     # position | extended_position | velocity
+    profile_velocity: 50         # 0 = max. Einheit 0.229 rpm
+    profile_acceleration: 20     # 0 = max. Einheit 214.577 rev/min^2
+    publish_rate: 50.0           # Hz fuer /joint_states
+    torque_off_on_shutdown: true
