@@ -221,6 +221,7 @@ def generate_launch_description():
             "unite_imu_method": 2,
             "camera_name": "camera",
             "camera_namespace": "",
+            "diagnostics_period": 1.0,
             }],
         condition=IfCondition(use_stereo),
     )
@@ -234,11 +235,7 @@ def generate_launch_description():
 
     # Mast TF chain -- always on, see module docstring for why this isn't
     # gated by use_lidar/use_stereo/use_mono.
-    fake_mast_hw = Node(
-        package="rover_perception",
-        executable="fake_mast_hw_node",
-        name="fake_mast_hw_node",
-    )
+
 
     # Real hardware-box IMU (Adafruit ICM-20649 over I2C) -- always on, no
     # fake fallback anymore. If it isn't plugged in, the node just stays
@@ -255,6 +252,9 @@ def generate_launch_description():
         package="rover_perception",
         executable="mast_pose_node",
         name="mast_pose_node",
+        parameters=[{
+        "joint_state_topic": "/motor_position/current",
+        }],
     )
 
     # ------------------------------------------------------------------
@@ -300,7 +300,7 @@ def generate_launch_description():
             # its own forward axis. Adjust pitch/yaw too if the mount turns
             # out to also be tilted or facing a different direction than
             # assumed here.
-            "--roll", "3.14159", "--pitch", "0.0", "--yaw", "0.0",
+            "--roll", "0.0", "--pitch", "1.5708", "--yaw", "0.0",
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "camera_link",
         ],
@@ -481,9 +481,42 @@ def generate_launch_description():
         condition=IfCondition(use_mono),
     )
 
+    # ------------------------------------------------------------------
+    # Rover control / command chain -- always on, analog zur Mast-TF-Chain
+    # ------------------------------------------------------------------
+    command = Node(
+        package="rover_control",
+        executable="command_node",
+        name="command_node",
+    )
+
+    set_mode = Node(
+        package="rover_control",
+        executable="set_mode_node",
+        name="set_mode_node",
+    )
+
+    wifi = Node(
+        package="rover_control",
+        executable="wifi_node",
+        name="wifi_node",
+    )
+
+    rover_pose = Node(
+        package="rover_control",
+        executable="rover_pose_node",
+        name="rover_pose_node",
+    )
+
+    logger = Node(
+        package="rover_control",
+        executable="logger_node",
+        name="logger_node",
+    )
+
     for action in [
-        lidar, stereo, fake_mono, fake_mast_hw, imu,
-        mast_pose,
+        lidar, stereo, fake_mono, imu,
+        mast_pose, command, set_mode, wifi, rover_pose, logger,
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,

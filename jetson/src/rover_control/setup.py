@@ -28,7 +28,7 @@ setup(
             'fake_stm32_bridge_node = rover_control.fake_stm32_bridge_node:main',
             'wifi_node = rover_control.wifi_node:main',
             'rover_pose_node = rover_control.rover_pose_node:main',
-            'stm_bridge_node = rover_control.stm_bridge_node:main',
+            'stm_bridge_node = rover_control.stm_bridge_node_V2:main',
             'set_mode_node = rover_control.set_mode_node:main',
             'logger_node = rover_control.logger_node:main',
             
