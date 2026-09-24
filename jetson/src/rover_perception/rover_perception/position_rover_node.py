@@ -34,11 +34,53 @@ total instead of 96), and meaningfully less ambiguity risk, since color
 already rules out 3/4 of the wrong pairings before any geometry is even
 considered.
 
-This is written generically (group detections by color, require the exact
-count of each color the model has, permute only within each color group,
-take the Cartesian product across colors) rather than hardcoded to
-"3 blue + 1 red", so a future pattern with a different color layout doesn't
-need this logic rewritten, just the LED_* DEFAULTS below changed.
+This is written generically (group detections by color, require *at least*
+the count of each color the model has, choose-and-order that many out of
+however many showed up, per color, then take the Cartesian product across
+colors) rather than hardcoded to "3 blue + 1 red", so a future pattern with
+a different color layout doesn't need this logic rewritten, just the LED_*
+DEFAULTS below changed.
+
+Tolerating extra detections per color (added 2026-09, for reflections)
+-----------------------------------------------------------------------------
+Real-world testing showed LED reflections (off nearby shiny surfaces) can
+show up as additional same-colored detections led_detector_node has no way
+to distinguish from the real thing on its own. Rather than requiring an
+*exact* color count (which meant a single stray reflection dropped the
+whole frame), this now requires only *at least* the model's count per
+color, and searches every way to choose-and-order that many detections out
+of however many arrived. Concretely: `itertools.permutations(dets, r)`
+already does exactly "choose r out of len(dets), in every order" in one
+call -- no separate combinations-then-permutations step needed.
+
+This leans on the same residual-based rejection already in place
+(max_fit_residual_deg): the pattern's asymmetric, exactly-known geometry
+means a reflection standing in for a real LED essentially never fits the
+rigid 4-point shape as well as the true correspondence does, so it should
+lose out to the correct one on residual alone.
+
+Two trade-offs that come with this, deliberately not addressed further
+right now (see chat -- this change is scoped to "tolerate a few extra
+detections", not a general noise-robustness overhaul):
+
+  - Combinatorics grow fast with extra detections: choosing-and-ordering 3
+    out of 7 blue detections (3 real + 4 reflections) is P(7,3) = 210
+    candidates instead of 6, x4 yaw seeds = 840 solves instead of 24 for
+    that color alone. max_candidates_per_color below is a blunt safety
+    valve (keeps only the largest-area detections per color beyond that
+    count) so a noisy frame can't make this unboundedly expensive -- raise
+    it only if you've confirmed the Jetson keeps up.
+  - More candidates statistically raises (slightly) the chance some wrong
+    combination fits deceptively well purely by chance, since
+    max_fit_residual_deg is an absolute threshold, not a "clearly better
+    than the next-best candidate" margin check. Not addressed here --
+    revisit if real testing shows false-positive poses.
+
+Separately, two known weaknesses in the underlying pose fit itself (very
+oblique viewing angles causing foreshortening/dimming; the classical
+monocular planar-pose ambiguity at near-frontal, distant views) were
+discussed in chat and are explicitly NOT addressed by this change -- see
+chat for the details if those need tackling later.
 
 Single mounting extrinsics (replaces the old per-panel roof/left/right
 dict)
@@ -247,10 +289,20 @@ DEFAULTS = {
     "mount_left_m": 0.035,
     "mount_up_m": 0.024,
 
-    # Exact color counts are derived from led1..4_color above, but the
+    # Minimum color counts are derived from led1..4_color above, but the
     # pattern needs to see ALL of its LEDs to attempt a solve -- no partial
-    # fits from a partially occluded view.
+    # fits from a partially occluded view. This is a floor, not an exact
+    # requirement -- see "Tolerating extra detections per color" above.
     "min_detections": 4,
+
+    # Safety valve against combinatorial blowup when extra same-colored
+    # detections (reflections) show up -- see "Tolerating extra detections
+    # per color" above. If more than this many detections of one color
+    # arrive in a frame, only the largest-area ones (by led_detector_node's
+    # area_px) are kept before the correspondence search runs. Real LEDs
+    # seen directly are generally larger/brighter than their reflections,
+    # though this is a heuristic, not a guarantee.
+    "max_candidates_per_color": 8,
 
     # If the best fit's RMS bearing residual (converted to an approximate
     # angle) exceeds this, the frame is dropped as unreliable rather than
@@ -421,16 +473,12 @@ class PositionRoverNode(Node):
             for idx, color in enumerate(self._local_colors):
                 self._color_local_indices.setdefault(color, []).append(idx)
             self._required_color_counts = dict(Counter(self._local_colors))
-
-            # Precomputed once: every within-color permutation of detection
-            # order -> local-point order, for each color that has more than
-            # one point (a single-point color has only the trivial
-            # permutation). Combined per-frame via itertools.product to
-            # build the full set of candidate correspondences.
-            self._color_perms = {
-                color: list(itertools.permutations(range(len(indices))))
-                for color, indices in self._color_local_indices.items()
-            }
+            # Note: unlike before, this is no longer precomputable -- how
+            # many detections of a given color show up (and therefore how
+            # many choose-and-order candidates exist) varies per frame now
+            # that extra detections (reflections) are tolerated. See
+            # _build_color_constrained_correspondences, called fresh each
+            # frame.
 
             # Single mounting extrinsics (pattern-local -> rover-local) --
             # see module docstring for how right_axis/up_axis/normal and
@@ -519,19 +567,32 @@ class PositionRoverNode(Node):
                     continue  # e.g. a stray green-dominant blob -- noise
                 groups.setdefault(color, []).append(d)
 
+            # Minimum, not exact -- see module docstring "Tolerating extra
+            # detections per color". Fewer than the model needs of some
+            # color means a partial/occluded view; skip. More is fine now
+            # (reflections) -- handled below.
             if any(
-                len(groups.get(color, [])) != count
+                len(groups.get(color, [])) < count
                 for color, count in self._required_color_counts.items()
             ):
                 self.get_logger().warn(
-                    "Detected LEDs don't match the expected pattern this "
-                    f"frame (need {self._required_color_counts}, got "
+                    "Not enough detections of some color this frame (need "
+                    f"at least {self._required_color_counts}, got "
                     f"{ {c: len(v) for c, v in groups.items()} }). "
                     "Skipping frame.",
                     throttle_duration_sec=5.0,
                 )
                 self._update_pan_tilt_control(found_this_frame=False, mean_bearing=None)
                 return
+
+            # Safety valve against combinatorial blowup -- see
+            # max_candidates_per_color's DEFAULTS comment. Keeps the
+            # largest-area detections when a color has more candidates than
+            # this.
+            for color, dets in groups.items():
+                if len(dets) > self.max_candidates_per_color:
+                    dets.sort(key=lambda d: d.area_px, reverse=True)
+                    groups[color] = dets[: self.max_candidates_per_color]
 
             all_bearings = []
             for dets in groups.values():
@@ -592,13 +653,22 @@ class PositionRoverNode(Node):
     # ------------------------------------------------------------------
     def _build_color_constrained_correspondences(self, groups: dict) -> list:
         """Builds every valid (bearing detection -> local point) ordering,
-        constrained by color: only permutes detections within the same
-        color group, then takes the Cartesian product across colors. For
-        this pattern (3 blue + 1 red) that's 3! x 1! = 6 candidates, not
-        the old unconstrained 4! = 24.
+        constrained by color: for each color, choose-and-order exactly as
+        many detections as the model has of that color out of however many
+        showed up (itertools.permutations(dets, r) does "choose r out of
+        len(dets), every order" directly -- no separate combinations step
+        needed), then takes the Cartesian product across colors. With no
+        extra detections this is the same 3! x 1! = 6 candidates as before;
+        with reflections present it grows -- see module docstring
+        "Tolerating extra detections per color".
         """
         colors = list(self._color_local_indices.keys())
-        per_color_choices = [self._color_perms[color] for color in colors]
+        per_color_choices = [
+            list(itertools.permutations(
+                range(len(groups[color])), len(self._color_local_indices[color])
+            ))
+            for color in colors
+        ]
 
         candidates = []
         for choice in itertools.product(*per_color_choices):

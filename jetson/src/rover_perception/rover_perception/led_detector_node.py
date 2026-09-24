@@ -136,18 +136,18 @@ DEFAULTS = {
     # against the old fake camera's clean synthetic background -- raise
     # substantially for real, especially lit-room, testing (see module
     # docstring's "Indoor/lit-room testing note").
-    "brightness_threshold": 240,
+    "brightness_threshold": 150,
 
     # Connected-component size filter, in pixels. Measured from the
     # original (undilated) bright-pixel mask -- unaffected by
     # merge_dilation_px below.
-    "min_blob_area_px": 4,
+    "min_blob_area_px": 2,
     "max_blob_area_px": 4000,
 
     # Fragment merging -- see module docstring "Fragment merging" section.
     # 0 disables merging (old behavior: every connected bright region in
     # the raw mask is its own blob).
-    "merge_dilation_px": 2,
+    "merge_dilation_px": 4,
 
     # Color filter: this pattern's LEDs are solid primary colors (blue/red
     # -- see position_rover_node). A blob's single brightest channel
@@ -160,7 +160,7 @@ DEFAULTS = {
     # substantially for real, especially lit-room, testing (see module
     # docstring).
     "enable_color_filter": True,
-    "min_color_dominance": 100,
+    "min_color_dominance": 80,
 
     # Pixels whose SMALLEST channel is >= this count as white (overexposed
     # LED core) and are ignored when computing a blob's color. Area and
