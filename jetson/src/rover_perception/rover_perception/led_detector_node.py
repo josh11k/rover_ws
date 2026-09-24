@@ -94,6 +94,19 @@ fragments of one LED against the pixel gap between two different LEDs).
 Default (2px) is deliberately conservative; raise it a little if fragments
 still aren't merging, but verify with real detections that distinct LEDs
 aren't merging into each other first.
+
+Overexposed white LED cores (added 2026-09)
+-----------------------------------------------------------------------------
+A bright LED often saturates to a near-white core (e.g. 255,250,252) with
+only its rim still clearly colored (e.g. 40,70,250 for blue). Averaging
+color over the whole blob drags the mean towards white and can push the
+dominance below min_color_dominance, so the real LED gets rejected while
+small, detached, purely colored rim fragments pass. Fix: the blob's color
+is computed only from pixels whose SMALLEST channel is below
+white_min_channel (i.e. not white); area and centroid still use all bright
+pixels. Blobs without any colored pixels (pure white -- lamps, glare) are
+dropped when the color filter is enabled. This complements, not replaces,
+a short fixed camera exposure.
 """
 
 import math
@@ -123,13 +136,13 @@ DEFAULTS = {
     # against the old fake camera's clean synthetic background -- raise
     # substantially for real, especially lit-room, testing (see module
     # docstring's "Indoor/lit-room testing note").
-    "brightness_threshold": 180,
+    "brightness_threshold": 240,
 
     # Connected-component size filter, in pixels. Measured from the
     # original (undilated) bright-pixel mask -- unaffected by
     # merge_dilation_px below.
     "min_blob_area_px": 4,
-    "max_blob_area_px": 2000,
+    "max_blob_area_px": 4000,
 
     # Fragment merging -- see module docstring "Fragment merging" section.
     # 0 disables merging (old behavior: every connected bright region in
@@ -147,7 +160,13 @@ DEFAULTS = {
     # substantially for real, especially lit-room, testing (see module
     # docstring).
     "enable_color_filter": True,
-    "min_color_dominance": 40,
+    "min_color_dominance": 100,
+
+    # Pixels whose SMALLEST channel is >= this count as white (overexposed
+    # LED core) and are ignored when computing a blob's color. Area and
+    # centroid still use them. See module docstring "Overexposed white LED
+    # cores".
+    "white_min_channel": 200,
 
     "sync_slop_sec": 0.05,
 }
@@ -272,26 +291,33 @@ class LedDetectorNode(Node):
                 areas = ndimage.sum(mask, labels, label_ids)
                 centroids = ndimage.center_of_mass(mask, labels, label_ids)
 
-                # Mask-weighted color means -- NOT a plain ndimage.mean over
-                # every pixel in the (possibly dilated-merged) label, which
-                # would dilute the color with the dark gap pixels used only
-                # to bridge fragments. Multiplying by mask first zeroes out
-                # every non-bright pixel's contribution before summing, then
-                # dividing by the true bright-pixel count (areas) gives the
-                # mean color over just the real LED pixels, exactly as
-                # before merging was introduced.
-                masked_r = np.where(mask, frame[:, :, 0].astype(np.float64), 0.0)
-                masked_g = np.where(mask, frame[:, :, 1].astype(np.float64), 0.0)
-                masked_b = np.where(mask, frame[:, :, 2].astype(np.float64), 0.0)
-                safe_areas = np.maximum(areas, 1.0)
-                mean_r = ndimage.sum(masked_r, labels, label_ids) / safe_areas
-                mean_g = ndimage.sum(masked_g, labels, label_ids) / safe_areas
-                mean_b = ndimage.sum(masked_b, labels, label_ids) / safe_areas
+                # Color from colored pixels only -- see module docstring
+                # "Overexposed white LED cores". Saturated near-white core
+                # pixels (smallest channel >= white_min_channel) would
+                # otherwise drag the mean towards white. Still mask-weighted
+                # (dark gap pixels from fragment merging contribute zero),
+                # but now divided by the number of COLORED bright pixels
+                # per blob instead of all bright pixels.
+                color_mask = mask & (frame.min(axis=2) < self.white_min_channel)
+                color_counts = ndimage.sum(color_mask, labels, label_ids)
+                safe_counts = np.maximum(color_counts, 1.0)
+
+                masked_r = np.where(color_mask, frame[:, :, 0].astype(np.float64), 0.0)
+                masked_g = np.where(color_mask, frame[:, :, 1].astype(np.float64), 0.0)
+                masked_b = np.where(color_mask, frame[:, :, 2].astype(np.float64), 0.0)
+                mean_r = ndimage.sum(masked_r, labels, label_ids) / safe_counts
+                mean_g = ndimage.sum(masked_g, labels, label_ids) / safe_counts
+                mean_b = ndimage.sum(masked_b, labels, label_ids) / safe_counts
 
                 for i, area in enumerate(areas):
                     area = int(area)
 
                     if area < self.min_blob_area_px or area > self.max_blob_area_px:
+                        continue
+
+                    # Pure white blob (no colored pixels at all) -> lamp,
+                    # glare or similar, not a colored LED.
+                    if self.enable_color_filter and color_counts[i] < 3:
                         continue
 
                     if self.enable_color_filter:
