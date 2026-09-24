@@ -169,8 +169,45 @@ classify+publish timer used to have. Percentage is relative to the full
 grid_width*grid_height cell count (the whole mapped area), not just tiles
 touched so far, so it reads 0% at the start of a scan and approaches 100%
 as coverage completes.
+
+Multi-wedge scanning: raw per-wedge snapshots (added 2026-09)
+-----------------------------------------------------------------------------
+For an area smaller than the configured grid, or one that needs scanning
+from several mast pan angles to fully see (walls/corners occluding a single
+viewpoint), the intended workflow is now: turn perception ON, let it buffer
+one "wedge" (one mast orientation), call save_wedge_points (below) to dump
+that wedge's *raw, unclassified* buffer to its own file, turn perception
+OFF, rotate the mast, turn back ON (which -- per "Fresh state every time
+this turns ON" below -- naturally starts the next wedge with an empty
+buffer), repeat. A separate node (not this one) later loads every saved
+wedge file, concatenates them (already valid without any extra rotation
+math, since these points are already in mast_base_link -- the pan/tilt-
+invariant frame -- at the moment they were buffered) into one combined
+cloud, republishes it once, and calls finalize_ground_segmentation as usual
+-- so the *global* ground/obstacle classification runs once, over every
+wedge's data together, rather than each wedge being classified in
+isolation (which could otherwise split the same physical tile
+inconsistently depending on which wedge happened to see it). See chat.
+
+    save_wedge_points (std_srvs/Trigger): dumps the *entire current*
+        cell_buffers content (every tile, unclassified, raw points) to
+        wedge_save_dir/wedge_<NNN>.npz, where NNN is this node's own
+        internal, auto-incrementing wedge counter (self._wedge_index) --
+        no index needs to be passed in from outside. Does NOT clear the
+        buffer or touch tile_classification/dirty_tiles -- purely a
+        snapshot dump. Requires the pipeline to be ON (needs
+        cell_buffers to exist).
+    clear_wedge_session (std_srvs/Trigger): resets self._wedge_index back
+        to 0 and deletes every wedge_*.npz file currently in
+        wedge_save_dir -- both together, so the counter and the folder's
+        contents can never drift out of sync. Call this once at the very
+        start of a new multi-wedge scan, before the first "perception ON"
+        of that session. Safe to call even if wedge_save_dir doesn't exist
+        yet (nothing to clear) or the pipeline is currently OFF.
 """
 
+import glob
+import os
 from collections import deque
 
 import numpy as np
@@ -222,7 +259,7 @@ DEFAULTS = {
     # to 2000 for the one-time detailed pre-deployment scan -- see module
     # docstring "Tuned 2026-09" section for the full reasoning and the
     # worst-case memory estimate at 60x60m.
-    "max_points_per_cell": 2000,
+    "max_points_per_cell": 5000,
 
     # Live coverage percentage -- see module docstring "Live coverage
     # percentage" section. Cheap, safe to run continuously, unrelated to
@@ -230,6 +267,13 @@ DEFAULTS = {
     "coverage_topic": "/perception/scan_coverage_pct",
     "coverage_min_points": 200,
     "coverage_publish_rate_hz": 1.0,
+
+    # Multi-wedge scanning -- see module docstring "Multi-wedge scanning"
+    # section. Directory must be writable; created automatically if it
+    # doesn't exist yet (unlike obstacle_grid_node's map_save_path, which
+    # deliberately does NOT auto-create its directory -- this one does,
+    # since wedge files are transient intermediates, not the final map).
+    "wedge_save_dir": "/home/team/rover_maps/wedges",
 }
 
 
@@ -248,6 +292,11 @@ class GroundSegmentationNode(Node):
         self.coverage_pub = None
         self.coverage_timer = None
 
+        # Multi-wedge scanning -- see module docstring. Lives at the node
+        # level (not reset on ON/OFF) so it survives across wedges within
+        # one session; only clear_wedge_session resets it.
+        self._wedge_index = 0
+
         self.grid_width = int(self.grid_size_x / self.grid_resolution)
         self.grid_height = int(self.grid_size_y / self.grid_resolution)
 
@@ -264,6 +313,15 @@ class GroundSegmentationNode(Node):
         # checks for that and reports a clear error otherwise.
         self.finalize_srv = self.create_service(
             Trigger, "finalize_ground_segmentation", self._finalize_callback,
+        )
+
+        # Unconditional, same reasoning -- see module docstring "Multi-wedge
+        # scanning" section.
+        self.save_wedge_srv = self.create_service(
+            Trigger, "save_wedge_points", self._save_wedge_callback,
+        )
+        self.clear_wedge_session_srv = self.create_service(
+            Trigger, "clear_wedge_session", self._clear_wedge_session_callback,
         )
 
     def state_callback(self, msg):
@@ -339,6 +397,10 @@ class GroundSegmentationNode(Node):
             )
 
             # Fresh state every time this turns ON -- see module docstring.
+            # Note this is exactly what makes the multi-wedge workflow work:
+            # each "perception ON" naturally starts the next wedge with an
+            # empty buffer, no separate reset call needed per wedge (only
+            # clear_wedge_session, once, at the start of the whole session).
             self.cell_buffers: dict = {}
             self.dirty_tiles: set = set()
             self.tile_classification: dict = {}
@@ -517,6 +579,103 @@ class GroundSegmentationNode(Node):
         except Exception as exc:  # noqa: BLE001 - report, don't crash
             response.success = False
             response.message = f"finalize_ground_segmentation failed: {exc}"
+            self.get_logger().error(response.message)
+
+        return response
+
+    # ------------------------------------------------------------------
+    # Multi-wedge scanning -- see module docstring "Multi-wedge scanning"
+    # section.
+    # ------------------------------------------------------------------
+    def _save_wedge_callback(self, request, response):
+        """std_srvs/srv/Trigger handler for save_wedge_points. Dumps the
+        entire current (raw, unclassified) cell_buffers content to its own
+        numbered file -- does not clear the buffer or touch
+        tile_classification/dirty_tiles, purely a snapshot dump. This
+        node's own internal counter (self._wedge_index) decides the
+        number, not the caller -- see module docstring for why."""
+
+        if not hasattr(self, "cell_buffers") or self.ground_pub is None:
+            response.success = False
+            response.message = (
+                "ground_segmentation_node is OFF (or not yet turned ON) -- "
+                "nothing to save. Call this while the pipeline is ON, "
+                "after this wedge's data has been buffered."
+            )
+            self.get_logger().warning(f"save_wedge_points: {response.message}")
+            return response
+
+        try:
+            all_points = [np.array(buf, dtype=np.float32) for buf in self.cell_buffers.values() if buf]
+
+            if not all_points:
+                response.success = False
+                response.message = (
+                    "No points buffered for this wedge yet -- nothing to "
+                    f"save. Has anything arrived on {self.input_topic}?"
+                )
+                self.get_logger().warning(f"save_wedge_points: {response.message}")
+                return response
+
+            points = np.concatenate(all_points, axis=0)
+
+            os.makedirs(self.wedge_save_dir, exist_ok=True)
+
+            self._wedge_index += 1
+            wedge_path = os.path.join(
+                self.wedge_save_dir, f"wedge_{self._wedge_index:03d}.npz"
+            )
+
+            np.savez_compressed(
+                wedge_path,
+                points=points,
+                frame_id=self._last_frame_id,
+                wedge_index=self._wedge_index,
+                grid_resolution=self.grid_resolution,
+                grid_size_x=self.grid_size_x,
+                grid_size_y=self.grid_size_y,
+            )
+
+            response.success = True
+            response.message = (
+                f"Saved wedge {self._wedge_index} ({len(points)} raw points, "
+                f"frame_id={self._last_frame_id}) to {wedge_path}."
+            )
+            self.get_logger().info(f"save_wedge_points: {response.message}")
+
+        except Exception as exc:  # noqa: BLE001 - report, don't crash
+            response.success = False
+            response.message = f"save_wedge_points failed: {exc}"
+            self.get_logger().error(response.message)
+
+        return response
+
+    def _clear_wedge_session_callback(self, request, response):
+        """std_srvs/srv/Trigger handler for clear_wedge_session. Resets the
+        wedge counter AND deletes every wedge_*.npz file in wedge_save_dir,
+        together, so they can never drift out of sync -- call once at the
+        very start of a new multi-wedge scan, before the first
+        save_wedge_points of that session."""
+
+        try:
+            removed = 0
+            if os.path.isdir(self.wedge_save_dir):
+                for path in glob.glob(os.path.join(self.wedge_save_dir, "wedge_*.npz")):
+                    os.remove(path)
+                    removed += 1
+
+            self._wedge_index = 0
+
+            response.success = True
+            response.message = (
+                f"Cleared wedge session: removed {removed} old wedge file(s) "
+                f"from {self.wedge_save_dir}, counter reset to 0."
+            )
+            self.get_logger().info(f"clear_wedge_session: {response.message}")
+
+        except Exception as exc:  # noqa: BLE001 - report, don't crash
+            response.success = False
+            response.message = f"clear_wedge_session failed: {exc}"
             self.get_logger().error(response.message)
 
         return response

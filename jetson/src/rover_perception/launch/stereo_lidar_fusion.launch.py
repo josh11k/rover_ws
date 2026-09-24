@@ -9,9 +9,8 @@ Wires together (see ARCHITECTURE.md for the full picture):
        v                                                                                           /
   stereo_pointcloud_node  -----------------------------------------------------------------------/
 
-  fake_mono_camera_node --> led_detector_node --> position_rover_node --> /rover/estimated_pose
-    (separate branch -- not fed into the point-cloud fusion above; no real
-    mono-camera driver wired into this launch file yet)
+  v4l2_camera_node (mono) --> led_detector_node --> position_rover_node --> /rover/estimated_pose
+    (separate branch -- not fed into the point-cloud fusion above)
 
 The whole perception module (this Jetson, with all its sensors) sits on a
 ~1.2m mast -- it does not move with the rover. `mast_base_link`/
@@ -48,6 +47,38 @@ targets mast_platform_link -> camera_link (physical pose only) -- the
 REP-103 rotation to camera_depth_optical_frame is published internally by
 realsense2_camera_node itself, so it doesn't need to be baked in here.
 
+Mono camera hardware (2026-09: swapped from fake_mono_camera_node to the
+real driver -- see chat)
+-----------------------------------------------------------------------------
+Real hardware: Arducam B0497 (Sony IMX678 sensor, USB3.0, UVC-compliant),
+driven by the generic ROS2 `v4l2_camera` package (no vendor-specific
+wrapper needed). Requires the package installed on the Jetson
+(`sudo apt install ros-<distro>-v4l2-camera` if `ros2 run v4l2_camera
+v4l2_camera_node` doesn't already work).
+
+v4l2_camera publishes unnamespaced topics (image_raw, camera_info) by
+default -- the node below is launched inside namespace="mono_cam", which is
+what turns those into /mono_cam/image_raw + /mono_cam/camera_info, exactly
+what led_detector_node (and position_rover_node downstream) expect, no
+remapping needed.
+
+Before relying on this on a new machine, double check:
+  - video_device: confirm the actual device path with `ls /dev/video*` or
+    `v4l2-ctl --list-devices` -- /dev/video0 below is not guaranteed,
+    especially with other video devices (e.g. the stereo cam) also
+    attached.
+  - pixel_format: the B0497's native format is YUY2 -- v4l2_camera's fourcc
+    for that is "YUYV" (set below). Confirm with `v4l2-ctl
+    --device=/dev/video0 --list-formats-ext` if detection produces nothing
+    and this turns out to be wrong.
+  - image_size: 1920x1080 is one of the sensor's 3 fixed USB3.0 modes
+    (3840x2160@15fps / 1920x1080@60fps / 1280x720@90fps). v4l2_camera
+    doesn't expose a direct fps parameter in most versions -- it just runs
+    at whatever rate the negotiated mode supports.
+  - the lens is manual-focus, fixed at the factory to 3m-infinity --
+    anything closer will be blurry, which matters e.g. for bench-testing
+    the LED pattern up close.
+
 Launch arguments -- run branches separately
 --------------------------------------------
     use_lidar  (default: true)  -- livox_ros_driver2_node, lidar_static_tf,
@@ -57,8 +88,9 @@ Launch arguments -- run branches separately
                                     stereo_pointcloud_node,
                                     stereo_frame_transform_node,
                                     stereo_preprocessing_node
-    use_mono   (default: true)  -- fake_mono_camera_node, mono_static_tf,
-                                    led_detector_node, position_rover_node
+    use_mono   (default: true)  -- v4l2_camera_node (real mono cam driver),
+                                    mono_static_tf, led_detector_node,
+                                    position_rover_node
     use_terrain_viz (default: true) -- terrain_visualization_node (RViz2
                                     elevation-grid PointCloud2)
     enable_filters (default: true) -- crop+voxel+outlier-removal in both
@@ -84,15 +116,17 @@ Examples:
     ros2 launch rover_perception stereo_lidar_fusion.launch.py use_stereo:=false
     ros2 launch rover_perception stereo_lidar_fusion.launch.py use_lidar:=false use_mono:=false
 
-Note on missing/disconnected hardware: use_lidar:=true / use_stereo:=true
-just starts the real driver nodes (livox_ros_driver2_node /
-realsense2_camera_node) -- no fake fallback exists anymore for either. If
-the hardware isn't actually plugged in, those two driver processes are on
-their own (no respawn/reconnect wired up here); downstream nodes already
-degrade gracefully to "no data on this topic" rather than crashing, but the
-driver processes themselves won't retry indefinitely -- see chat for the
-known behavior difference between the two (lidar keeps retrying
-internally, realsense2_camera_node tends to exit outright).
+Note on missing/disconnected hardware: use_lidar:=true / use_stereo:=true /
+use_mono:=true just starts the real driver nodes (livox_ros_driver2_node /
+realsense2_camera_node / v4l2_camera_node) -- no fake fallback exists for
+any of the three anymore. If the hardware isn't actually plugged in, those
+driver processes are on their own (no respawn/reconnect wired up here);
+downstream nodes already degrade gracefully to "no data on this topic"
+rather than crashing, but the driver processes themselves won't retry
+indefinitely -- see chat for the known behavior difference (lidar keeps
+retrying internally, realsense2_camera_node tends to exit outright;
+v4l2_camera_node's behavior on a missing /dev/video device hasn't been
+characterized yet here -- check its own logs if mono comes up empty).
 
 Two things are deliberately NOT gated by these arguments, always running
 regardless of which branches are on:
@@ -145,8 +179,9 @@ def generate_launch_description():
     ))
     ld.add_action(DeclareLaunchArgument(
         "use_mono", default_value="true",
-        description="Start the mono-cam/LED branch (fake_mono_camera_node, "
-                     "its static TF, led_detector_node, position_rover_node).",
+        description="Start the mono-cam/LED branch (v4l2_camera_node -- "
+                     "real hardware driver, see module docstring -- its "
+                     "static TF, led_detector_node, position_rover_node).",
     ))
     ld.add_action(DeclareLaunchArgument(
         "use_terrain_viz", default_value="true",
@@ -186,8 +221,9 @@ def generate_launch_description():
 
     # ------------------------------------------------------------------
     # Sensor sources: real drivers only -- livox_ros_driver2 for the
-    # Mid-360, realsense2_camera for the D400-series stereo camera. No fake
-    # fallback for either anymore (see module docstring for what happens if
+    # Mid-360, realsense2_camera for the D400-series stereo camera,
+    # v4l2_camera for the mono cam (Arducam B0497). No fake fallback for
+    # any of the three anymore (see module docstring for what happens if
     # the hardware isn't actually connected).
     # ------------------------------------------------------------------
     lidar = Node(
@@ -221,15 +257,34 @@ def generate_launch_description():
             "unite_imu_method": 2,
             "camera_name": "camera",
             "camera_namespace": "",
-            "diagnostics_period": 1.0,
+            "diagnostics_period": 5.0,
             }],
+        remappings=[
+            ('diagnostics', '/stereo/diagnostics'),
+            ],
         condition=IfCondition(use_stereo),
     )
 
-    fake_mono = Node(
-        package="rover_perception",
-        executable="fake_mono_camera_node",
-        name="fake_mono_camera_node",
+    # Real hardware driver -- 2026-09, replaces fake_mono_camera_node (the
+    # synthetic simulator, still present in the package but no longer
+    # launched here). See module docstring "Mono camera hardware" section
+    # for the parameters below and what to double-check on a new machine.
+    mono_camera = Node(
+        package="v4l2_camera",
+        executable="v4l2_camera_node",
+        name="mono_camera_node",
+        namespace="mono_cam",
+        output="screen",
+        parameters=[{
+            # CHECK: confirm with `ls /dev/video*` / `v4l2-ctl --list-devices`.
+            "video_device": "/dev/video0",
+            "image_size": [1920, 1080],
+            # Native sensor format YUY2 -- v4l2_camera's fourcc "YUYV".
+            "pixel_format": "YUYV",
+            # led_detector_node requires exactly this encoding.
+            "output_encoding": "rgb8",
+            "frame_id": "mono_cam_optical_frame",
+        }],
         condition=IfCondition(use_mono),
     )
 
@@ -515,7 +570,7 @@ def generate_launch_description():
     )
 
     for action in [
-        lidar, stereo, fake_mono, imu,
+        lidar, stereo, mono_camera, imu,
         mast_pose, command, set_mode, wifi, rover_pose, logger,
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,

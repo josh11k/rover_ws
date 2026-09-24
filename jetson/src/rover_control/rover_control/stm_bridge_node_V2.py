@@ -286,10 +286,11 @@ class STMBridgeNode(Node):
             msg_hkd = Housekeeping()
             msg_hkd.source = "STM32"
 
-            for i in range(1, len(parts) - 1, 2):    
+            for i in range(1, len(parts) - 1, 3):    
                  # Werte zuweisen
                 msg_hkd.component = parts[i]
-                msg_hkd.value = parts[i+1]
+                msg_hkd.type = parts[i+1]
+                msg_hkd.value = parts[i+2]
                 self.publish_housekeeping_data.publish(msg_hkd)
             
             self.publish_operational_log.publish(msg)

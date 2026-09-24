@@ -13,39 +13,87 @@ Algorithm (deliberately simple, no OpenCV/cv_bridge dependency -- reuses
 scipy, which the workspace already depends on everywhere else):
 
   1. Threshold on per-pixel brightness (max of R/G/B) -> binary mask.
-  2. `scipy.ndimage.label` to find connected components ("blobs") in that
-     mask.
-  3. Drop blobs outside [min_blob_area_px, max_blob_area_px] -- filters out
+  2. Merge nearby same-blob fragments (2026-09, see "Fragment merging"
+     below) BEFORE connected-component labeling, so a single physical LED
+     that happens to split into several disconnected bright regions (lens
+     blur gaps, internal LED structure, sensor noise near a saturated
+     source) is still counted as one detection.
+  3. `scipy.ndimage.label` to find connected components ("blobs") in the
+     (merged) mask.
+  4. Drop blobs outside [min_blob_area_px, max_blob_area_px] -- filters out
      both single-pixel sensor noise and large overexposed regions that
-     aren't small, point-like LEDs.
-  4. Drop blobs whose color isn't "pure enough" to be one of the rover's 3
-     LED panels (roof=green, left=red, right=blue -- see
-     fake_mono_camera_node). Rather than matching each blob against 3 fixed
-     target RGB triples, this finds each blob's *dominant* channel (R, G or
-     B -- whichever is highest) and checks it exceeds the other two by at
-     least min_color_dominance. A blob that passes is, by construction, one
-     of exactly 3 colors -- dominant-red, dominant-green or dominant-blue --
-     which is exactly the 3-panel-color scheme downstream nodes expect. This
-     is deliberately a *dominance* check rather than a fixed-RGB match:
-     exposure and a camera's automatic white balance shift the exact RGB
-     values a lot more than the "which channel wins" relationship,
-     especially outdoors. Toggle via enable_color_filter if this ever needs
-     debugging. Which panel a detection belongs to is *not* decided here --
-     this node just reports each blob's mean color (color_r/g/b);
-     position_rover_node is the one that groups detections by dominant
-     channel into roof/left/right and solves each panel's geometry
-     independently (see its module docstring).
-  5. For each surviving blob: pixel centroid, mean color (color_r/g/b --
+     aren't small, point-like LEDs. Area is still measured from the
+     original (unmerged) bright-pixel mask, not the dilated one used for
+     merging -- see below.
+  5. Drop blobs whose color isn't "pure enough" to be one of this pattern's
+     colors (currently blue/red -- see position_rover_node). Rather than
+     matching each blob against fixed target RGB triples, this finds each
+     blob's *dominant* channel (R, G or B -- whichever is highest) and
+     checks it exceeds the second-highest by at least min_color_dominance.
+     This is deliberately a *dominance* check rather than a fixed-RGB
+     match: exposure and a camera's automatic white balance shift the
+     exact RGB values a lot more than the "which channel wins"
+     relationship, especially outdoors/indoors under different lighting.
+     Toggle via enable_color_filter if this ever needs debugging. Which LED
+     a detection corresponds to is *not* decided here -- this node just
+     reports each blob's mean color (color_r/g/b); position_rover_node is
+     the one that groups detections by dominant channel and solves the
+     pattern's geometry (see its module docstring).
+  6. For each surviving blob: pixel centroid, mean color (color_r/g/b --
      used both to double-check the dominance filter and by
-     position_rover_node to classify which panel a detection belongs to),
+     position_rover_node to classify which LED a detection belongs to),
      and a bearing vector from the camera intrinsics (pinhole
      back-projection, same math family as stereo_pointcloud_node -- just
      normalized to unit length since there's no depth here).
 
-Runs against the fake camera today unchanged: fake_mono_camera_node draws
-green/red/blue blobs (its 3 panel colors -- see its panel_*_color_*
-parameters) on a dark noisy background, so this node's thresholding +
-color-filter logic is already exercised end-to-end without real hardware.
+Indoor/lit-room testing note (2026-09): a brightly lit test environment
+produces far more false-positive blobs than dark/field conditions --
+warm-white room lighting is often already red-dominant enough to clear
+min_color_dominance, and reflections off bright/glossy surfaces clear
+brightness_threshold easily. Since position_rover_node requires an *exact*
+color-count match (see its module docstring), any extra spurious detection
+of either color causes every frame to be dropped. If testing somewhere
+brightly lit, raising brightness_threshold and min_color_dominance well
+above the defaults (which were tuned against the old fake camera's clean
+synthetic background, not real ambient light) is expected to be necessary
+-- tune empirically by comparing the color_r/g/b of known-real LED
+detections against the color_r/g/b of the false positives you're seeing.
+
+Fragment merging (added 2026-09)
+-----------------------------------------------------------------------------
+Real LEDs sometimes show up as *multiple* separate blobs instead of one --
+e.g. a bright core plus a couple of satellite fragments just outside it
+(lens blur/blooming, a few pixels dipping below brightness_threshold in the
+middle of the LED's footprint, sensor noise right at the edge of a
+saturated region). Left alone, this breaks position_rover_node exactly like
+extra ambient-light false positives do: it needs an exact color count (see
+its module docstring), and one physical LED reported as 2-3 detections
+throws that count off just as badly as genuine noise would.
+
+Fix: dilate the brightness mask by merge_dilation_px pixels *before*
+connected-component labeling (scipy.ndimage.binary_dilation), so nearby
+fragments become one connected region and get one label. Area, centroid,
+and color are still computed from the ORIGINAL (undilated) bright-pixel
+mask, restricted to each now-merged label -- the dilation only changes
+which fragments count as "the same blob", it does not inflate the
+measured size/color of that blob with the dark gap pixels used to bridge
+the fragments (those contribute zero weight, since they're not part of the
+original mask).
+
+Tuning trade-off, worth understanding before changing merge_dilation_px:
+too small and it won't bridge a real LED's own internal fragmentation
+(back to the original problem); too large and it starts merging
+*genuinely separate* nearby LEDs into a single blob instead (a different,
+arguably worse problem -- position_rover_node would then see too few
+detections of that color instead of too many, still breaking the exact-
+count check, but now also silently discarding real position information).
+Pick merge_dilation_px well below half the smallest expected pixel
+separation between two distinct LEDs at your typical operating distance --
+check this against your own footage (compare the pixel gap between
+fragments of one LED against the pixel gap between two different LEDs).
+Default (2px) is deliberately conservative; raise it a little if fragments
+still aren't merging, but verify with real detections that distinct LEDs
+aren't merging into each other first.
 """
 
 import math
@@ -71,20 +119,33 @@ DEFAULTS = {
     "detections_topic": "/mono_cam/led_detections",
     "state_topic": "/operational_mode/settings",
 
-    # A pixel counts as "LED" if its brightest channel is >= this.
+    # A pixel counts as "LED" if its brightest channel is >= this. Tuned
+    # against the old fake camera's clean synthetic background -- raise
+    # substantially for real, especially lit-room, testing (see module
+    # docstring's "Indoor/lit-room testing note").
     "brightness_threshold": 180,
 
-    # Connected-component size filter, in pixels.
+    # Connected-component size filter, in pixels. Measured from the
+    # original (undilated) bright-pixel mask -- unaffected by
+    # merge_dilation_px below.
     "min_blob_area_px": 4,
     "max_blob_area_px": 2000,
 
-    # Color filter: the rover's 3 LED panels are each a solid primary color
-    # (green/red/blue -- see fake_mono_camera_node). A blob's single
-    # brightest channel (whichever of R/G/B is highest) must exceed the
-    # other two by at least this much (0-255 scale) to count as a real
-    # detection -- this accepts red-, green- or blue-dominant blobs alike
-    # and rejects washed-out/white/gray ones. Set enable_color_filter to
-    # False to fall back to brightness+size only (e.g. while debugging).
+    # Fragment merging -- see module docstring "Fragment merging" section.
+    # 0 disables merging (old behavior: every connected bright region in
+    # the raw mask is its own blob).
+    "merge_dilation_px": 2,
+
+    # Color filter: this pattern's LEDs are solid primary colors (blue/red
+    # -- see position_rover_node). A blob's single brightest channel
+    # (whichever of R/G/B is highest) must exceed the second-highest by at
+    # least this much (0-255 scale) to count as a real detection -- this
+    # accepts red- or blue-dominant blobs alike and rejects washed-out/
+    # white/gray ones (including most ambient lighting/reflections). Set
+    # enable_color_filter to False to fall back to brightness+size only
+    # (e.g. while debugging). Tuned against the old fake camera -- raise
+    # substantially for real, especially lit-room, testing (see module
+    # docstring).
     "enable_color_filter": True,
     "min_color_dominance": 40,
 
@@ -112,7 +173,7 @@ class LedDetectorNode(Node):
             self.state_callback,
             10,
         )
-        
+
     def state_callback(self, msg):
         self.state = msg.mono_cam
 
@@ -127,10 +188,10 @@ class LedDetectorNode(Node):
             self.info_sub = None
             self.sync = None
             self.detections_pub = None
-        
+
         elif self.state == "ON":
             self.get_logger().info("led_detector_node: ON")
-           
+
             self.image_sub = message_filters.Subscriber(
                 self, Image, self.image_topic, qos_profile=qos_profile_sensor_data
             )
@@ -157,6 +218,7 @@ class LedDetectorNode(Node):
                 f"{self.camera_info_topic} -> {self.detections_topic} "
                 f"(brightness>={self.brightness_threshold}, "
                 f"area in [{self.min_blob_area_px}, {self.max_blob_area_px}] px, "
+                f"merge_dilation_px={self.merge_dilation_px}, "
                 f"color_filter={self.enable_color_filter} "
                 f"(color_dominance>={self.min_color_dominance}))"
             )
@@ -187,7 +249,20 @@ class LedDetectorNode(Node):
             out_msg.header = image_msg.header
 
             mask = frame.max(axis=2) >= self.brightness_threshold
-            labels, num_labels = ndimage.label(mask)
+
+            # Fragment merging -- see module docstring. Labeling runs on the
+            # (optionally dilated) mask, but area/centroid/color below are
+            # always computed from the ORIGINAL mask, so merging only
+            # changes which fragments count as one blob, never what that
+            # blob's measured size/position/color is.
+            if self.merge_dilation_px > 0:
+                label_mask = ndimage.binary_dilation(
+                    mask, iterations=self.merge_dilation_px
+                )
+            else:
+                label_mask = mask
+
+            labels, num_labels = ndimage.label(label_mask)
 
             if num_labels > 0:
                 fx, fy = info_msg.k[0], info_msg.k[4]
@@ -197,9 +272,21 @@ class LedDetectorNode(Node):
                 areas = ndimage.sum(mask, labels, label_ids)
                 centroids = ndimage.center_of_mass(mask, labels, label_ids)
 
-                mean_r = ndimage.mean(frame[:, :, 0], labels, label_ids)
-                mean_g = ndimage.mean(frame[:, :, 1], labels, label_ids)
-                mean_b = ndimage.mean(frame[:, :, 2], labels, label_ids)
+                # Mask-weighted color means -- NOT a plain ndimage.mean over
+                # every pixel in the (possibly dilated-merged) label, which
+                # would dilute the color with the dark gap pixels used only
+                # to bridge fragments. Multiplying by mask first zeroes out
+                # every non-bright pixel's contribution before summing, then
+                # dividing by the true bright-pixel count (areas) gives the
+                # mean color over just the real LED pixels, exactly as
+                # before merging was introduced.
+                masked_r = np.where(mask, frame[:, :, 0].astype(np.float64), 0.0)
+                masked_g = np.where(mask, frame[:, :, 1].astype(np.float64), 0.0)
+                masked_b = np.where(mask, frame[:, :, 2].astype(np.float64), 0.0)
+                safe_areas = np.maximum(areas, 1.0)
+                mean_r = ndimage.sum(masked_r, labels, label_ids) / safe_areas
+                mean_g = ndimage.sum(masked_g, labels, label_ids) / safe_areas
+                mean_b = ndimage.sum(masked_b, labels, label_ids) / safe_areas
 
                 for i, area in enumerate(areas):
                     area = int(area)
@@ -210,8 +297,8 @@ class LedDetectorNode(Node):
                     if self.enable_color_filter:
                         # Dominant channel minus the *second*-highest
                         # channel (not the sum of the other two) -- e.g.
-                        # pure green (60,255,80) must still pass even
-                        # though R+B=140 isn't small compared to G=255.
+                        # pure blue (60,60,255) must still pass even though
+                        # R+G=120 isn't small compared to B=255.
                         channels = sorted([mean_r[i], mean_g[i], mean_b[i]], reverse=True)
                         dominance = channels[0] - channels[1]
                         if dominance < self.min_color_dominance:

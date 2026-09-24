@@ -47,17 +47,49 @@ class OperationalModes(Node):
             msg.lidar = "OFF"   
             msg.make_global_pointcloud = "OFF"
         
-        elif mode == "PERCEPTION":
+        elif mode == "MAPPING":
             msg.stereo_cam = "ON"
-            msg.mono_cam = "ON"
+            msg.mono_cam = "OFF"
             msg.lidar = "ON"
-            msg.make_global_pointcloud = "ON"   
+            msg.make_global_pointcloud = "ON"
+
+        elif mode == "MAPPING_BREAK":
+            msg.stereo_cam = "OFF"
+            msg.mono_cam = "OFF"        
+            msg.lidar = "OFF"
+            msg.make_global_pointcloud = "OFF"
         
         elif mode == "SAFE":
             msg.stereo_cam = "OFF"
             msg.mono_cam = "OFF"        
             msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
+
+        elif mode == "ASSEMBLY_MAP":
+            msg.stereo_cam = "OFF"
+            msg.mono_cam = "OFF"        
+            msg.lidar = "OFF"
+            msg.make_global_pointcloud = "OFF"
+
+        elif mode == "TRACKING":
+            msg.stereo_cam = "OFF"
+            msg.mono_cam = "ON"        
+            msg.lidar = "OFF"
+            msg.make_global_pointcloud = "OFF"
+
+        elif mode == "HOT_SWAP":
+            msg.stereo_cam = "OFF"
+            msg.mono_cam = "OFF"        
+            msg.lidar = "OFF"
+            msg.make_global_pointcloud = "OFF"
+
+        elif mode == "MAST_DEPLOYMENT":
+            msg.stereo_cam = "OFF"
+            msg.mono_cam = "OFF"        
+            msg.lidar = "OFF"
+            msg.make_global_pointcloud = "OFF"
+
+        
 
         self.get_logger().info(f"Stereo camera set to: {msg.stereo_cam}")
         self.get_logger().info(f"Mono camera set to: {msg.mono_cam}")

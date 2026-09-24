@@ -2,69 +2,120 @@
 led_detector_node's LED-blob detections -- the diagram's "position_rover_node",
 the final consumer of the mono-cam/LED branch.
 
-Physical setup (see fake_mono_camera_node.py's docstring): a fixed
-mast-mounted camera observes a separate rover carrying 3 rigid LED panels
-(roof/left/right, one solid color each -- green/red/blue), each shaped as
-an isosceles triangle (2 legs + a base) plus a 4th LED partway along one
-leg. Every frame, only the panel(s) currently facing the camera are lit.
+Physical setup (single LED pattern, 2026-09 redesign)
+-----------------------------------------------------------------------------
+For practical reasons the rover now carries a single, fixed LED pattern
+(previously: 3 separate panels, roof/left/right -- that design is gone,
+replaced entirely by this one). 4 LEDs, flat (all on one plane, z=0 in the
+pattern's own local frame), coordinates as measured (origin = LED1, x = to
+the right as drawn/laid out, y = up):
 
-This is a PnP problem (Perspective-n-Point) solved per panel: given known
-3D points in that panel's own local frame and their observed bearing rays
-(unit vectors) in the camera's optical frame, solve for the rigid transform
-(rotation + translation) from panel-local to camera-optical. led_detector_node
-gives us bearings and a mean color per blob; it does NOT tell us *which*
-detected blob is which specific LED on the panel -- that correspondence
-problem, plus grouping detections into panels and turning a solved panel
-pose into a *rover* pose, is what this node does.
+    LED1: x=0.0    mm, y=0.0   mm, blue   (pattern-local origin)
+    LED2: x=32.6   mm, y=0.0   mm, blue
+    LED3: x=50.3   mm, y=24.9  mm, red
+    LED4: x=66.5   mm, y=0.0   mm, blue
+
+This shape has no symmetry (LED1-LED2 spacing, 32.6mm, differs from
+LED2-LED4 spacing, 33.9mm; LED3 sits off-center between LED2/LED4), so --
+same as the old design -- a correct correspondence between detections and
+model points has an unambiguously better fit than any wrong one.
+
+Color-constrained correspondence search (replaces the old 24-permutation
+exhaustive search)
+-----------------------------------------------------------------------------
+With 3 blue + 1 red LED, led_detector_node's per-blob dominant-color report
+(color_r/g/b) already tells us almost the whole correspondence for free:
+the single red detection can only be LED3 (the pattern's one red point) --
+no search needed there. Only the 3 blue detections still need to be matched
+against the 3 blue model points (LED1, LED2, LED4), which means only 3! = 6
+candidate correspondences instead of the old 4! = 24 -- a real speedup
+(this runs x4 yaw seeds per candidate in the pose solve below, so 24 solves
+total instead of 96), and meaningfully less ambiguity risk, since color
+already rules out 3/4 of the wrong pairings before any geometry is even
+considered.
+
+This is written generically (group detections by color, require the exact
+count of each color the model has, permute only within each color group,
+take the Cartesian product across colors) rather than hardcoded to
+"3 blue + 1 red", so a future pattern with a different color layout doesn't
+need this logic rewritten, just the LED_* DEFAULTS below changed.
+
+Single mounting extrinsics (replaces the old per-panel roof/left/right
+dict)
+-----------------------------------------------------------------------------
+Only one pattern now, so only one fixed mounting transform (rover-local
+rotation + offset) is needed, not three. Values below come directly from
+the chat discussion that pinned these down:
+
+  - The pattern faces forward (pattern normal, i.e. the direction it's lit
+    up toward, points in the rover's own direction of travel) -- confirmed
+    via "wenn der Rover mir entgegen faehrt sehe ich genau die Draufsicht"
+    (facing an oncoming rover, the observer sees exactly the schematic
+    top-down layout above).
+  - mount_offset (LED1, the pattern's local origin, relative to rover
+    center): 10mm forward, 35mm left, 24mm up -- given directly in those
+    terms by the user, so no forward/left/up ambiguity here.
+  - Mirror effect, resolved explicitly rather than assumed: an object
+    coming toward you has its own right appear on YOUR left (face someone
+    walking toward you -- their right hand is on your left). This matters
+    because the schematic above was drawn/measured as *seen*, and its
+    "increasing x" direction (LED1 -> LED2 -> LED4) was confirmed
+    physically -- sitting ON the rover facing forward, LED2 is on the
+    RIGHT and LED4 is on the (far) LEFT. So the pattern's local +x axis
+    (as drawn) maps to the rover's own LEFT direction, not right -- this
+    is exactly the mirror effect, confirmed against physical placement
+    instead of assumed from the camera-facing description alone.
+
+Rover-local frame used here (internal to this file only -- see below):
+x = forward, y = left, z = up (REP103-style). This only has to be
+self-consistent between mount_offset and R_mount (both defined in these
+same local axes) for the math to come out right; nothing external reads
+this intermediate frame directly -- the published pose is always in
+world_frame, via the TF lookup below.
+
+Given all of that, in this file's (x=forward, y=left, z=up) rover-local
+axes:
+    normal    (pattern's local z, points toward the camera) = (1, 0, 0)  -- forward
+    up_axis   (pattern's local y, toward LED3)               = (0, 0, 1)  -- up
+    right_axis(pattern's local x, LED1->LED2->LED4 direction)= (0, 1, 0)  -- left (mirror effect)
+    mount_offset = (0.010, 0.035, 0.024)  -- (forward, left, up), meters
+
+This is a PnP problem (Perspective-n-Point): given known 3D points in the
+pattern's own local frame and their observed bearing rays (unit vectors) in
+the camera's optical frame, solve for the rigid transform (rotation +
+translation) from pattern-local to camera-optical. led_detector_node gives
+us bearings and a mean color per blob; it does NOT tell us *which* detected
+blob is which specific LED -- that correspondence problem, plus turning the
+solved pattern pose into a *rover* pose, is what this node does.
 
 No OpenCV, consistent with led_detector_node's own from-scratch approach:
 
-1. Classify each detection into a panel (roof/green, left/red, right/blue)
-   by its dominant color channel (color_r/g/b, from led_detector_node).
-   Detections that don't form a clean group of exactly 4 for some panel are
-   ignored -- a partial view of a panel (occlusion, a missed blob) isn't
-   enough to solve that panel's pose.
+1. Classify each detection by its dominant color channel (color_r/g/b).
+   Only "red" and "blue" are meaningful now (a stray "green"-dominant
+   detection would be noise -- there's no green LED in this pattern -- and
+   is dropped).
 
-2. For each panel with exactly 4 detections: because the panel's 4-LED
-   shape (triangle + 1 leg point) has NO rotational or mirror symmetry --
-   unlike the old symmetric square+center pattern this replaced -- every
-   one of the 24 possible pairings (4! permutations) between the 4 detected
-   bearings and the panel's 4 known local points is tried, and whichever
-   one produces the best-fitting pose is kept. This is exhaustive and
-   exact: exactly one of the 24 pairings is the true correspondence, and
-   because the pattern is asymmetric, that pairing's fit is unambiguously
-   better than all 23 wrong ones (this is the whole point of choosing an
-   asymmetric shape -- see the chat discussion that led to this design).
-   This also means, unlike the old pattern, there is no leftover yaw
-   ambiguity: a correct fit pins down the panel's (and therefore the
-   rover's) full orientation, not just its position and tilt.
+2. Require exactly 3 blue + 1 red detections this frame (derived from the
+   model's own color list, not hardcoded -- see above). Fewer/more of
+   either means a partial or ambiguous view; the frame is skipped rather
+   than guessing.
 
-3. For a given candidate correspondence, the actual 6-DOF pose (rotation +
-   translation, camera <- panel) is found via nonlinear least squares
-   (scipy.optimize.least_squares) minimizing the difference between
-   predicted and observed unit bearings. A few different initial yaw
-   guesses are tried per candidate purely to help the optimizer avoid bad
-   local minima for large rotations -- cheap, since each solve only has 4
-   points.
+3. Build all valid (color-constrained) correspondences -- 6 for this
+   pattern -- and for each, solve the 6-DOF pose (rotation + translation,
+   camera <- pattern) via nonlinear least squares (scipy.optimize.least_squares)
+   minimizing the difference between predicted and observed unit bearings.
+   A few different initial yaw guesses are tried per candidate purely to
+   help the optimizer avoid bad local minima for large rotations -- cheap,
+   since each solve only has 4 points.
 
-4. Whichever (panel x correspondence x yaw-seed) attempt converges to the
-   lowest residual, *per panel*, is kept as that panel's candidate pose. If
-   more than one panel produced a valid detection set this frame (e.g. the
-   rover is seen at an angle where two panels are both edge-on visible),
-   the panel with the lowest residual is used -- more views isn't better
-   here, a clean single-panel fit is more trustworthy than an ambiguous
-   one. If even the best panel's residual is too large
+4. Whichever (correspondence x yaw-seed) attempt converges to the lowest
+   residual is kept. If even the best residual is too large
    (max_fit_residual_deg), the frame is dropped rather than publishing a
    bad pose.
 
-5. The winning panel's solved pose (camera <- panel) is composed with that
-   panel's known, fixed mounting extrinsics (position + orientation
-   relative to the rover's own center -- see the DEFAULTS below) to get
-   the pose of the *rover center* in the camera frame, camera <- rover.
-   This is the step that's new compared to the single-tag version: a
-   solved LED pattern pose is no longer directly the rover's pose, it's
-   one panel's pose, and has to be translated back to "where is the rover,
-   given that this is where its roof/left/right panel is".
+5. The winning pose (camera <- pattern) is composed with the pattern's
+   fixed mounting extrinsics (above) to get the pose of the *rover center*
+   in the camera frame, camera <- rover.
 
 6. That camera <- rover pose is transformed into the world frame using the
    existing TF tree (world -> mast_base_link -> mast_platform_link ->
@@ -73,24 +124,24 @@ No OpenCV, consistent with led_detector_node's own from-scratch approach:
    broadcast as a TF (world -> rover_frame) so it shows up in RViz2 like
    everything else in this project.
 
-Placeholder values throughout (panel shape/size, panel mounting positions
-and orientations relative to rover center) -- MUST be kept in sync with
-fake_mono_camera_node's matching DEFAULTS and its hardcoded
-right_axis/up_axis/normal triples (see that node's docstring for why),
-since there's no shared source of truth for these yet. Replace both with
-real measurements once the rover's physical LED mounts are finalized.
+Not yet updated to match: fake_mono_camera_node.py still simulates the OLD
+3-panel roof/left/right pattern -- if you rely on that node for testing
+without real hardware, it needs a matching rewrite to render this single
+pattern instead, or simulated detections won't match what this node now
+expects. Not done here -- flagged for a follow-up pass.
 
-Active pan/tilt search + centering (added 2026-09)
+Active pan/tilt search + centering (added 2026-09, unchanged by the
+single-pattern redesign)
 -----------------------------------------------------------------------------
-Since the mono camera has a limited field of view, this node now also
-actively points the mast's pan/tilt motors to find and keep the LED pattern
+Since the mono camera has a limited field of view, this node also actively
+points the mast's pan/tilt motors to find and keep the LED pattern
 centered, rather than passively hoping it stays in frame. This is
 deliberately here (not in led_detector_node) because led_detector_node only
 reports raw color blobs per frame -- it has no idea whether a blob is
-actually part of a validated, geometrically-consistent panel or just noise
-(a reflection, another light source). This node already does that
-validation (the per-panel fit above), so it's the right place to decide
-"do we actually see the pattern or not".
+actually part of a validated, geometrically-consistent pattern or just
+noise (a reflection, another light source). This node already does that
+validation (the fit above), so it's the right place to decide "do we
+actually see the pattern or not".
 
 State machine, per detections_callback invocation:
 
@@ -99,20 +150,20 @@ State machine, per detections_callback invocation:
   fixed at tilt_home_raw. At each step: wait (via /motor_position/current
   feedback, with a frame-count timeout fallback) until the pan motor
   actually arrives, then watch for up to search_dwell_frames camera frames.
-  If search_confirm_frames *consecutive* frames report a valid panel fit,
-  declare it found and switch to TRACKING. Otherwise move to the next step.
-  If the whole sweep completes with nothing found, log an error and park
-  (still passively listening -- a lucky later detection still catches).
+  If search_confirm_frames *consecutive* frames report a valid fit, declare
+  it found and switch to TRACKING. Otherwise move to the next step. If the
+  whole sweep completes with nothing found, log an error and park (still
+  passively listening -- a lucky later detection still catches).
 
 - TRACKING (self._tracking == True): every frame with a valid fit, the
-  panel's mean bearing vector gives a pan/tilt deviation from "dead ahead"
-  (atan2 of the bearing's x/y against its z, i.e. directly against the
-  camera's own optical axis -- no separate CameraInfo needed, the bearing
-  already encodes it). If a deviation exceeds pan_deadband_deg /
-  tilt_deadband_deg (each axis independent, see chat), a correction is
-  requested for that axis via /motor_position/new. If lost_confirm_frames
-  *consecutive* frames report no valid fit, the pattern is considered lost
-  and a new search starts.
+  pattern's mean bearing vector gives a pan/tilt deviation from "dead
+  ahead" (atan2 of the bearing's x/y against its z, i.e. directly against
+  the camera's own optical axis -- no separate CameraInfo needed, the
+  bearing already encodes it). If a deviation exceeds pan_deadband_deg /
+  tilt_deadband_deg (each axis independent), a correction is requested for
+  that axis via /motor_position/new. If lost_confirm_frames *consecutive*
+  frames report no valid fit, the pattern is considered lost and a new
+  search starts.
 
 Dead-zone handling: the pan motor (Dynamixel AX-12A) can only reach 0..300
 deg (raw 0..1023) in Joint Mode -- 300-360 deg is mechanically invalid, a
@@ -144,11 +195,12 @@ to -1 for either axis if the first live test moves the wrong way.
 Not yet wired to any mode arbitration: this runs whenever mono_cam is ON,
 with no awareness of e.g. an in-progress terrain scan also wanting to move
 the mast platform. That's intentionally deferred until command_node grows
-real mode arbitration (see chat) -- until then, don't run LED tracking and
-a terrain scan at the same time.
+real mode arbitration -- until then, don't run LED tracking and a terrain
+scan at the same time.
 """
 
 import itertools
+from collections import Counter
 
 import numpy as np
 
@@ -175,31 +227,34 @@ DEFAULTS = {
     # for RViz2 visualization -- not consumed by any other node (yet).
     "rover_frame": "rover_estimated_link",
 
-    # Shared LED-panel shape (all 3 panels use the same asymmetric
-    # geometry): isosceles triangle (2 legs of panel_leg_m, base of
-    # panel_base_m) + a 4th LED at panel_extra_led_fraction along ONE leg
-    # (0 = at the base corner, 1 = at the apex). MUST match
-    # fake_mono_camera_node's DEFAULTS exactly.
-    "panel_base_m": 0.20,
-    "panel_leg_m": 0.25,
-    "panel_extra_led_fraction": 0.5,
+    # ------------------------------------------------------------------
+    # The single LED pattern's geometry, in its own local frame (x=right
+    # as drawn, y=up as drawn, z=0 -- flat). Measured 2026-09 -- see module
+    # docstring for the physical layout and how it was confirmed.
+    # ------------------------------------------------------------------
+    "led1_x_m": 0.0000, "led1_y_m": 0.0000, "led1_color": "blue",
+    "led2_x_m": 0.0326, "led2_y_m": 0.0000, "led2_color": "blue",
+    "led3_x_m": 0.0503, "led3_y_m": 0.0249, "led3_color": "red",
+    "led4_x_m": 0.0665, "led4_y_m": 0.0000, "led4_color": "blue",
 
-    # Placeholder panel mounting relative to the rover's own center (before
-    # the rover's yaw is applied). MUST match fake_mono_camera_node's
-    # DEFAULTS exactly -- and its hardcoded right_axis/up_axis/normal
-    # triples in __init__ below must match that node's too.
-    "roof_height_offset_m": 0.20,
-    "side_offset_m": 0.15,
-    "side_height_offset_m": 0.05,
+    # ------------------------------------------------------------------
+    # Pattern mounting, relative to rover center, in THIS FILE's rover-
+    # local axes (x=forward, y=left, z=up -- see module docstring). Pattern
+    # faces forward; mount_offset is LED1's (the pattern's local origin)
+    # position relative to rover center.
+    # ------------------------------------------------------------------
+    "mount_forward_m": 0.010,
+    "mount_left_m": 0.035,
+    "mount_up_m": 0.024,
 
-    # A panel needs exactly this many same-colored detections to attempt a
-    # solve (all 4 of its LEDs, no partial fits from a partially occluded
-    # panel).
+    # Exact color counts are derived from led1..4_color above, but the
+    # pattern needs to see ALL of its LEDs to attempt a solve -- no partial
+    # fits from a partially occluded view.
     "min_detections": 4,
 
-    # If the best panel's RMS bearing residual (converted to an
-    # approximate angle) exceeds this, the frame is dropped as unreliable
-    # rather than publishing a bad pose.
+    # If the best fit's RMS bearing residual (converted to an approximate
+    # angle) exceeds this, the frame is dropped as unreliable rather than
+    # publishing a bad pose.
     "max_fit_residual_deg": 3.0,
 
     "tf_timeout_sec": 0.3,
@@ -221,11 +276,11 @@ DEFAULTS = {
     "pan_raw_center": 512,
     "pan_deg_per_raw": 0.29,
 
-    # Tilt motor: a DIFFERENT model than the pan motor (see chat) -- numbers
-    # from its own datasheet. Using its "Recommended Range" (21..1002)
-    # rather than the absolute full range (0..1023) as the usable bound
-    # here, since running right at the mechanical hard stops during normal
-    # operation isn't advisable. Adjust if you'd rather use the full range.
+    # Tilt motor: a DIFFERENT model than the pan motor -- numbers from its
+    # own datasheet. Using its "Recommended Range" (21..1002) rather than
+    # the absolute full range (0..1023) as the usable bound here, since
+    # running right at the mechanical hard stops during normal operation
+    # isn't advisable. Adjust if you'd rather use the full range.
     "tilt_raw_min": 21,
     "tilt_raw_max": 1002,
     "tilt_raw_center": 512,
@@ -249,7 +304,7 @@ DEFAULTS = {
     # the whole search forever.
     "search_arrival_timeout_frames": 60,
 
-    # Tracking / deadband -- independent per axis (see chat).
+    # Tracking / deadband -- independent per axis.
     "pan_deadband_deg": 5.0,
     "tilt_deadband_deg": 5.0,
     # Consecutive frames with no valid fit before the pattern counts as
@@ -269,30 +324,31 @@ DEFAULTS = {
 _SEED_YAW_DEG = (0.0, 90.0, 180.0, 270.0)
 
 
-def _build_panel_local_points(base_m: float, leg_m: float, extra_fraction: float) -> np.ndarray:
-    """The shared 4-LED panel shape, as 3D points in the panel's own local
-    frame (x=along right_axis, y=along up_axis, z=0 -- the panel is flat).
-    Mirrors fake_mono_camera_node's _build_panel_local_points (2D) -- kept
-    as a separate copy since this workspace has no shared-constants module
-    yet; the two MUST be kept in sync (base_m/leg_m/extra_fraction here come
-    from this node's own DEFAULTS, meant to match the other node's).
+def _build_led_local_points(defaults: dict) -> tuple:
+    """The single LED pattern's shape, as 3D points in its own local frame
+    (x=right as drawn, y=up as drawn, z=0 -- flat), plus a parallel list of
+    each point's color. Order matches LED1..LED4 as measured -- see module
+    docstring.
     """
-    half_base = base_m / 2.0
-    apex_height = float(np.sqrt(max(leg_m ** 2 - half_base ** 2, 1e-9)))
-
-    base_left = np.array([-half_base, 0.0, 0.0])
-    base_right = np.array([half_base, 0.0, 0.0])
-    apex = np.array([0.0, apex_height, 0.0])
-    extra = base_left + extra_fraction * (apex - base_left)
-
-    return np.array([base_left, base_right, apex, extra])  # (4, 3)
+    points = np.array([
+        [defaults["led1_x_m"], defaults["led1_y_m"], 0.0],
+        [defaults["led2_x_m"], defaults["led2_y_m"], 0.0],
+        [defaults["led3_x_m"], defaults["led3_y_m"], 0.0],
+        [defaults["led4_x_m"], defaults["led4_y_m"], 0.0],
+    ], dtype=np.float64)
+    colors = [
+        defaults["led1_color"], defaults["led2_color"],
+        defaults["led3_color"], defaults["led4_color"],
+    ]
+    return points, colors
 
 
 def _mount_rotation(right_axis: np.ndarray, up_axis: np.ndarray, normal: np.ndarray) -> np.ndarray:
-    """Panel-local -> rover-local rotation matrix, built from the panel's
-    own basis vectors (as columns). right_axis/up_axis/normal must form a
-    proper (determinant +1) orthonormal basis, i.e. normal = right x up --
-    see fake_mono_camera_node's docstring for why this matters.
+    """Pattern-local -> rover-local rotation matrix, built from the
+    pattern's own basis vectors (as columns). right_axis/up_axis/normal
+    must form a proper (determinant +1) orthonormal basis, i.e.
+    normal = right x up -- see module docstring for how these were derived
+    for this pattern's actual mounting.
     """
     return np.column_stack([right_axis, up_axis, normal])
 
@@ -320,8 +376,6 @@ class PositionRoverNode(Node):
             self.state_callback,
             10,
         )
-
-
 
     def state_callback(self, msg):
         if self.state == msg.mono_cam:
@@ -355,39 +409,40 @@ class PositionRoverNode(Node):
         elif self.state == "ON":
             self.get_logger().info(f"position_rover_node: ON")
 
-            self._local_points = _build_panel_local_points(
-            self.panel_base_m, self.panel_leg_m, self.panel_extra_led_fraction
-            )
+            current_params = {name: getattr(self, name) for name in DEFAULTS}
+            self._local_points, self._local_colors = _build_led_local_points(current_params)
 
-            # Per-panel mounting extrinsics relative to the rover center --
-            # MUST match fake_mono_camera_node's panel definitions (mount
-            # offsets AND right_axis/up_axis/normal triples) exactly.
-            self._panel_extrinsics = {
-                "roof": {
-                    "mount_offset": np.array([0.0, self.roof_height_offset_m, 0.0]),
-                    "R_mount": _mount_rotation(
-                        np.array([1.0, 0.0, 0.0]),
-                        np.array([0.0, 0.0, -1.0]),
-                        np.array([0.0, 1.0, 0.0]),
-                    ),
-                },
-                "left": {
-                    "mount_offset": np.array([-self.side_offset_m, self.side_height_offset_m, 0.0]),
-                    "R_mount": _mount_rotation(
-                        np.array([0.0, 0.0, 1.0]),
-                        np.array([0.0, 1.0, 0.0]),
-                        np.array([-1.0, 0.0, 0.0]),
-                    ),
-                },
-                "right": {
-                    "mount_offset": np.array([self.side_offset_m, self.side_height_offset_m, 0.0]),
-                    "R_mount": _mount_rotation(
-                        np.array([0.0, 0.0, -1.0]),
-                        np.array([0.0, 1.0, 0.0]),
-                        np.array([1.0, 0.0, 0.0]),
-                    ),
-                },
+            # Which local point indices belong to each color, and how many
+            # of each color the pattern needs to see -- derived from the
+            # measured geometry, not hardcoded, so a future pattern with a
+            # different color layout doesn't need this logic touched. See
+            # module docstring "Color-constrained correspondence search".
+            self._color_local_indices: dict = {}
+            for idx, color in enumerate(self._local_colors):
+                self._color_local_indices.setdefault(color, []).append(idx)
+            self._required_color_counts = dict(Counter(self._local_colors))
+
+            # Precomputed once: every within-color permutation of detection
+            # order -> local-point order, for each color that has more than
+            # one point (a single-point color has only the trivial
+            # permutation). Combined per-frame via itertools.product to
+            # build the full set of candidate correspondences.
+            self._color_perms = {
+                color: list(itertools.permutations(range(len(indices))))
+                for color, indices in self._color_local_indices.items()
             }
+
+            # Single mounting extrinsics (pattern-local -> rover-local) --
+            # see module docstring for how right_axis/up_axis/normal and
+            # mount_offset were derived for this pattern's actual mounting.
+            self._R_mount = _mount_rotation(
+                right_axis=np.array([0.0, 1.0, 0.0]),   # pattern local +x -> rover left
+                up_axis=np.array([0.0, 0.0, 1.0]),       # pattern local +y -> rover up
+                normal=np.array([1.0, 0.0, 0.0]),        # pattern local +z -> rover forward
+            )
+            self._mount_offset = np.array([
+                self.mount_forward_m, self.mount_left_m, self.mount_up_m,
+            ])
 
             self._seed_rotvecs = [
                 Rotation.from_euler("y", deg, degrees=True).as_rotvec()
@@ -395,16 +450,16 @@ class PositionRoverNode(Node):
             ]
 
             self.sub = self.create_subscription(
-            LedDetectionArray,
-            self.detections_topic,
-            self.detections_callback,
-            10,
+                LedDetectionArray,
+                self.detections_topic,
+                self.detections_callback,
+                10,
             )
 
             self.pose_pub = self.create_publisher(
-            PoseStamped,
-            self.pose_topic,
-            10,
+                PoseStamped,
+                self.pose_topic,
+                10,
             )
 
             self.motor_position_sub = self.create_subscription(
@@ -422,10 +477,6 @@ class PositionRoverNode(Node):
 
             self._reset_pan_tilt_state()
 
-            # All 4! = 24 possible pairings between (ordered) detected bearings
-            # and the panel's 4 local points -- see module docstring point 2.
-            self._correspondence_perms = list(itertools.permutations(range(4)))
-
             self.tf_buffer = tf2_ros.Buffer()
             self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
             self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
@@ -433,13 +484,11 @@ class PositionRoverNode(Node):
             self.get_logger().info(
                 f"position_rover_node: {self.detections_topic} -> "
                 f"{self.pose_topic} (world_frame={self.world_frame}, "
-                f"3 panels [roof=green, left=red, right=blue], "
-                f"panel_base_m={self.panel_base_m}, panel_leg_m={self.panel_leg_m}); "
+                f"single LED pattern, colors={self._local_colors}, "
+                f"required_counts={self._required_color_counts}); "
                 f"pan/tilt search+tracking via {self.motor_position_topic} -> "
                 f"{self.motor_position_cmd_topic}"
             )
-
-
 
     def _declare_parameters(self):
         for name, value in DEFAULTS.items():
@@ -463,52 +512,63 @@ class PositionRoverNode(Node):
                 self._update_pan_tilt_control(found_this_frame=False, mean_bearing=None)
                 return
 
-            groups = {"roof": [], "left": [], "right": []}
+            groups: dict = {}
             for d in msg.detections:
-                panel_name = self._classify_panel(d.color_r, d.color_g, d.color_b)
-                groups[panel_name].append(d)
+                color = self._classify_color(d.color_r, d.color_g, d.color_b)
+                if color not in self._color_local_indices:
+                    continue  # e.g. a stray green-dominant blob -- noise
+                groups.setdefault(color, []).append(d)
 
-            best = None  # (rms_deg, panel_name, rotmat_cam_rover, t_cam_rover, mean_bearing)
-
-            for panel_name, dets in groups.items():
-                if len(dets) != 4:
-                    continue
-
-                bearings = np.array([
-                    (d.bearing.x, d.bearing.y, d.bearing.z) for d in dets
-                ], dtype=np.float64)
-                bearings = bearings / np.linalg.norm(bearings, axis=1, keepdims=True)
-                mean_bearing = bearings.mean(axis=0)
-
-                t_seed = self._initial_translation_guess(bearings, self._local_points)
-                result = self._search_best_pose(bearings, self._local_points, t_seed)
-                if result is None:
-                    continue
-
-                rms_deg, rotmat_cam_panel, t_cam_panel = result
-                if rms_deg > self.max_fit_residual_deg:
-                    continue
-
-                extrinsics = self._panel_extrinsics[panel_name]
-                rotmat_cam_rover, t_cam_rover = self._compose_rover_pose(
-                    rotmat_cam_panel, t_cam_panel, extrinsics
-                )
-
-                if best is None or rms_deg < best[0]:
-                    best = (rms_deg, panel_name, rotmat_cam_rover, t_cam_rover, mean_bearing)
-
-            if best is None:
+            if any(
+                len(groups.get(color, [])) != count
+                for color, count in self._required_color_counts.items()
+            ):
                 self.get_logger().warn(
-                    "No panel (roof/left/right) produced a valid 4-LED fit "
-                    f"this frame ({n} total detections, "
-                    f"roof={len(groups['roof'])} left={len(groups['left'])} "
-                    f"right={len(groups['right'])}). Skipping frame.",
+                    "Detected LEDs don't match the expected pattern this "
+                    f"frame (need {self._required_color_counts}, got "
+                    f"{ {c: len(v) for c, v in groups.items()} }). "
+                    "Skipping frame.",
                     throttle_duration_sec=5.0,
                 )
                 self._update_pan_tilt_control(found_this_frame=False, mean_bearing=None)
                 return
 
-            rms_deg, panel_name, rotmat_cam_rover, t_cam_rover, mean_bearing = best
+            all_bearings = []
+            for dets in groups.values():
+                for d in dets:
+                    all_bearings.append((d.bearing.x, d.bearing.y, d.bearing.z))
+            all_bearings = np.array(all_bearings, dtype=np.float64)
+            all_bearings = all_bearings / np.linalg.norm(all_bearings, axis=1, keepdims=True)
+            mean_bearing = all_bearings.mean(axis=0)
+
+            candidates = self._build_color_constrained_correspondences(groups)
+
+            t_seed = self._initial_translation_guess(all_bearings, self._local_points)
+            result = self._search_best_pose(candidates, self._local_points, t_seed)
+
+            if result is None:
+                self.get_logger().warn(
+                    "No correspondence produced a valid fit this frame.",
+                    throttle_duration_sec=5.0,
+                )
+                self._update_pan_tilt_control(found_this_frame=False, mean_bearing=None)
+                return
+
+            rms_deg, rotmat_cam_pattern, t_cam_pattern = result
+            if rms_deg > self.max_fit_residual_deg:
+                self.get_logger().warn(
+                    f"Best fit residual {rms_deg:.2f} deg exceeds "
+                    f"max_fit_residual_deg={self.max_fit_residual_deg}. "
+                    "Skipping frame.",
+                    throttle_duration_sec=5.0,
+                )
+                self._update_pan_tilt_control(found_this_frame=False, mean_bearing=None)
+                return
+
+            rotmat_cam_rover, t_cam_rover = self._compose_rover_pose(
+                rotmat_cam_pattern, t_cam_pattern,
+            )
+
             self._publish_world_pose(msg, rotmat_cam_rover, t_cam_rover)
             self._update_pan_tilt_control(found_this_frame=True, mean_bearing=mean_bearing)
 
@@ -516,23 +576,48 @@ class PositionRoverNode(Node):
             self.get_logger().error(f"detections_callback failed: {exc}")
 
     # ------------------------------------------------------------------
-    # Panel classification
+    # Color classification
     # ------------------------------------------------------------------
-    def _classify_panel(self, r: float, g: float, b: float) -> str:
-        """Which panel a detection belongs to, by its dominant color
-        channel (roof=green, left=red, right=blue -- see
-        fake_mono_camera_node's panel colors). led_detector_node has
-        already filtered out low-dominance/ambiguous blobs, so this just
-        picks the highest of the 3 channels.
+    def _classify_color(self, r: float, g: float, b: float) -> str:
+        """Which color a detection is, by its dominant channel. Only "red"
+        and "blue" mean anything for this pattern -- a "green" result is
+        noise (a reflection, another light source) and gets dropped by the
+        caller, since this pattern has no green LED.
         """
         idx = int(np.argmax([r, g, b]))
-        return ("left", "roof", "right")[idx]
+        return ("red", "green", "blue")[idx]
+
+    # ------------------------------------------------------------------
+    # Color-constrained correspondence search -- see module docstring.
+    # ------------------------------------------------------------------
+    def _build_color_constrained_correspondences(self, groups: dict) -> list:
+        """Builds every valid (bearing detection -> local point) ordering,
+        constrained by color: only permutes detections within the same
+        color group, then takes the Cartesian product across colors. For
+        this pattern (3 blue + 1 red) that's 3! x 1! = 6 candidates, not
+        the old unconstrained 4! = 24.
+        """
+        colors = list(self._color_local_indices.keys())
+        per_color_choices = [self._color_perms[color] for color in colors]
+
+        candidates = []
+        for choice in itertools.product(*per_color_choices):
+            ordered = [None] * len(self._local_points)
+            for color, perm in zip(colors, choice):
+                local_indices = self._color_local_indices[color]
+                dets = groups[color]
+                for local_idx, det_idx in zip(local_indices, perm):
+                    d = dets[det_idx]
+                    ordered[local_idx] = (d.bearing.x, d.bearing.y, d.bearing.z)
+            candidates.append(np.array(ordered, dtype=np.float64))
+
+        return candidates
 
     # ------------------------------------------------------------------
     # Pose search
     # ------------------------------------------------------------------
     def _initial_translation_guess(self, bearings: np.ndarray, local_points: np.ndarray) -> np.ndarray:
-        """Rough initial distance estimate from the panel's known size and
+        """Rough initial distance estimate from the pattern's known size and
         its apparent angular spread (small-angle approximation -- refined
         immediately afterward by least_squares, this only needs to be in
         the right ballpark to help the optimizer converge).
@@ -570,18 +655,16 @@ class PositionRoverNode(Node):
         except Exception:  # noqa: BLE001
             return None
 
-    def _search_best_pose(self, bearings, local_points, t_seed):
-        """Tries every (24-permutation correspondence x yaw seed)
-        combination, returns (rms_residual_deg, rotation_matrix,
-        translation) [camera <- panel] for whichever converged to the
-        lowest cost, or None if nothing did.
+    def _search_best_pose(self, candidates: list, local_points, t_seed):
+        """Tries every (candidate correspondence x yaw seed) combination,
+        returns (rms_residual_deg, rotation_matrix, translation)
+        [camera <- pattern] for whichever converged to the lowest cost, or
+        None if nothing did.
         """
         best_cost = None
         best_result = None
 
-        for perm in self._correspondence_perms:
-            candidate = bearings[list(perm)]
-
+        for candidate in candidates:
             for rotvec_seed in self._seed_rotvecs:
                 result = self._solve_pose(candidate, local_points, rotvec_seed, t_seed)
                 if result is None or not result.success:
@@ -603,29 +686,26 @@ class PositionRoverNode(Node):
         return rms_residual_deg, rotmat, t
 
     # ------------------------------------------------------------------
-    # Panel pose -> rover-center pose
+    # Pattern pose -> rover-center pose
     # ------------------------------------------------------------------
-    def _compose_rover_pose(self, rotmat_cam_panel, t_cam_panel, extrinsics):
-        """Given a solved camera<-panel pose and that panel's fixed
+    def _compose_rover_pose(self, rotmat_cam_pattern, t_cam_pattern):
+        """Given a solved camera<-pattern pose and the pattern's fixed
         mounting extrinsics (rover-local rotation + offset), returns the
         camera<-rover pose.
 
-        Derivation: a point on the panel satisfies both
-            X_camera = rotmat_cam_panel @ X_panel + t_cam_panel
-            X_panel  = R_mount.T @ (X_rover - mount_offset)
+        Derivation: a point on the pattern satisfies both
+            X_camera  = rotmat_cam_pattern @ X_pattern + t_cam_pattern
+            X_pattern = R_mount.T @ (X_rover - mount_offset)
         (the second line just inverts "X_rover = mount_offset +
-        R_mount @ X_panel", the panel's placement relative to the rover
+        R_mount @ X_pattern", the pattern's placement relative to the rover
         center). Substituting gives X_camera = R_cr @ X_rover + t_cr with:
-            R_cr = rotmat_cam_panel @ R_mount.T
-            t_cr = t_cam_panel - rotmat_cam_panel @ R_mount.T @ mount_offset
+            R_cr = rotmat_cam_pattern @ R_mount.T
+            t_cr = t_cam_pattern - rotmat_cam_pattern @ R_mount.T @ mount_offset
         which is exactly the rover center's pose in the camera frame (at
         X_rover = 0, X_camera = t_cr).
         """
-        R_mount = extrinsics["R_mount"]
-        mount_offset = extrinsics["mount_offset"]
-
-        rotmat_cam_rover = rotmat_cam_panel @ R_mount.T
-        t_cam_rover = t_cam_panel - rotmat_cam_panel @ R_mount.T @ mount_offset
+        rotmat_cam_rover = rotmat_cam_pattern @ self._R_mount.T
+        t_cam_rover = t_cam_pattern - rotmat_cam_pattern @ self._R_mount.T @ self._mount_offset
 
         return rotmat_cam_rover, t_cam_rover
 
