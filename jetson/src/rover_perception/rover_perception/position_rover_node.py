@@ -172,8 +172,9 @@ without real hardware, it needs a matching rewrite to render this single
 pattern instead, or simulated detections won't match what this node now
 expects. Not done here -- flagged for a follow-up pass.
 
-Active pan/tilt search + centering (added 2026-09, unchanged by the
-single-pattern redesign)
+Active pan/tilt search + centering (added 2026-09; motor wiring rewritten
+2026-09 -- pan and tilt now use two completely separate motors/topics, see
+below)
 -----------------------------------------------------------------------------
 Since the mono camera has a limited field of view, this node also actively
 points the mast's pan/tilt motors to find and keep the LED pattern
@@ -188,8 +189,8 @@ actually see the pattern or not".
 State machine, per detections_callback invocation:
 
 - SEARCHING (self._tracking == False): pan sweeps across the full reachable
-  range (pan_raw_min..pan_raw_max) in search_step_deg increments, tilt held
-  fixed at tilt_home_raw. At each step: wait (via /motor_position/current
+  range (pan_min_deg..pan_max_deg) in search_step_deg increments, tilt held
+  fixed at tilt_home_raw. At each step: wait (via /xm430_node/new_position
   feedback, with a frame-count timeout fallback) until the pan motor
   actually arrives, then watch for up to search_dwell_frames camera frames.
   If search_confirm_frames *consecutive* frames report a valid fit, declare
@@ -203,34 +204,63 @@ State machine, per detections_callback invocation:
   the camera's own optical axis -- no separate CameraInfo needed, the
   bearing already encodes it). If a deviation exceeds pan_deadband_deg /
   tilt_deadband_deg (each axis independent), a correction is requested for
-  that axis via /motor_position/new. If lost_confirm_frames *consecutive*
+  that axis (pan via /xm430_node/goal_position, tilt via
+  /motor_position/goal_position). If lost_confirm_frames *consecutive*
   frames report no valid fit, the pattern is considered lost and a new
   search starts.
 
-Dead-zone handling: the pan motor (Dynamixel AX-12A) can only reach 0..300
-deg (raw 0..1023) in Joint Mode -- 300-360 deg is mechanically invalid, a
-~60 deg gap it can never reach. If a requested correction would land outside
-[pan_raw_min, pan_raw_max] (analogously for tilt, a *different* motor model
-with its own, separately calibrated range), that axis is deliberately NOT
-corrected -- it holds its current position and lets the pattern drift out of
-frame rather than trying to chase it into an unreachable angle. Once the
-pattern is then lost (lost_confirm_frames of nothing), the next search
-starts from the OPPOSITE edge of the reachable range from wherever the pan
-axis was blocked, on the assumption that whatever it was tracking kept
-moving in that direction and will reappear on the far side of the gap
-first. Tilt has no search of its own (only pan sweeps; tilt is assumed
-roughly constant height), so only pan's block direction matters for where
-the next search resumes.
+Two physically different motors, two completely separate topic pairs
+(2026-09 -- pan and tilt motor MODELS were swapped relative to the earlier
+design; see chat)
+-----------------------------------------------------------------------------
+Tilt (and the drive motors) -- Dynamixel AX-12A, via the shared
+MotorPosition message (rover_control_msgs/msg/MotorPosition), reduced from
+5 to 4 fields (motor1=tilt, motor2-4=drive/other; motor5/pan removed --
+see below). Topics renamed too:
+    /motor_position/new_position   (sub, feedback)
+    /motor_position/goal_position  (pub, command)
+This is still an *absolute* 4-motor command, not a per-motor delta (see
+stm_bridge_node_V2.py). Every command this node sends echoes back the
+other 2 drive motors' last known real values from /motor_position/
+new_position untouched, so a tilt correction never accidentally stomps on
+whatever the drive motors were doing. AX-12A Joint Mode only reaches raw
+0..1023 = 0..300 deg -- 300-360 deg is mechanically invalid, a ~60 deg gap
+it can never reach (the "dead zone" referenced below, now specifically a
+TILT concern -- this used to be pan's constraint before the motor swap).
 
-MotorPosition (rover_control_msgs/msg/MotorPosition) is a full 5-motor
-*absolute* command, not a per-motor delta (see stm_bridge_node_V2.py) --
-motor1=tilt, motor5=pan, motor2/3/4=drive/other. Every command this node
-sends echoes back the other three motors' last known real values from
-/motor_position/current untouched, so a pan/tilt correction never
-accidentally stomps on whatever the drive motors were doing.
+Pan -- Dynamixel XM430-W350, via its own dedicated xm430_node (package
+dxl_xm430_control), NOT bundled into MotorPosition at all:
+    /xm430_node/new_position   (sub, feedback) -- std_msgs/Float64, RADIANS
+    /xm430_node/goal_position  (pub, command)  -- std_msgs/Float64, RADIANS
+(0 rad = xm430_node's own center convention, tick 2048 of 4096). Since
+xm430_node works in a single float per message (no other motors sharing
+this topic), no echo-back is needed for pan the way tilt needs one for its
+drive motors. Converted to/from degrees in this file only for consistency
+with the rest of its parameters (deadband, search step), which are all in
+degrees -- np.radians/np.degrees at the message boundary, nowhere else.
+
+Confirmed reachable pan range: 0-360 deg (effectively the full circle --
+the XM430-W350's Position Control Mode covers 0..4095 ticks internally,
+~360 deg, unlike the AX-12A's 300 deg limit it replaced for this axis).
+NOT confirmed: whether commanding across the 0/360 deg seam (e.g. 350 deg
+-> 10 deg) makes the servo take the short way around or the long way --
+Dynamixel Position Control Mode (as opposed to Extended Position Control
+Mode, which this node is NOT configured for -- see xm430_node.py) does not
+necessarily wrap ticks automatically the way a truly continuous joint
+would. Until this is verified on real hardware, pan_min_deg/pan_max_deg
+below are treated as a soft boundary -- hold instead of crossing it --
+using the exact same block-and-resume-at-opposite-edge mechanism the old
+AX-12A dead zone used, even though this is a precaution against an
+unconfirmed wraparound behavior rather than a truly unreachable mechanical
+gap like the old dead zone was. Revisit (and potentially just wrap
+normally) once tested for real.
+
+Tilt has no search of its own (only pan sweeps; tilt is assumed roughly
+constant height), so only pan's block direction matters for where the next
+search resumes.
 
 pan_correction_sign/tilt_correction_sign exist because the real physical
-direction (does increasing raw actually move toward where the pattern
+direction (does increasing raw/rad actually move toward where the pattern
 drifted, or away?) hasn't been confirmed against real hardware yet -- flip
 to -1 for either axis if the first live test moves the wrong way.
 
@@ -251,6 +281,7 @@ from rclpy.node import Node
 from rclpy.duration import Duration
 
 from geometry_msgs.msg import PoseStamped, TransformStamped
+from std_msgs.msg import Float64
 
 import tf2_ros
 from scipy.spatial.transform import Rotation
@@ -312,35 +343,47 @@ DEFAULTS = {
     "tf_timeout_sec": 0.3,
 
     # ------------------------------------------------------------------
-    # Active pan/tilt search + centering -- see module docstring.
+    # Active pan/tilt search + centering -- see module docstring "Two
+    # physically different motors, two completely separate topic pairs".
     # ------------------------------------------------------------------
-    "motor_position_topic": "/motor_position/current",
-    "motor_position_cmd_topic": "/motor_position/new",
 
-    "pan_motor_field": "motor5",
+    # Tilt + drive motors -- Dynamixel AX-12A, via the shared MotorPosition
+    # message. Renamed/reduced 2026-09: this message now has 4 fields
+    # (motor1=tilt, motor2-4=drive), motor5 (pan) was removed since pan
+    # moved to its own dedicated topics below (a different physical motor,
+    # XM430-W350, controlled by its own node).
+    "tilt_motor_topic": "/motor_position/new_position",
+    "tilt_motor_cmd_topic": "/motor_position/goal_position",
     "tilt_motor_field": "motor1",
 
-    # Pan motor: Dynamixel AX-12A (see datasheet). Joint Mode only reaches
-    # raw 0..1023 = 0..300 deg -- 300-360 deg is mechanically invalid, that
-    # ~60 deg gap is the "dead zone" referenced throughout this file.
-    "pan_raw_min": 0,
-    "pan_raw_max": 1023,
-    "pan_raw_center": 512,
-    "pan_deg_per_raw": 0.29,
-
-    # Tilt motor: a DIFFERENT model than the pan motor -- numbers from its
-    # own datasheet. Using its "Recommended Range" (21..1002) rather than
-    # the absolute full range (0..1023) as the usable bound here, since
-    # running right at the mechanical hard stops during normal operation
-    # isn't advisable. Adjust if you'd rather use the full range.
-    "tilt_raw_min": 21,
-    "tilt_raw_max": 1002,
+    # AX-12A (see datasheet): Joint Mode raw 0..1023 = 0..300 deg -- 300-360
+    # deg is mechanically invalid, that ~60 deg gap is the "dead zone"
+    # referenced throughout this file, now specifically a TILT concern
+    # (pan and tilt motor models were swapped 2026-09 -- see chat).
+    "tilt_raw_min": 0,
+    "tilt_raw_max": 1023,
     "tilt_raw_center": 512,
-    "tilt_deg_per_raw": 0.325,
+    "tilt_deg_per_raw": 0.29,
 
-    # Pan/tilt position (raw) held during the search sweep and while a
+    # Tilt position (raw) held during the search sweep and while a pan
     # correction is blocked. Tilt never sweeps on its own (only pan does).
     "tilt_home_raw": 512,
+
+    # Pan -- Dynamixel XM430-W350, via its own dedicated xm430_node, NOT
+    # bundled into MotorPosition. Wire format is std_msgs/Float64 in
+    # RADIANS (0 rad = xm430_node's own center convention) -- converted
+    # to/from degrees here only for consistency with the rest of this
+    # file's deadband/search-step parameters, which are all in degrees.
+    "pan_topic": "/xm430_node/new_position",
+    "pan_cmd_topic": "/xm430_node/goal_position",
+
+    # Confirmed reachable range: 0-360 deg (effectively the full circle).
+    # Treated as a soft boundary (hold, don't cross) rather than assumed-
+    # safe wraparound -- see module docstring for why this is unconfirmed
+    # rather than a known mechanical limit like the old AX-12A dead zone.
+    "pan_min_deg": 0.0,
+    "pan_max_deg": 360.0,
+    "pan_home_deg": 180.0,
 
     # Search sweep.
     "search_step_deg": 20.0,
@@ -350,8 +393,11 @@ DEFAULTS = {
     # Give up on a search position (move to the next) after this many
     # camera frames without confirming, once arrived.
     "search_dwell_frames": 20,
-    "search_arrival_tolerance_raw": 5,
-    # If /motor_position/current never confirms arrival within this many
+    # Pan arrival tolerance is in degrees now (pan works directly in
+    # degrees, no raw/tick scale -- see module docstring). Tilt still uses
+    # its own raw-tick arrival check inline (AX-12A, unchanged mechanism).
+    "search_arrival_tolerance_deg": 2.0,
+    # If /xm430_node/new_position never confirms arrival within this many
     # frames (feedback lag/dropout), proceed anyway rather than stalling
     # the whole search forever.
     "search_arrival_timeout_frames": 60,
@@ -417,9 +463,12 @@ class PositionRoverNode(Node):
         self.sub = None
         self.pose_pub = None
 
-        self.motor_position_sub = None
-        self.motor_cmd_pub = None
-        self._latest_motor_position = None
+        self.tilt_position_sub = None
+        self.tilt_cmd_pub = None
+        self.pan_position_sub = None
+        self.pan_cmd_pub = None
+        self._latest_tilt_position = None
+        self._latest_pan_deg = None
         self._reset_pan_tilt_state()
 
         self.state_sub = self.create_subscription(
@@ -440,14 +489,19 @@ class PositionRoverNode(Node):
 
             self.destroy_subscription(self.sub)
             self.destroy_publisher(self.pose_pub)
-            self.destroy_subscription(self.motor_position_sub)
-            self.destroy_publisher(self.motor_cmd_pub)
+            self.destroy_subscription(self.tilt_position_sub)
+            self.destroy_publisher(self.tilt_cmd_pub)
+            self.destroy_subscription(self.pan_position_sub)
+            self.destroy_publisher(self.pan_cmd_pub)
 
             self.sub = None
             self.pose_pub = None
-            self.motor_position_sub = None
-            self.motor_cmd_pub = None
-            self._latest_motor_position = None
+            self.tilt_position_sub = None
+            self.tilt_cmd_pub = None
+            self.pan_position_sub = None
+            self.pan_cmd_pub = None
+            self._latest_tilt_position = None
+            self._latest_pan_deg = None
             self._reset_pan_tilt_state()
 
             # 1. Listener und Broadcaster deaktivieren (auf None setzen)
@@ -510,16 +564,29 @@ class PositionRoverNode(Node):
                 10,
             )
 
-            self.motor_position_sub = self.create_subscription(
+            self.tilt_position_sub = self.create_subscription(
                 MotorPosition,
-                self.motor_position_topic,
-                self._motor_position_callback,
+                self.tilt_motor_topic,
+                self._tilt_position_callback,
                 10,
             )
 
-            self.motor_cmd_pub = self.create_publisher(
+            self.tilt_cmd_pub = self.create_publisher(
                 MotorPosition,
-                self.motor_position_cmd_topic,
+                self.tilt_motor_cmd_topic,
+                10,
+            )
+
+            self.pan_position_sub = self.create_subscription(
+                Float64,
+                self.pan_topic,
+                self._pan_position_callback,
+                10,
+            )
+
+            self.pan_cmd_pub = self.create_publisher(
+                Float64,
+                self.pan_cmd_topic,
                 10,
             )
 
@@ -534,8 +601,8 @@ class PositionRoverNode(Node):
                 f"{self.pose_topic} (world_frame={self.world_frame}, "
                 f"single LED pattern, colors={self._local_colors}, "
                 f"required_counts={self._required_color_counts}); "
-                f"pan/tilt search+tracking via {self.motor_position_topic} -> "
-                f"{self.motor_position_cmd_topic}"
+                f"tilt via {self.tilt_motor_topic} -> {self.tilt_motor_cmd_topic}, "
+                f"pan via {self.pan_topic} -> {self.pan_cmd_topic}"
             )
 
     def _declare_parameters(self):
@@ -861,14 +928,14 @@ class PositionRoverNode(Node):
         self._pan_blocked_at_min = False
         self._pan_blocked_at_max = False
 
-    def _motor_position_callback(self, msg: MotorPosition):
-        self._latest_motor_position = msg
+    def _tilt_position_callback(self, msg: MotorPosition):
+        self._latest_tilt_position = msg
 
-    def _pan_raw_to_deg(self, raw):
-        return (raw - self.pan_raw_center) * self.pan_deg_per_raw
-
-    def _pan_deg_to_raw(self, deg):
-        return self.pan_raw_center + deg / self.pan_deg_per_raw
+    def _pan_position_callback(self, msg: Float64):
+        # Wire format is radians (xm430_node's own convention) -- converted
+        # to degrees immediately so the rest of this file (deadband,
+        # search step, etc., all in degrees) never has to think about units.
+        self._latest_pan_deg = float(np.degrees(msg.data))
 
     def _tilt_raw_to_deg(self, raw):
         return (raw - self.tilt_raw_center) * self.tilt_deg_per_raw
@@ -876,50 +943,52 @@ class PositionRoverNode(Node):
     def _tilt_deg_to_raw(self, deg):
         return self.tilt_raw_center + deg / self.tilt_deg_per_raw
 
-    def _send_motor_command(self, pan_raw=None, tilt_raw=None):
-        """Publishes a full MotorPosition command, echoing back the other
-        3 motors' last known real values -- see module docstring, this is
-        an absolute 5-motor setpoint, not a per-motor delta."""
+    def _send_tilt_command(self, tilt_raw):
+        """Publishes a 4-motor MotorPosition command, echoing back the 2
+        drive motors' last known real values -- see module docstring, this
+        is an absolute setpoint, not a per-motor delta."""
 
-        if self._latest_motor_position is None:
+        if self._latest_tilt_position is None:
             self.get_logger().warn(
-                f"Cannot send a motor command yet -- no {self.motor_position_topic} "
-                "feedback received, don't know the other motors' current values.",
+                f"Cannot send a tilt command yet -- no {self.tilt_motor_topic} "
+                "feedback received, don't know the drive motors' current values.",
                 throttle_duration_sec=5.0,
             )
             return
 
         cmd = MotorPosition()
-        cmd.motor1 = self._latest_motor_position.motor1
-        cmd.motor2 = self._latest_motor_position.motor2
-        cmd.motor3 = self._latest_motor_position.motor3
-        cmd.motor4 = self._latest_motor_position.motor4
-        cmd.motor5 = self._latest_motor_position.motor5
+        cmd.motor2 = self._latest_tilt_position.motor2
+        cmd.motor3 = self._latest_tilt_position.motor3
+        cmd.motor4 = self._latest_tilt_position.motor4
+        setattr(cmd, self.tilt_motor_field,
+                int(np.clip(tilt_raw, self.tilt_raw_min, self.tilt_raw_max)))
 
-        if pan_raw is not None:
-            setattr(cmd, self.pan_motor_field,
-                    int(np.clip(pan_raw, self.pan_raw_min, self.pan_raw_max)))
-        if tilt_raw is not None:
-            setattr(cmd, self.tilt_motor_field,
-                    int(np.clip(tilt_raw, self.tilt_raw_min, self.tilt_raw_max)))
+        self.tilt_cmd_pub.publish(cmd)
 
-        self.motor_cmd_pub.publish(cmd)
+    def _send_pan_command(self, pan_deg):
+        """Publishes a standalone Float64 (radians) to xm430_node -- no
+        echo-back needed, unlike tilt, since pan doesn't share its topic
+        with any other motor."""
+
+        cmd = Float64()
+        cmd.data = float(np.radians(np.clip(pan_deg, self.pan_min_deg, self.pan_max_deg)))
+        self.pan_cmd_pub.publish(cmd)
 
     def _build_search_positions(self, start_at: str):
-        """Pan raw positions to sweep, search_step_deg apart, covering the
-        full reachable range, starting from one edge. Always includes the
-        far endpoint exactly even if the step doesn't divide evenly."""
+        """Pan positions (degrees) to sweep, search_step_deg apart, covering
+        the full reachable range, starting from one edge. Always includes
+        the far endpoint exactly even if the step doesn't divide evenly."""
 
-        step_raw = max(1, int(round(self.search_step_deg / self.pan_deg_per_raw)))
+        step_deg = self.search_step_deg
 
         if start_at == "min":
-            positions = list(range(self.pan_raw_min, self.pan_raw_max, step_raw))
-            positions.append(self.pan_raw_max)
+            positions = list(np.arange(self.pan_min_deg, self.pan_max_deg, step_deg))
+            positions.append(self.pan_max_deg)
         else:
-            positions = list(range(self.pan_raw_max, self.pan_raw_min, -step_raw))
-            positions.append(self.pan_raw_min)
+            positions = list(np.arange(self.pan_max_deg, self.pan_min_deg, -step_deg))
+            positions.append(self.pan_min_deg)
 
-        return positions
+        return [float(p) for p in positions]
 
     def _start_search(self, start_at: str = "min"):
         self._tracking = False
@@ -939,22 +1008,22 @@ class PositionRoverNode(Node):
             self._search_exhausted = True
             return
 
-        target_raw = self._search_positions[self._search_index]
+        target_deg = self._search_positions[self._search_index]
         self._search_phase = "moving"
         self._arrival_wait_frames = 0
-        self._send_motor_command(pan_raw=target_raw, tilt_raw=self.tilt_home_raw)
+        self._send_pan_command(target_deg)
+        self._send_tilt_command(self.tilt_home_raw)
         self.get_logger().info(
-            f"LED-Suchlauf: naechste Pan-Position raw={target_raw} "
-            f"({self._pan_raw_to_deg(target_raw):.1f} deg)"
+            f"LED-Suchlauf: naechste Pan-Position {target_deg:.1f} deg"
         )
 
     def _update_search(self, found_this_frame):
-        current_pan_raw = getattr(self._latest_motor_position, self.pan_motor_field)
+        current_pan_deg = self._latest_pan_deg
 
         if not self._search_exhausted and self._search_phase == "moving":
-            target_raw = self._search_positions[self._search_index]
+            target_deg = self._search_positions[self._search_index]
             self._arrival_wait_frames += 1
-            arrived = abs(current_pan_raw - target_raw) <= self.search_arrival_tolerance_raw
+            arrived = abs(current_pan_deg - target_deg) <= self.search_arrival_tolerance_deg
             timed_out = self._arrival_wait_frames >= self.search_arrival_timeout_frames
             if not (arrived or timed_out):
                 return  # still slewing -- don't evaluate detections yet
@@ -1005,31 +1074,32 @@ class PositionRoverNode(Node):
         pan_dev_deg = float(np.degrees(np.arctan2(mean_bearing[0], mean_bearing[2])))
         tilt_dev_deg = float(np.degrees(np.arctan2(mean_bearing[1], mean_bearing[2])))
 
-        current_pan_raw = getattr(self._latest_motor_position, self.pan_motor_field)
-        current_tilt_raw = getattr(self._latest_motor_position, self.tilt_motor_field)
+        current_pan_deg = self._latest_pan_deg
+        current_tilt_raw = getattr(self._latest_tilt_position, self.tilt_motor_field)
 
-        new_pan_raw = None
+        new_pan_deg = None
         new_tilt_raw = None
 
         if abs(pan_dev_deg) > self.pan_deadband_deg:
-            target_pan_deg = self._pan_raw_to_deg(current_pan_raw) + self.pan_correction_sign * pan_dev_deg
-            target_pan_raw = int(round(self._pan_deg_to_raw(target_pan_deg)))
+            target_pan_deg = current_pan_deg + self.pan_correction_sign * pan_dev_deg
 
-            if self.pan_raw_min <= target_pan_raw <= self.pan_raw_max:
-                new_pan_raw = target_pan_raw
+            if self.pan_min_deg <= target_pan_deg <= self.pan_max_deg:
+                new_pan_deg = target_pan_deg
                 self._pan_blocked = False
                 self._pan_blocked_at_min = False
                 self._pan_blocked_at_max = False
             else:
-                # Would need to move into the dead zone -- hold instead of
-                # correcting (see module docstring), remember which edge.
+                # Would cross the 0/360 deg seam -- hold instead of
+                # correcting (see module docstring: wraparound safety is
+                # unconfirmed on this motor), remember which edge.
                 self._pan_blocked = True
-                self._pan_blocked_at_min = target_pan_raw < self.pan_raw_min
-                self._pan_blocked_at_max = target_pan_raw > self.pan_raw_max
+                self._pan_blocked_at_min = target_pan_deg < self.pan_min_deg
+                self._pan_blocked_at_max = target_pan_deg > self.pan_max_deg
                 self.get_logger().warn(
-                    f"Pan-Korrektur wuerde in den toten Winkel fuehren (Ziel-raw "
-                    f"{target_pan_raw}, Bereich [{self.pan_raw_min}, {self.pan_raw_max}]) "
-                    "-- halte Position, folge nicht weiter.",
+                    f"Pan-Korrektur wuerde ueber die 0/360-Grad-Naht fuehren "
+                    f"(Ziel {target_pan_deg:.1f} deg, Bereich "
+                    f"[{self.pan_min_deg}, {self.pan_max_deg}]) -- halte "
+                    "Position, folge nicht weiter.",
                     throttle_duration_sec=2.0,
                 )
         else:
@@ -1055,11 +1125,13 @@ class PositionRoverNode(Node):
         else:
             self._tilt_blocked = False
 
-        if new_pan_raw is not None or new_tilt_raw is not None:
-            self._send_motor_command(pan_raw=new_pan_raw, tilt_raw=new_tilt_raw)
+        if new_pan_deg is not None:
+            self._send_pan_command(new_pan_deg)
+        if new_tilt_raw is not None:
+            self._send_tilt_command(new_tilt_raw)
 
     def _update_pan_tilt_control(self, found_this_frame, mean_bearing):
-        if self._latest_motor_position is None:
+        if self._latest_tilt_position is None or self._latest_pan_deg is None:
             return  # no feedback yet -- don't command anything blind
 
         if not self._search_started:
