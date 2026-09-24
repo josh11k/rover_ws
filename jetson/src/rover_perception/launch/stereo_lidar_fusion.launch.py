@@ -79,6 +79,27 @@ Before relying on this on a new machine, double check:
     anything closer will be blurry, which matters e.g. for bench-testing
     the LED pattern up close.
 
+Mono camera frame, calibration and exposure (2026-09, see chat)
+-----------------------------------------------------------------------------
+  - camera_frame_id: v4l2_camera only knows `camera_frame_id` -- a plain
+    `frame_id` parameter is silently ignored and the image header falls
+    back to "camera", which breaks the TF lookup to mono_cam_optical_frame
+    (published by mono_static_tf below).
+  - camera_info_url: intrinsics + distortion from the checkerboard
+    calibration at 1920x1080 (fx ~1351, fy ~1349, k1 ~ -0.307). Only valid
+    for this resolution -- recalibrate if image_size changes.
+  - Fixed exposure/white balance for LED detection: very short manual
+    exposure so the LEDs stay colored instead of saturating to a white
+    core, and a bright/white background drops out. Fixed white balance so
+    colors don't shift between scenes. Values were tuned live with
+    v4l2-ctl. After launching, verify they were actually applied with:
+        v4l2-ctl -d /dev/video0 --get-ctrl=auto_exposure,exposure_time_absolute
+    Adjust at runtime with:
+        ros2 param set /mono_cam/mono_camera_node exposure_time_absolute <value>
+  - With this short exposure the LEDs are much dimmer in the image than
+    before -- led_detector_node's brightness_threshold (default 240) will
+    likely need to be lowered accordingly.
+
 Launch arguments -- run branches separately
 --------------------------------------------
     use_lidar  (default: true)  -- livox_ros_driver2_node, lidar_static_tf,
@@ -267,8 +288,9 @@ def generate_launch_description():
 
     # Real hardware driver -- 2026-09, replaces fake_mono_camera_node (the
     # synthetic simulator, still present in the package but no longer
-    # launched here). See module docstring "Mono camera hardware" section
-    # for the parameters below and what to double-check on a new machine.
+    # launched here). See module docstring "Mono camera hardware" and
+    # "Mono camera frame, calibration and exposure" sections for the
+    # parameters below and what to double-check on a new machine.
     mono_camera = Node(
         package="v4l2_camera",
         executable="v4l2_camera_node",
@@ -283,7 +305,22 @@ def generate_launch_description():
             "pixel_format": "YUYV",
             # led_detector_node requires exactly this encoding.
             "output_encoding": "rgb8",
-            "frame_id": "mono_cam_optical_frame",
+            # v4l2_camera only knows camera_frame_id -- "frame_id" is
+            # silently ignored and the header falls back to "camera".
+            "camera_frame_id": "mono_cam_optical_frame",
+            # Checkerboard calibration (1920x1080 only).
+            "camera_info_url": "file:///home/team/.ros/camera_info/mono_cam.yaml",
+
+            # Fixed exposure / white balance for LED detection -- tuned
+            # live with v4l2-ctl, see module docstring.
+            "auto_exposure": 1,                 # 0 = Auto, 1 = Manual
+            "exposure_time_absolute": 5,        # min 5, max 10000
+            "gain": 100,                        # min 100 (= lowest)
+            "brightness": 0,                    # -64 .. 64
+            "contrast": 10,                     # 0 .. 20
+            "saturation": 15,                   # 0 .. 15 (max -> stronger LED colors)
+            "white_balance_automatic": False,
+            "white_balance_temperature": 4500,  # 2300 .. 6500
         }],
         condition=IfCondition(use_mono),
     )
