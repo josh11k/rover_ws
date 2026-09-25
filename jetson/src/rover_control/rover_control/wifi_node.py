@@ -17,7 +17,9 @@ class WifiNode(Node):
         self.source_path_map = "~/map"
         self.source_path_hkd = "~/rover_log"
         self.target_user = "user"  # Ersetzen Sie dies durch den tatsächlichen
-        self.target_ip = "192.168.2.3"
+
+        self.target_ip = "192.168.2.61"
+
         self.target_dir = "~/rover_data/"
 
         self.state = "STANDBY"  # Initialer Zustand
@@ -73,7 +75,7 @@ class WifiNode(Node):
             msg_log = LogMessage()
             msg_log.source = "CONTROLLER"
             msg_log.event = "REQUEST"
-            msg_log.details = "Map requested via WiFi"
+            msg_log.message = "Map requested via WiFi"
             self.publish_wifi_log.publish(msg_log)
             self.publish_operational_mode.publish(msg_log)
             
@@ -94,7 +96,7 @@ class WifiNode(Node):
             msg_log = LogMessage()
             msg_log.source = "CONTROLLER"
             msg_log.event = "REQUEST"
-            msg_log.details = "Housekeeping Data requested via WiFi"
+            msg_log.message = "Housekeeping Data requested via WiFi"
             self.publish_wifi_log.publish(msg_log)
             self.publish_operational_mode.publish(msg_log)
 
@@ -115,7 +117,7 @@ class WifiNode(Node):
             msg_log = LogMessage()
             msg_log.source = "CONTROLLER"
             msg_log.event = "REQUEST"
-            msg_log.details = "Status requested via WiFi"
+            msg_log.message = "Status requested via WiFi"
             self.publish_wifi_log.publish(msg_log)
             self.publish_operational_mode.publish(msg_log)
 
