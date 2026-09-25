@@ -15,6 +15,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64, Bool
 from sensor_msgs.msg import JointState
+from rover_control_msgs.msg import Housekeeping, LogMessage
 from dynamixel_sdk import PortHandler, PacketHandler, COMM_SUCCESS
 
 # --- XM430-W350 Control Table (Protokoll 2.0) ---------------------------------
@@ -95,6 +96,8 @@ class XM430Node(Node):
 
         # --- ROS-Schnittstellen ----------------------------------------------
         self.js_pub = self.create_publisher(Float64, '/xm430_node/new_position', 10)
+        self.publish_hkd = self.create_publisher(Housekeeping, '/log/housekeeping', 10)
+        self.publish_operation_log = self.create_publisher(LogMessage, '/log/operation', 10)
         self.create_subscription(Float64, '~/goal_position', self._on_goal_position, 10)
         self.create_subscription(Float64, '~/goal_velocity', self._on_goal_velocity, 10)
         self.create_subscription(Bool, '~/torque_enable', self._on_torque_enable, 10)
@@ -194,7 +197,17 @@ class XM430Node(Node):
         js.effort = [current * AMP_PER_CUR_UNIT]   # Strom in A (kein Drehmoment!)
         msg_pos = Float64()
         msg_pos.data = float(js.position[0])
+        msg_hkd = Housekeeping()
+        msg_log = LogMessage()
+        msg_hkd.source = "JETSON"
+        msg_hkd.component = "MOTOR 5"
+        msg_hkd.type = "POSITION"
+        msg_hkd.vlaue = f"{msg_pos.data}"
+        msg_log.source = "MOTOR 5"
+        msg_log.event = "INFO"
+        msg_log.message =f"Set Motor to new position: {msg_pos.data}"
         self.js_pub.publish(msg_pos)
+        self.publish_hkd(msg_hkd)
 
     # --- Aufraeumen ----------------------------------------------------------
     def destroy_node(self):
