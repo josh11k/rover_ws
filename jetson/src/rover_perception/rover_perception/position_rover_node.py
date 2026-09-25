@@ -190,7 +190,7 @@ State machine, per detections_callback invocation:
 
 - SEARCHING (self._tracking == False): pan sweeps across the full reachable
   range (pan_min_deg..pan_max_deg) in search_step_deg increments, tilt held
-  fixed at tilt_home_raw. At each step: wait (via /xm430_node/new_position
+  fixed at tilt_home_raw. At each step: wait (via /xm430_node/current_position
   feedback, with a frame-count timeout fallback) until the pan motor
   actually arrives, then watch for up to search_dwell_frames camera frames.
   If search_confirm_frames *consecutive* frames report a valid fit, declare
@@ -217,12 +217,12 @@ Tilt (and the drive motors) -- Dynamixel AX-12A, via the shared
 MotorPosition message (rover_control_msgs/msg/MotorPosition), reduced from
 5 to 4 fields (motor1=tilt, motor2-4=drive/other; motor5/pan removed --
 see below). Topics renamed too:
-    /motor_position/new_position   (sub, feedback)
+    /motor_position/current_position   (sub, feedback)
     /motor_position/goal_position  (pub, command)
 This is still an *absolute* 4-motor command, not a per-motor delta (see
 stm_bridge_node_V2.py). Every command this node sends echoes back the
 other 2 drive motors' last known real values from /motor_position/
-new_position untouched, so a tilt correction never accidentally stomps on
+current_position untouched, so a tilt correction never accidentally stomps on
 whatever the drive motors were doing. AX-12A Joint Mode only reaches raw
 0..1023 = 0..300 deg -- 300-360 deg is mechanically invalid, a ~60 deg gap
 it can never reach (the "dead zone" referenced below, now specifically a
@@ -230,7 +230,7 @@ TILT concern -- this used to be pan's constraint before the motor swap).
 
 Pan -- Dynamixel XM430-W350, via its own dedicated xm430_node (package
 dxl_xm430_control), NOT bundled into MotorPosition at all:
-    /xm430_node/new_position   (sub, feedback) -- std_msgs/Float64, RADIANS
+    /xm430_node/current_position   (sub, feedback) -- std_msgs/Float64, RADIANS
     /xm430_node/goal_position  (pub, command)  -- std_msgs/Float64, RADIANS
 (0 rad = xm430_node's own center convention, tick 2048 of 4096). Since
 xm430_node works in a single float per message (no other motors sharing
@@ -352,7 +352,7 @@ DEFAULTS = {
     # (motor1=tilt, motor2-4=drive), motor5 (pan) was removed since pan
     # moved to its own dedicated topics below (a different physical motor,
     # XM430-W350, controlled by its own node).
-    "tilt_motor_topic": "/motor_position/new_position",
+    "tilt_motor_topic": "/motor_position/current_position",
     "tilt_motor_cmd_topic": "/motor_position/goal_position",
     "tilt_motor_field": "motor1",
 
@@ -374,16 +374,16 @@ DEFAULTS = {
     # RADIANS (0 rad = xm430_node's own center convention) -- converted
     # to/from degrees here only for consistency with the rest of this
     # file's deadband/search-step parameters, which are all in degrees.
-    "pan_topic": "/xm430_node/new_position",
+    "pan_topic": "/xm430_node/current_position",
     "pan_cmd_topic": "/xm430_node/goal_position",
 
     # Confirmed reachable range: 0-360 deg (effectively the full circle).
     # Treated as a soft boundary (hold, don't cross) rather than assumed-
     # safe wraparound -- see module docstring for why this is unconfirmed
     # rather than a known mechanical limit like the old AX-12A dead zone.
-    "pan_min_deg": 0.0,
-    "pan_max_deg": 360.0,
-    "pan_home_deg": 180.0,
+    "pan_min_deg": -180.0,
+    "pan_max_deg": 180.0,
+    "pan_home_deg": 0.0,
 
     # Search sweep.
     "search_step_deg": 20.0,
@@ -397,7 +397,7 @@ DEFAULTS = {
     # degrees, no raw/tick scale -- see module docstring). Tilt still uses
     # its own raw-tick arrival check inline (AX-12A, unchanged mechanism).
     "search_arrival_tolerance_deg": 2.0,
-    # If /xm430_node/new_position never confirms arrival within this many
+    # If /xm430_node/current_position never confirms arrival within this many
     # frames (feedback lag/dropout), proceed anyway rather than stalling
     # the whole search forever.
     "search_arrival_timeout_frames": 60,
