@@ -17,7 +17,9 @@ class WifiNode(Node):
         self.source_path_map = "~/map"
         self.source_path_hkd = "~/rover_log"
         self.target_user = "user"  # Ersetzen Sie dies durch den tatsächlichen
+
         self.target_ip = "192.168.2.61"
+
         self.target_dir = "~/rover_data/"
 
         self.state = "STANDBY"  # Initialer Zustand

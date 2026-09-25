@@ -20,6 +20,7 @@ class STMBridgeNode(Node):
         # STM32 -- von receive_message() befüllt, sobald das angeschlossen wird.
         self.buffer = ""
 
+
         # 2. Incoming Messages
         # message beinhaltet task und ruft send_message auf
         self.subscription = self.create_subscription(
@@ -31,7 +32,7 @@ class STMBridgeNode(Node):
 
         self.motor_position_subscription = self.create_subscription(
             MotorPosition,
-            '/motor_position/new',
+            '/motor_position/goal_position',
             self.send_motor_position_callback,
             10
         )
@@ -111,13 +112,13 @@ class STMBridgeNode(Node):
         msg_log = LogMessage()
         msg_log.source = "JETSON"
         msg_log.event = "INFO"
-        msg_log.details = f"Motor command sent: Motor 1 {msg.motor1}, Motor 2 {msg.motor2}, Motor 3 {msg.motor3}, Motor 4 {msg.motor4}, Motor 5 {msg.motor5}"
+        msg_log.details = f"Motor command sent: Motor 1 {msg.motor1}, Motor 2 {msg.motor2}, Motor 3 {msg.motor3}, Motor 4 {msg.motor4}"
 
         self.publish_operational_log.publish(msg_log)
         self.publish_com_stm_log.publish(msg_log)
 
         msg.task = "SET_MOTOR:"
-        command = f">>{msg.task} {msg.motor1}, {msg.motor2}, {msg.motor3}, {msg.motor4}, {msg.motor5}<<"
+        command = f">>{msg.task} {msg.motor1}, {msg.motor2}, {msg.motor3}, {msg.motor4}<<"
         self.send_message(command)
 
 
@@ -298,11 +299,10 @@ class STMBridgeNode(Node):
 
             # Make Motor Values:
             msg_motor = MotorPosition()
-            msg_motor.motor1 = int(parts[23])
-            msg_motor.motor2 = int(parts[25])
-            msg_motor.motor3 = int(parts[27])
-            msg_motor.motor4 = int(parts[29])
-            msg_motor.motor5 = int(parts[31])
+            msg_motor.motor1 = int(parts[13])
+            msg_motor.motor2 = int(parts[19])
+            msg_motor.motor3 = int(parts[25])
+            msg_motor.motor4 = int(parts[31])
 
             self.publish_motor_position.publish(msg_motor)    
 

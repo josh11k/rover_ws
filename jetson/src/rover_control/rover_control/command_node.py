@@ -1,3 +1,4 @@
+import math
 import subprocess
 import time
 
@@ -8,7 +9,7 @@ from rclpy.executors import MultiThreadedExecutor
 
 # Uniform Service Interface
 from rover_control_msgs.msg import OperationalMode, SystemRequest, LogMessage
-from std_msgs.msg import String
+from std_msgs.msg import String, Float64
 from std_srvs.srv import Trigger
 
 
@@ -20,9 +21,13 @@ class CommandNode(Node):
         self.state = "STANDBY"  # Initialer Modus
         self.old_state = "STANDBY"  # Initialer alter Modus
         self.wedges = 0
-        self.max_wedges = 3          # Anzahl Wedges pro Mapping-Session -- anpassen
+        self.max_wedges = 6          # Anzahl Wedges pro Mapping-Session -- anpassen
         self.mapping_timer = None    # nur aktiv, solange state == MAPPING
         self.wedges_width = 30  # Not in Degree
+        self.time_mapping = 10.0 # time for mapping in sec
+
+        self.motor5_position_old = 0.0
+        self.motor5_position_new = 0.0
 
         cb_group = ReentrantCallbackGroup()
 
@@ -31,10 +36,20 @@ class CommandNode(Node):
             SystemRequest,
             '/bridge_node/system_request',
             self.bridge_node_callback,
+            10,)
+
+        self.subscribe_bridge_node = self.create_subscription(
+            Float64, 
+            '/xm430_node/new_position'
+            self.motor_rotation_callback,
             10
         )
 
         # 3. Publishers
+        self.publish_rotation_position = self.create_publisher(
+            Float64,
+            '/xm430_node/goal_position'
+        )
         self.publish_operational_mode = self.create_publisher(
             OperationalMode,
             '/operational_mode/current',
@@ -71,6 +86,12 @@ class CommandNode(Node):
             10
         )
 
+        self.publish_motor5 = self.create_publisher(
+            Float64, 
+            '/xm430_node/new_position', 
+            10
+        )
+
         # 4. Timer
         self.housekeeping_timer = self.create_timer(
             60.0, self.trigger_housekeeping
@@ -78,6 +99,11 @@ class CommandNode(Node):
 
         self.alive_timer = self.create_timer(
             5.0, self.send_alive_message
+        )
+
+        self.get_logger().info(
+            "command_node bereit -- Steuerung ausschliesslich ueber "
+            "/bridge_node/system_request (SET_STATE / REBOOT / SHUTDOWN)."
         )
 
         self.check_system_timer = self.create_timer(
@@ -97,17 +123,15 @@ class CommandNode(Node):
             Trigger, "combine_wedges", callback_group=cb_group,
         )
 
-        self.get_logger().info(
-            "command_node bereit -- Steuerung ausschliesslich ueber "
-            "/bridge_node/system_request (SET_STATE / REBOOT / SHUTDOWN)."
-        )
-
     # ------------------------------------------------------------------
     # Generischer Helper fuer alle vier Trigger-Services -- blockiert
     # den aufrufenden Thread, bis die Antwort da ist oder ein Timeout
     # greift. Braucht die ReentrantCallbackGroup + MultiThreadedExecutor
     # (siehe main()), sonst deadlockt es.
     # ------------------------------------------------------------------
+    def motor_rotation_callback(self, msg):
+        self.motor5_position_old = msg.data
+
     def _call_trigger(self, client, name, timeout_sec=10.0):
         if not client.wait_for_service(timeout_sec=timeout_sec):
             self.get_logger().error(f"{name}: Service nicht verfuegbar.")
@@ -150,6 +174,7 @@ class CommandNode(Node):
 
 
         if msg.task == "REBOOT":
+            self.publish_motor5(Float64(0))
             try:
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", details="Rebooting system..."))
                 subprocess.run(['systemctl', 'reboot'], check=True)
@@ -157,6 +182,7 @@ class CommandNode(Node):
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", details=f"Reboot failed: {e}"))
 
         if msg.task == "SHUTDOWN":
+            self.publish_motor5(Float64(0))
             try:
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", details="Shutting down system..."))
                 subprocess.Popen(['systemctl', 'poweroff'])
@@ -192,8 +218,6 @@ class CommandNode(Node):
         self.publish_wifi.publish(String(data="get_status"))
 
     # triggert by timer
-    def check_system_status(self):
-        i = 1
 
     def check_state(self):
 
@@ -237,10 +261,11 @@ class CommandNode(Node):
             self._call_trigger(
                 self.clear_wedge_session_client, "clear_wedge_session"
             )
+            self.motor5_position_old = - math.pi()
 
         # start timer (nach 3 min soll getriggert werden)
         if self.mapping_timer is None:
-            self.mapping_timer = self.create_timer(180.0, self.timer_mapping)
+            self.mapping_timer = self.create_timer(self.time_mapping, self.timer_mapping)
 
         self.get_logger().info(
             f"Mapping gestartet. wedges={self.wedges}/{self.max_wedges}."
@@ -261,6 +286,9 @@ class CommandNode(Node):
         msg.details = "Mapping timer triggered. Requesting to save current map slice."
         self.publish_operational_log.publish(msg)
 
+        self.publish_operational_mode(OperationalMode("ASSEMBLY_MAP"))
+        self.publish_operational_log(LogMessage("JETSON", "INFO", "Turn of Perception to save map and rotate mast."))
+
         # 1. aktuelle Wedge fertig klassifizieren + publishen lassen
         self._call_trigger(
             self.finalize_ground_segmentation_client, "finalize_ground_segmentation"
@@ -270,11 +298,6 @@ class CommandNode(Node):
         #    gescannt werden kann. Kein eigener Service dafuer vorhanden --
         #    ueber den bestehenden SystemRequest-Publisher geschickt.
         #    ANPASSEN: Task-Name je nachdem, wie der Mast-Node es erwartet.
-        mast_msg = SystemRequest()
-        mast_msg.source = "JETSON"
-        mast_msg.task = "ROTATE_MAST"
-        mast_msg.message = str(self.wedge_width)
-        self.publish_system_request.publish(mast_msg)
 
         # 3. aktuellen Wedge-Ausschnitt als Rohdaten sichern
         self._call_trigger(
@@ -286,6 +309,7 @@ class CommandNode(Node):
         self.get_logger().info(
             f"timer_mapping: wedge {self.wedges}/{self.max_wedges} gesichert."
         )
+        self.publish_operational_log(LogMessage("JETSON", "INFO", f"Wedge {self.wedges}/{self.max_wedges} saved."))
 
         # wedges genug?
         if self.wedges >= self.max_wedges:
@@ -301,6 +325,10 @@ class CommandNode(Node):
                 "timer_mapping: max_wedges erreicht, combine_wedges ausgeloest, "
                 "wedges zurueckgesetzt."
             )
+        else:
+            if self.motor5_position_old <= math.pi:
+                self.motor5_position_new = self.motor5_position_old + 2 * math.pi /(self.max_wedges)
+                self.publish_motor5(Float64(self.motor5_position_new))
 
 
 def main(args=None):
