@@ -15,7 +15,7 @@
 #define JETSON_MOTOR_CODE_MIN      25L
 #define JETSON_MOTOR_CODE_MAX      998L
 
-#define SET_MOTOR_TARGET_MIN_COUNT 4U
+#define SET_MOTOR_TARGET_MIN_COUNT 1U
 #define SET_MOTOR_TARGET_MAX_COUNT 5U
 #define SET_MOTOR_TARGET_COUNT     6U
 
@@ -171,7 +171,7 @@ static void PrintHelp(void)
     printf("  >>SET_STATE: MAST_DEPLOYMENT<<\r\n");
     printf("  >>SET_STATE: STANDBY<<\r\n");
     printf("  >>SET_STATE: AUTO<<\r\n");
-    printf("  >>SET_MOTOR: 512,512,512,512,512<<  (M1..M5 position codes, 25..998)\r\n");
+    printf("  >>SET_MOTOR: tilt or 512,512,512,512,512<<  (M1..M5 position codes, 25..998)\r\n");
     printf("  >>ERROR: TEMP_HIGH<<\r\n");
     printf("  RECOVER\r\n");
     printf("  pos / status / s / b / si  (direct motor debug commands)\r\n");

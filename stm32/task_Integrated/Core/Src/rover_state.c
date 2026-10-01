@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "rover_housekeeping.h"
 
 RobotState currentState = STATE_IDLE;
 FaultCode activeFault = FAULT_NONE;
@@ -92,6 +93,7 @@ void ReportFault(FaultCode fault)
 
     printf(">>NACK, %s<<\r\n", FaultToString());
     printf("System is locked in SAFE mode. Use RECOVER after resolving the fault.\r\n");
+    PrintState(); /* push the new state to the Jetson, don't wait for it to ask */
 }
 
 void RecoverFromFault(void)
@@ -106,6 +108,22 @@ void RecoverFromFault(void)
 void PrintState(void)
 {
     printf(">>SET_STATE %s<<\r\n", StateToString());
+}
+
+void RoverState_AutoCheckTask(void)
+{
+    FaultCode detected;
+
+    if (activeFault != FAULT_NONE)
+    {
+        /* Already locked in SAFE for some reason - nothing new to evaluate. */
+        return;
+    }
+
+    if (RoverHousekeeping_CheckThresholds(&detected))
+    {
+        ReportFault(detected);
+    }
 }
 
 void Robot_Task(void)
