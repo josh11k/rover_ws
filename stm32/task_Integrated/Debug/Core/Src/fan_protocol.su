@@ -1,0 +1,4 @@
+../Core/Src/fan_protocol.c:22:6:FanProtocol_Init	16	static
+../Core/Src/fan_protocol.c:30:13:ProcessLine	32	static
+../Core/Src/fan_protocol.c:107:13:Heartbeat_Task	24	static
+../Core/Src/fan_protocol.c:141:6:FanProtocol_Task	24	static

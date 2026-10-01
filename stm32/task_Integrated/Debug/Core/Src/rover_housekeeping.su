@@ -1,0 +1,10 @@
+../Core/Src/rover_housekeeping.c:34:13:PrintFloat1	32	static
+../Core/Src/rover_housekeeping.c:47:13:PrintVoltageValueV	24	static
+../Core/Src/rover_housekeeping.c:54:13:PrintSignedCurrentValueA	32	static
+../Core/Src/rover_housekeeping.c:73:13:PrintSignedMilliCValueC	32	static
+../Core/Src/rover_housekeeping.c:92:13:ScanINADevices	16	static
+../Core/Src/rover_housekeeping.c:129:13:ReadTemperatures	8	static
+../Core/Src/rover_housekeeping.c:142:13:ReadINADevices	24	static
+../Core/Src/rover_housekeeping.c:151:13:PrintHousekeeping	32	static
+../Core/Src/rover_housekeeping.c:282:6:RoverHousekeeping_Init	16	static
+../Core/Src/rover_housekeeping.c:297:6:RoverHousekeeping_Task	16	static

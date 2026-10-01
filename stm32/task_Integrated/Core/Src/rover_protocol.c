@@ -303,6 +303,8 @@ static void ProcessCommand(char *line)
     if (strcmp(message, "s") == 0 || strcmp(message, "b") == 0 ||
         strcmp(message, "i") == 0 || strcmp(message, "si") == 0 ||
         strcmp(message, "pos") == 0 || strcmp(message, "status") == 0 ||
+        strcmp(message, "deploy") == 0 || strcmp(message, "deploy stop") == 0 ||
+        strcmp(message, "retract") == 0 || strcmp(message, "retract stop") == 0 ||
         strncmp(message, "sync ", 5U) == 0 || strncmp(message, "mix ", 4U) == 0 ||
         (message[0] >= '0' && message[0] <= '9'))
     {

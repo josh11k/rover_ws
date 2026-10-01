@@ -15,5 +15,6 @@ void FanDriver_Init(void);
 void FanDriver_Task(void);
 
 uint32_t FanDriver_GetRPM(void);
+void FanDriver_SetPWM(uint8_t percent);
 
 #endif /* FAN_DRIVER_H_ */
