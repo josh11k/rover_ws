@@ -212,7 +212,8 @@ static void MX_USART1_UART_Init(void)
     if (HAL_UART_Init(&huart1) != HAL_OK) Error_Handler();
     if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK) Error_Handler();
     if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK) Error_Handler();
-    if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK) Error_Handler();
+    //if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK) Error_Handler();
+    if (HAL_UARTEx_EnableFifoMode(&huart1) != HAL_OK) Error_Handler();
 }
 
 static void MX_USART2_UART_Init(void)
@@ -231,7 +232,8 @@ static void MX_USART2_UART_Init(void)
     if (HAL_UART_Init(&huart2) != HAL_OK) Error_Handler();
     if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK) Error_Handler();
     if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK) Error_Handler();
-    if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK) Error_Handler();
+    //if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK) Error_Handler();
+    if (HAL_UARTEx_EnableFifoMode(&huart2) != HAL_OK) Error_Handler();
 }
 
 static void MX_DMA_Init(void)

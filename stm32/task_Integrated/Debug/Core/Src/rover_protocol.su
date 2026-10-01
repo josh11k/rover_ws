@@ -1,0 +1,11 @@
+../Core/Src/rover_protocol.c:29:14:Trim	24	static
+../Core/Src/rover_protocol.c:53:14:UnframeJetsonMessage	24	static
+../Core/Src/rover_protocol.c:72:18:ParseFault	16	static
+../Core/Src/rover_protocol.c:82:16:ParseSetMotorSyncTargets	40	static
+../Core/Src/rover_protocol.c:166:13:PrintHelp	8	static
+../Core/Src/rover_protocol.c:180:13:ProcessCommand	160	static
+../Core/Src/rover_protocol.c:317:6:RoverProtocol_Init	16	static
+../Core/Src/rover_protocol.c:326:6:RoverProtocol_Task	24	static
+../Core/Src/rover_protocol.c:369:6:RoverProtocol_CheckAliveTimeout	16	static
+../Core/Src/rover_protocol.c:382:6:SendAck	16	static
+../Core/Src/rover_protocol.c:387:6:SendNack	16	static

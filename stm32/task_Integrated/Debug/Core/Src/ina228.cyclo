@@ -1,0 +1,9 @@
+../Core/Src/ina228.c:39:9:INA228_IsReady	1
+../Core/Src/ina228.c:48:9:INA228_SetAveraging64	2
+../Core/Src/ina228.c:70:9:INA228_ReadTemperature	3
+../Core/Src/ina228.c:96:9:INA228_ReadBusVoltage	3
+../Core/Src/ina228.c:127:9:INA228_ReadCurrent	3
+../Core/Src/ina228.c:159:9:INA228_ReadMeasurement	5
+../Core/Src/ina228.c:190:16:INA228_ReadRegister	1
+../Core/Src/ina228.c:206:16:INA228_WriteRegister16	1
+../Core/Src/ina228.c:226:16:INA228_SignExtend20	2

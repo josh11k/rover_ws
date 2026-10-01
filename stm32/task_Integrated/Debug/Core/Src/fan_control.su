@@ -1,0 +1,11 @@
+../Core/Src/fan_control.c:25:13:FanControl_UpdateFault	16	static
+../Core/Src/fan_control.c:60:6:FanControl_Init	8	static
+../Core/Src/fan_control.c:73:9:FanControl_SetTemperature	16	static
+../Core/Src/fan_control.c:85:6:FanControl_Task	24	static
+../Core/Src/fan_control.c:136:5:FanControl_GetTemperature	8	static
+../Core/Src/fan_control.c:137:9:FanControl_GetPWM	8	static
+../Core/Src/fan_control.c:138:9:FanControl_IsFresh	8	static
+../Core/Src/fan_control.c:140:9:FanControl_HasFault	8	static
+../Core/Src/fan_control.c:145:6:FanControl_SetManualPWM	16	static
+../Core/Src/fan_control.c:161:6:FanControl_ClearManualPWM	8	static
+../Core/Src/fan_control.c:167:9:FanControl_IsManual	8	static

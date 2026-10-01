@@ -1,0 +1,9 @@
+../Core/Src/rover_state.c:9:13:StateToString	8	static
+../Core/Src/rover_state.c:22:13:FaultToString	8	static
+../Core/Src/rover_state.c:37:9:RoverState_IsLocked	8	static
+../Core/Src/rover_state.c:42:9:RoverState_SetState	16	static
+../Core/Src/rover_state.c:53:9:RoverState_SetStateFromString	16	static
+../Core/Src/rover_state.c:88:6:ReportFault	16	static
+../Core/Src/rover_state.c:97:6:RecoverFromFault	8	static
+../Core/Src/rover_state.c:106:6:PrintState	8	static
+../Core/Src/rover_state.c:111:6:Robot_Task	16	static
