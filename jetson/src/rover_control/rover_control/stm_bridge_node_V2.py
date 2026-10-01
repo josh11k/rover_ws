@@ -112,13 +112,13 @@ class STMBridgeNode(Node):
         msg_log = LogMessage()
         msg_log.source = "JETSON"
         msg_log.event = "INFO"
-        msg_log.details = f"Motor command sent: Motor 1 {msg.motor1}, Motor 2 {msg.motor2}, Motor 3 {msg.motor3}, Motor 4 {msg.motor4}"
+        msg_log.details = f"Motor command sent: Motor 1 {msg.motor1}"
 
         self.publish_operational_log.publish(msg_log)
         self.publish_com_stm_log.publish(msg_log)
 
         msg.task = "SET_MOTOR:"
-        command = f">>{msg.task} {msg.motor1}, {msg.motor2}, {msg.motor3}, {msg.motor4}<<"
+        command = f">>{msg.task} {msg.motor1}<<"
         self.send_message(command)
 
 
