@@ -62,6 +62,7 @@ class XM430Node(Node):
         self.declare_parameter('profile_acceleration', 20)
         self.declare_parameter('publish_rate', 50.0)
         self.declare_parameter('torque_off_on_shutdown', True)
+        self.position = 0.0
 
         port_name = self.get_parameter('port').value
         baudrate = self.get_parameter('baudrate').value
@@ -97,14 +98,15 @@ class XM430Node(Node):
         # --- ROS-Schnittstellen ----------------------------------------------
         self.js_pub = self.create_publisher(Float64, '/xm430_node/new_position', 10)
         self.publish_hkd = self.create_publisher(Housekeeping, '/log/housekeeping', 10)
-        self.publish_operation_log = self.create_publisher(LogMessage, '/log/operation', 10)
-        self.create_subscription(Float64, '~/goal_position', self._on_goal_position, 10)
+        self.publish_operation_log = self.create_publisher(LogMessage, '/log/operations', 10)
+        self.create_subscription(Float64, '/xm430_node/goal_position', self._on_goal_position, 10)
         self.create_subscription(Float64, '~/goal_velocity', self._on_goal_velocity, 10)
         self.create_subscription(Bool, '~/torque_enable', self._on_torque_enable, 10)
 
         rate = float(self.get_parameter('publish_rate').value)
         self.create_timer(1.0 / rate, self._publish_state)
         self.get_logger().info(f'XM430 bereit (Modus: {self.mode_name})')
+        self.create_timer(30.0, self.housekeeping_timer_callback)
 
     # --- Low-Level-Helfer ----------------------------------------------------
     def _write(self, size, addr, value):
@@ -159,7 +161,22 @@ class XM430Node(Node):
             ticks = max(0, min(4095, ticks))
         else:  # extended_position: +-256 Umdrehungen
             ticks = max(-1048575, min(1048575, ticks))
-        self._write(4, ADDR_GOAL_POSITION, ticks)
+        if self._write(4, ADDR_GOAL_POSITION, ticks):
+            msg_pos = Float64()
+            msg_pos.data = msg.data
+            msg_hkd = Housekeeping()
+            msg_log = LogMessage()
+            msg_hkd.source = "JETSON"
+            msg_hkd.component = "MOTOR 5"
+            msg_hkd.type = "POSITION"
+            msg_hkd.value = f"{msg_pos.data}"
+            msg_log.source = "MOTOR 5"
+            msg_log.event = "INFO"
+            msg_log.message =f"Set Motor to new position: {msg_pos.data}"
+            self.publish_operation_log.publish(msg_log)
+            self.js_pub.publish(msg_pos)
+            self.publish_hkd.publish(msg_hkd)
+
 
     def _on_goal_velocity(self, msg):
         if self.mode_name != 'velocity':
@@ -195,19 +212,15 @@ class XM430Node(Node):
         js.position = [(position - POS_CENTER) * RAD_PER_TICK]
         js.velocity = [velocity * RADS_PER_VEL_UNIT]
         js.effort = [current * AMP_PER_CUR_UNIT]   # Strom in A (kein Drehmoment!)
-        msg_pos = Float64()
-        msg_pos.data = float(js.position[0])
+        self.position = js.position[0]
+        self.js_pub.publish(Float64(data=self.position))
+
+    def housekeeping_timer_callback(self):
         msg_hkd = Housekeeping()
-        msg_log = LogMessage()
         msg_hkd.source = "JETSON"
         msg_hkd.component = "MOTOR 5"
-        msg_hkd.type = "POSITION"
-        msg_hkd.vlaue = f"{msg_pos.data}"
-        msg_log.source = "MOTOR 5"
-        msg_log.event = "INFO"
-        msg_log.message =f"Set Motor to new position: {msg_pos.data}"
-        self.js_pub.publish(msg_pos)
-        self.publish_hkd(msg_hkd)
+        msg_hkd.type = f"Set Motor to new position: {self.position}"
+        self.publish_hkd.publish(msg_hkd)
 
     # --- Aufraeumen ----------------------------------------------------------
     def destroy_node(self):
