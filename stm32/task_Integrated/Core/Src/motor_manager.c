@@ -173,6 +173,7 @@ static uint8_t detectedMotor[DRS_ID_COUNT];
 static uint8_t discoveryMissCount[DRS_ID_COUNT];
 static uint8_t discoveryMotorId;
 static uint8_t scanMotorIndex;
+static uint8_t lastMissionSucceeded = 0U;
 static uint32_t lastDiscoveryCheck;
 static uint32_t lastMotorCheck;
 /* Multi-motor segmented sync control */
@@ -1505,6 +1506,26 @@ static void Motor_SyncSegmentTask(void)
  * ---------------------------------------------------------------------
  */
 
+void MotorManager_StartDeployment(void)
+{
+    Deployment_Start();
+}
+
+void MotorManager_StartRetract(void)
+{
+    Deployment_StartRetractSequence();
+}
+
+uint8_t MotorManager_IsMissionActive(void)
+{
+    return (deploymentPhase != DEPLOY_IDLE) ? 1U : 0U;
+}
+
+uint8_t MotorManager_GetLastMissionSucceeded(void)
+{
+    return lastMissionSucceeded;
+}
+
 static uint8_t Deployment_ValidateTarget(uint16_t target)
 {
     return (target >= (uint16_t)DRS_HOLD_POSITION_MIN) &&
@@ -1526,6 +1547,10 @@ static void Deployment_StartRetractSequence(void)
         printf("RETRACT rejected: deployment/retract already active\r\n");
         return;
     }
+
+    lastMissionSucceeded = 0U;
+
+    deploymentStageRetried = 0U;
 
     deploymentStageRetried = 0U;
     deploymentManualAbort = 0U;
@@ -1672,7 +1697,7 @@ static void Deployment_SettleTask(void)
     Motor_SetState(indexes[2], MOTOR_BRAKED);
 
     printf("RETRACT complete: settled and braked at stowed position\r\n");
-
+    lastMissionSucceeded = 1U;
     deploymentPhase = DEPLOY_IDLE;
 }
 
@@ -1712,6 +1737,8 @@ static void Deployment_Start(void)
         printf("DEPLOY rejected: deployment already active\r\n");
         return;
     }
+
+    lastMissionSucceeded = 0U; /* assume failure until a success point proves otherwise */
 
     if (syncSegmentActive)
     {
@@ -1980,6 +2007,7 @@ static void Deployment_StartSeating(void)
          * deployment still counts as complete at the plain stage-3 target. */
         printf("DEPLOY: seating overshoot out of safe range (top=%u, mid=%u, base=%u) - skipping, staying in normal HOLDING\r\n",
                targetTop, targetMid, targetBase);
+               lastMissionSucceeded = 1U;
         deploymentPhase = DEPLOY_IDLE;
         return;
     }
@@ -2039,7 +2067,7 @@ static void Deployment_SeatingTask(void)
     Motor_SetState(indexes[2], MOTOR_BRAKED);
 
     printf("DEPLOY complete: seated against end-stops, holding in BRAKE mode\r\n");
-
+    lastMissionSucceeded = 1U;
     deploymentPhase = DEPLOY_IDLE;
 }
 

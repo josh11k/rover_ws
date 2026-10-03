@@ -37,7 +37,7 @@ Core/Src/rover_housekeeping.o: ../Core/Src/rover_housekeeping.c \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_tim_ex.h \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_uart.h \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_uart_ex.h \
- ../Core/Inc/fan_driver.h ../Core/Inc/ina228.h \
+ ../Core/Inc/rover_state.h ../Core/Inc/fan_driver.h ../Core/Inc/ina228.h \
  ../Core/Inc/motor_manager.h ../Core/Inc/rover_state.h \
  ../Core/Inc/temperature_sensor.h
 ../Core/Inc/rover_housekeeping.h:
@@ -79,6 +79,7 @@ Core/Src/rover_housekeeping.o: ../Core/Src/rover_housekeeping.c \
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_tim_ex.h:
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_uart.h:
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_uart_ex.h:
+../Core/Inc/rover_state.h:
 ../Core/Inc/fan_driver.h:
 ../Core/Inc/ina228.h:
 ../Core/Inc/motor_manager.h:

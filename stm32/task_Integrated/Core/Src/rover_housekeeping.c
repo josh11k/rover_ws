@@ -5,18 +5,47 @@
 #include "motor_manager.h"
 #include "rover_state.h"
 #include "temperature_sensor.h"
+#include <stdlib.h>
 
 #include <stdio.h>
 #include <string.h>
 
+#define HK_REPORT_INTERVAL_MS 5000U  
 #define INA_ADDRESS_MIN 0x40U
 #define INA_ADDRESS_MAX 0x4FU
 #define HK_MAX_INA_COUNT 4U
 #define HK_MOTOR_COUNT 5U
 #define HK_TEMP_INTERVAL_MS 1000U
 #define HK_INA_INTERVAL_MS 1000U
-#define HK_REPORT_INTERVAL_MS 10000U		/*HB 1s pro time*/
+#define HK_EXT_TEMP_MAX_C       60        /* PT1000 external sensor limit, deg C */
+#define HK_MOTOR_TEMP_MAX_C     70        /* HerkuleX internal motor temp limit, deg C */
 
+/*
+ * Feste Zuordnung I2C-Adresse -> Bus/Alert-Pin und INA228-Hardware-Alert-
+ * Grenzwerte (Shunt = 15 mOhm fuer alle vier Kanaele).
+ * SOVL: 5 uV/LSB  -> I_max[A] * Rshunt[Ohm] / 5uV = I_max * 3000
+ * BOVL/BUVL: 3.125 mV/LSB, Marge = +-10% um die Nominalspannung.
+ * Ueber-/Unterspannung und Ueberstrom werden ab jetzt NICHT MEHR per
+ * Software-Vergleich geprueft, sondern vom INA228 selbst erkannt und
+ * nur noch als DIAG_ALRT-Flag ausgelesen (siehe RoverHousekeeping_CheckThresholds).
+ */
+typedef struct
+{
+    uint8_t address;
+    const char *busName;
+    int16_t sovl;   /* Ueberstrom-Schwelle */
+    uint16_t bovl;  /* Ueberspannungs-Schwelle */
+    uint16_t buvl;  /* Unterspannungs-Schwelle */
+} INA228_BusConfig;
+
+static const INA228_BusConfig inaBusConfigs[] =
+{
+    { 0x45U, "12V_BUS1 (3A)",   9000, 4224, 3456 }, /* Alert1, PC0 */
+    { 0x44U, "12V_BUS2 (3A)",   9000, 4224, 3456 }, /* Alert2, PC1 */
+    { 0x41U, "12V_BUS3 (6A)",  18000, 4224, 3456 }, /* Alert3, PC2 */
+    { 0x40U, "5V_BUS4 (1.6A)",  4800, 1760, 1440 }, /* Alert4, PC3 */
+};
+#define INA228_BUS_CONFIG_COUNT (sizeof(inaBusConfigs) / sizeof(inaBusConfigs[0]))
 
 static TemperatureSensorData latestTemperature;
 static uint8_t temperatureValid = 0U;
@@ -24,12 +53,26 @@ static uint8_t temperatureValid = 0U;
 static uint8_t inaAddresses[HK_MAX_INA_COUNT];
 static INA228_Measurement inaMeasurements[HK_MAX_INA_COUNT];
 static uint8_t inaValid[HK_MAX_INA_COUNT];
+static uint16_t inaAlertFlags[HK_MAX_INA_COUNT];
 static uint8_t inaCount = 0U;
 
 static uint32_t lastTempTick = 0U;
 static uint32_t lastInaTick = 0U;
 static uint32_t lastReportTick = 0U;
 
+
+static const INA228_BusConfig *FindBusConfig(uint8_t address)
+{
+    for (size_t i = 0U; i < INA228_BUS_CONFIG_COUNT; i++)
+    {
+        if (inaBusConfigs[i].address == address)
+        {
+            return &inaBusConfigs[i];
+        }
+    }
+
+    return NULL;
+}
 
 static void PrintFloat1(float value)
 {
@@ -93,6 +136,7 @@ static void ScanINADevices(void)
 {
     inaCount = 0U;
     memset(inaValid, 0, sizeof(inaValid));
+    memset(inaAlertFlags, 0, sizeof(inaAlertFlags));
 
     for (uint8_t address = INA_ADDRESS_MIN;
          address <= INA_ADDRESS_MAX && inaCount < HK_MAX_INA_COUNT;
@@ -114,6 +158,37 @@ static void ScanINADevices(void)
                 printf("INA%u detected at 0x%02X, averaging setup failed\r\n",
                        (unsigned)(inaCount + 1U),
                        address);
+            }
+
+            {
+                const INA228_BusConfig *busConfig = FindBusConfig(address);
+
+                if (busConfig != NULL)
+                {
+                    if (INA228_SetAlertLimits(address,
+                                              busConfig->sovl,
+                                              busConfig->bovl,
+                                              busConfig->buvl))
+                    {
+                        printf("INA%u (0x%02X) = %s, alert limits armed\r\n",
+                               (unsigned)(inaCount + 1U),
+                               address,
+                               busConfig->busName);
+                    }
+                    else
+                    {
+                        printf("INA%u (0x%02X) = %s, alert limit setup FAILED\r\n",
+                               (unsigned)(inaCount + 1U),
+                               address,
+                               busConfig->busName);
+                    }
+                }
+                else
+                {
+                    printf("INA%u (0x%02X): no bus config found, alert limits NOT armed\r\n",
+                           (unsigned)(inaCount + 1U),
+                           address);
+                }
             }
 
             inaCount++;
@@ -145,6 +220,11 @@ static void ReadINADevices(void)
     {
         inaValid[i] = INA228_ReadMeasurement(inaAddresses[i],
                                              &inaMeasurements[i]);
+
+        if (!INA228_ReadAlertFlags(inaAddresses[i], &inaAlertFlags[i]))
+        {
+            inaAlertFlags[i] = 0U;
+        }
     }
 }
 
@@ -277,6 +357,63 @@ static void PrintHousekeeping(void)
     }
 
     printf("<<\r\n");
+}
+
+uint8_t RoverHousekeeping_CheckThresholds(FaultCode *outFault)
+{
+    for (uint8_t i = 0U; i < inaCount; i++)
+    {
+        if (!inaValid[i])
+        {
+            continue;
+        }
+
+        /*
+         * Ueber-/Unterspannung und Ueberstrom werden jetzt vom INA228
+         * selbst erkannt (SOVL/BOVL/BUVL, siehe ScanINADevices) und hier
+         * nur noch als gelatchtes DIAG_ALRT-Flag abgeholt.
+         */
+        if (inaAlertFlags[i] & (INA228_DIAGALRT_BUSOL | INA228_DIAGALRT_BUSUL))
+        {
+            if (outFault != NULL) { *outFault = FAULT_VOLTAGE_HIGH; }
+            return 1U;
+        }
+
+        if (inaAlertFlags[i] & INA228_DIAGALRT_SHNTOL)
+        {
+            if (outFault != NULL) { *outFault = FAULT_CURRENT_HIGH; }
+            return 1U;
+        }
+    }
+
+    if (temperatureValid)
+    {
+        for (uint8_t i = 0U; i < TEMP_SENSOR_COUNT; i++)
+        {
+            if (latestTemperature.valid[i] &&
+                latestTemperature.temperature[i] > (float)HK_EXT_TEMP_MAX_C)
+            {
+                if (outFault != NULL) { *outFault = FAULT_TEMP_HIGH; }
+                return 1U;
+            }
+        }
+    }
+
+    for (uint8_t motorId = 1U; motorId <= HK_MOTOR_COUNT; motorId++)
+    {
+        int16_t motorTemperatureC;
+        uint8_t tempConnected;
+
+        if (MotorManager_GetInternalTemperatureCById(motorId, &motorTemperatureC, &tempConnected) &&
+            tempConnected &&
+            motorTemperatureC > (int16_t)HK_MOTOR_TEMP_MAX_C)
+        {
+            if (outFault != NULL) { *outFault = FAULT_TEMP_HIGH; }
+            return 1U;
+        }
+    }
+
+    return 0U;
 }
 
 void RoverHousekeeping_Init(ADC_HandleTypeDef *hadc)

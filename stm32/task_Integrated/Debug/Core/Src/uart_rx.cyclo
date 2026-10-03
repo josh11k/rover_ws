@@ -1,0 +1,5 @@
+../Core/Src/uart_rx.c:19:23:FindChannel	3
+../Core/Src/uart_rx.c:31:6:UartRx_Start	4
+../Core/Src/uart_rx.c:56:9:UartRx_GetByte	5
+../Core/Src/uart_rx.c:83:6:HAL_UART_RxCpltCallback	4
+../Core/Src/uart_rx.c:109:6:HAL_UART_ErrorCallback	3

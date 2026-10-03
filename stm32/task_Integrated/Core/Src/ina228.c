@@ -15,7 +15,14 @@
 #define INA228_REG_VSHUNT     0x04U
 #define INA228_REG_VBUS       0x05U
 #define INA228_REG_DIETEMP    0x06U
+#define INA228_REG_DIAG_ALRT  0x0BU
+#define INA228_REG_SOVL       0x0CU
+#define INA228_REG_BOVL       0x0EU
+#define INA228_REG_BUVL       0x0FU
 #define INA228_I2C_TIMEOUT_MS 100U
+
+#define INA228_DIAGALRT_ALATCH    0x8000U /* latch alert until DIAG_ALRT is read */
+#define INA228_DIAGALRT_SLOWALERT 0x2000U /* compare against averaged value, not raw */
 
 // USER CONFIGURATION: Adafruit INA228 uses a 15000 microohm shunt.
 #define INA228_SHUNT_RESISTANCE_MICROOHM 15000LL
@@ -65,6 +72,61 @@ uint8_t INA228_SetAveraging64(uint8_t address)
         address,
         INA228_REG_ADC_CONFIG,
         config);
+}
+
+uint8_t INA228_SetAlertLimits(uint8_t address,
+                              int16_t sovl,
+                              uint16_t bovl,
+                              uint16_t buvl)
+{
+    /*
+     * ALATCH=1: ein ausgelöster Alert (Flag + ALERT-Pin) bleibt gesetzt,
+     * bis DIAG_ALRT gelesen wird - kurze Spitzen gehen so nicht zwischen
+     * zwei Housekeeping-Zyklen verloren.
+     * SLOWALERT=1: Vergleich gegen den gemittelten (64x) Messwert statt
+     * gegen den rohen Einzel-Sample-Wert, passend zu INA228_SetAveraging64().
+     * SUVL bleibt bewusst auf Reset-Default (0x8000) - Rueckstrom wird auf
+     * diesen Schienen nicht ueberwacht.
+     */
+    if (!INA228_WriteRegister16(address,
+                                INA228_REG_DIAG_ALRT,
+                                INA228_DIAGALRT_ALATCH | INA228_DIAGALRT_SLOWALERT))
+    {
+        return 0U;
+    }
+
+    if (!INA228_WriteRegister16(address, INA228_REG_SOVL, (uint16_t)sovl))
+    {
+        return 0U;
+    }
+
+    if (!INA228_WriteRegister16(address, INA228_REG_BOVL, bovl))
+    {
+        return 0U;
+    }
+
+    return INA228_WriteRegister16(address, INA228_REG_BUVL, buvl);
+}
+
+uint8_t INA228_ReadAlertFlags(uint8_t address, uint16_t *flags)
+{
+    uint8_t data[2];
+
+    if (flags == NULL)
+        return 0U;
+
+    /*
+     * Lesen von DIAG_ALRT loescht bei ALATCH=1 die gelatchten Flag-Bits
+     * (7-1). Das ist hier gewollt: der naechste Alert wird wieder frisch
+     * erkannt, die Grenzwertregister selbst bleiben unveraendert scharf.
+     */
+    if (!INA228_ReadRegister(address, INA228_REG_DIAG_ALRT, data, sizeof(data)))
+    {
+        return 0U;
+    }
+
+    *flags = ((uint16_t)data[0] << 8) | data[1];
+    return 1U;
 }
 
 uint8_t INA228_ReadTemperature(
