@@ -37,7 +37,8 @@ Core/Src/rover_protocol.o: ../Core/Src/rover_protocol.c \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_tim_ex.h \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_uart.h \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_uart_ex.h \
- ../Core/Inc/motor_manager.h ../Core/Inc/rover_state.h
+ ../Core/Inc/motor_manager.h ../Core/Inc/rover_state.h \
+ ../Core/Inc/uart_rx.h
 ../Core/Inc/rover_protocol.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal.h:
@@ -79,3 +80,4 @@ Core/Src/rover_protocol.o: ../Core/Src/rover_protocol.c \
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_uart_ex.h:
 ../Core/Inc/motor_manager.h:
 ../Core/Inc/rover_state.h:
+../Core/Inc/uart_rx.h:

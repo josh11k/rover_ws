@@ -3,6 +3,7 @@
 
 #include "motor_manager.h"
 #include "rover_state.h"
+#include "uart_rx.h"   /* NEU: Interrupt-Empfang mit Ringpuffer */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -15,11 +16,12 @@
 #define JETSON_MOTOR_CODE_MIN      25L
 #define JETSON_MOTOR_CODE_MAX      998L
 
-#define SET_MOTOR_TARGET_MIN_COUNT 4U
+#define SET_MOTOR_TARGET_MIN_COUNT 1U
 #define SET_MOTOR_TARGET_MAX_COUNT 5U
 #define SET_MOTOR_TARGET_COUNT     6U
 
 static UART_HandleTypeDef *protocolUart = NULL;
+static UART_HandleTypeDef *activeReplyUart = NULL;
 static char rxLine[RX_LINE_BUFFER_SIZE];
 static uint8_t rxIndex = 0U;
 static uint8_t rxOverflow = 0U;
@@ -170,14 +172,17 @@ static void PrintHelp(void)
     printf("  >>SET_STATE: IDLE<<\r\n");
     printf("  >>SET_STATE: MAST_DEPLOYMENT<<\r\n");
     printf("  >>SET_STATE: STANDBY<<\r\n");
-    printf("  >>SET_STATE: AUTO<<\r\n");
-    printf("  >>SET_MOTOR: 512,512,512,512,512<<  (M1..M5 position codes, 25..998)\r\n");
+    printf("  >>SET_STATE: SETUP<<\r\n");
+    printf("  >>SET_STATE: RETRACT<<\r\n");
+    printf("  >>SET_STATE: SHUTDOWN<<\r\n");;
+    printf("  >>SET_MOTOR: tilt or 512,512,512,512,512<<  (M1..M5 position codes, 25..998)\r\n");
     printf("  >>ERROR: TEMP_HIGH<<\r\n");
     printf("  RECOVER\r\n");
     printf("  pos / status / s / b / si  (direct motor debug commands)\r\n");
+    printf("  pmos <1-4> on|off  (1=PMOS11 7.4V, 2=PMOS12 5V, 3=PMOS21 Jetson 12V, 4=PMOS22 12V)\r\n");
 }
 
-static void ProcessCommand(char *line)
+void RoverProtocol_ProcessCommand(char *line)
 {
     char *message;
     char *payload;
@@ -299,6 +304,41 @@ static void ProcessCommand(char *line)
         return;
     }
 
+    if (strncmp(message, "pmos ", 5U) == 0)
+    {
+        char *args = message + 5U;
+        char *endPtr;
+        long id;
+        char *statePart;
+
+        id = strtol(args, &endPtr, 10);
+
+        if (endPtr == args || id < 1L || id > (long)PMOS_COUNT)
+        {
+            SendNack("INVALID_PMOS_ID");
+            return;
+        }
+
+        statePart = Trim(endPtr);
+
+        if (strcmp(statePart, "on") == 0)
+        {
+            RoverState_SetPowerSwitch((PowerSwitchId)(id - 1), 1U);
+            SendAck("PMOS");
+        }
+        else if (strcmp(statePart, "off") == 0)
+        {
+            RoverState_SetPowerSwitch((PowerSwitchId)(id - 1), 0U);
+            SendAck("PMOS");
+        }
+        else
+        {
+            SendNack("INVALID_PMOS_STATE");
+        }
+
+        return;
+    }
+
     /* Direct motor debug commands inherited from Task 5.6. */
     if (strcmp(message, "s") == 0 || strcmp(message, "b") == 0 ||
         strcmp(message, "i") == 0 || strcmp(message, "si") == 0 ||
@@ -315,6 +355,17 @@ static void ProcessCommand(char *line)
     SendNack("UNKNOWN_COMMAND");
 }
 
+void RoverProtocol_SetReplyUart(UART_HandleTypeDef *uart)
+{
+    activeReplyUart = uart;
+}
+
+UART_HandleTypeDef *RoverProtocol_GetReplyUart(void)
+{
+    /* NULL = kein aktiver Kanal-Override -> Standard ist der Jetson-Link. */
+    return (activeReplyUart != NULL) ? activeReplyUart : protocolUart;
+}
+
 void RoverProtocol_Init(UART_HandleTypeDef *uart)
 {
     protocolUart = uart;
@@ -322,6 +373,8 @@ void RoverProtocol_Init(UART_HandleTypeDef *uart)
     rxOverflow = 0U;
     lastAliveTick = HAL_GetTick();
     aliveTimeoutReported = 0U;
+
+    UartRx_Start(uart);   /* NEU: Interrupt-Empfang starten */
 }
 
 void RoverProtocol_Task(void)
@@ -331,13 +384,12 @@ void RoverProtocol_Task(void)
         return;
     }
 
-    for (uint8_t i = 0U; i < 32U; i++)
+    /* NEU: Bytes kommen aus dem Ringpuffer statt per blockierendem Polling */
+    for (uint8_t i = 0U; i < 64U; i++)
     {
         uint8_t ch;
-        HAL_StatusTypeDef result;
 
-        result = HAL_UART_Receive(protocolUart, &ch, 1U, 1U);
-        if (result != HAL_OK)
+        if (!UartRx_GetByte(protocolUart, &ch))
         {
             break;
         }
@@ -347,7 +399,7 @@ void RoverProtocol_Task(void)
             if (rxIndex > 0U || rxOverflow)
             {
                 rxLine[rxIndex] = '\0';
-                ProcessCommand(rxLine);
+                RoverProtocol_ProcessCommand(rxLine);
             }
 
             rxIndex = 0U;
@@ -378,6 +430,11 @@ void RoverProtocol_CheckAliveTimeout(void)
         aliveTimeoutReported = 1U;
         ReportFault(FAULT_COMM_TIMEOUT);
     }
+}
+
+uint8_t RoverProtocol_HasAliveSince(uint32_t sinceTick)
+{
+    return ((int32_t)(lastAliveTick - sinceTick) >= 0) ? 1U : 0U;
 }
 
 void SendAck(const char *message)
