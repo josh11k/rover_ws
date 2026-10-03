@@ -96,7 +96,7 @@ class XM430Node(Node):
         self._configure()
 
         # --- ROS-Schnittstellen ----------------------------------------------
-        self.js_pub = self.create_publisher(Float64, '/xm430_node/new_position', 10)
+        self.js_pub = self.create_publisher(Float64, '/xm430_node/current_position', 10)
         self.publish_hkd = self.create_publisher(Housekeeping, '/log/housekeeping', 10)
         self.publish_operation_log = self.create_publisher(LogMessage, '/log/operations', 10)
         self.create_subscription(Float64, '/xm430_node/goal_position', self._on_goal_position, 10)

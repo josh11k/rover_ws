@@ -65,7 +65,7 @@ class STMBridgeNode(Node):
 
         self.publish_motor_position = self.create_publisher(
             MotorPosition,
-            '/motor_position/current',
+            '/motor_position/current_position',
             10
             )
 
