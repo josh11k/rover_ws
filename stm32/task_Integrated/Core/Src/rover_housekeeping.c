@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define HK_REPORT_INTERVAL_MS 5000U  
+#define HK_REPORT_INTERVAL_MS 5000U
 #define INA_ADDRESS_MIN 0x40U
 #define INA_ADDRESS_MAX 0x4FU
 #define HK_MAX_INA_COUNT 4U
@@ -19,15 +19,17 @@
 #define HK_INA_INTERVAL_MS 1000U
 #define HK_EXT_TEMP_MAX_C       60        /* PT1000 external sensor limit, deg C */
 #define HK_MOTOR_TEMP_MAX_C     70        /* HerkuleX internal motor temp limit, deg C */
+#define HK_BUS_SETTLE_MS        2000U     /* Unterspannung ignorieren, solange Schiene hochfaehrt */
 
 /*
- * Feste Zuordnung I2C-Adresse -> Bus/Alert-Pin und INA228-Hardware-Alert-
+ * Feste Zuordnung I2C-Adresse -> Bus/Alert-Pin/PMOS und INA228-Hardware-Alert-
  * Grenzwerte (Shunt = 15 mOhm fuer alle vier Kanaele).
  * SOVL: 5 uV/LSB  -> I_max[A] * Rshunt[Ohm] / 5uV = I_max * 3000
  * BOVL/BUVL: 3.125 mV/LSB, Marge = +-10% um die Nominalspannung.
- * Ueber-/Unterspannung und Ueberstrom werden ab jetzt NICHT MEHR per
- * Software-Vergleich geprueft, sondern vom INA228 selbst erkannt und
- * nur noch als DIAG_ALRT-Flag ausgelesen (siehe RoverHousekeeping_CheckThresholds).
+ * Ueber-/Unterspannung und Ueberstrom werden NICHT per Software-Vergleich
+ * geprueft, sondern vom INA228 selbst erkannt und nur noch als DIAG_ALRT-Flag
+ * ausgelesen (siehe RoverHousekeeping_CheckThresholds).
+ * Die Unterspannung wird nur geprueft, wenn der zugehoerige PMOS an ist.
  */
 typedef struct
 {
@@ -36,14 +38,15 @@ typedef struct
     int16_t sovl;   /* Ueberstrom-Schwelle */
     uint16_t bovl;  /* Ueberspannungs-Schwelle */
     uint16_t buvl;  /* Unterspannungs-Schwelle */
+    int8_t pmos;    /* PowerSwitchId, -1 = Schiene immer an */
 } INA228_BusConfig;
 
 static const INA228_BusConfig inaBusConfigs[] =
 {
-    { 0x45U, "12V_BUS1 (3A)",   9000, 4224, 3456 }, /* Alert1, PC0 */
-    { 0x44U, "12V_BUS2 (3A)",   9000, 4224, 3456 }, /* Alert2, PC1 */
-    { 0x41U, "12V_BUS3 (6A)",  18000, 4224, 3456 }, /* Alert3, PC2 */
-    { 0x40U, "5V_BUS4 (1.6A)",  4800, 1760, 1440 }, /* Alert4, PC3 */
+    { 0x45U, "12V_BUS1 Jetson (3A)", 9000, 4224, 3456, PMOS_21_JETSON_12V }, /* Alert1, PC0 */
+    { 0x44U, "12V_BUS2 (3A)",        9000, 4224, 3456, PMOS_22_12V },        /* Alert2, PC1 */
+    { 0x41U, "7V4_BUS3 Motor (6A)", 18000, 2605, 2131, PMOS_12_MOTOR_7V4 }, /* Alert3, PC2 */
+    { 0x40U, "5V_BUS4 (1.6A)",       4800, 1760, 1440, PMOS_11_5V },         /* Alert4, PC3 */
 };
 #define INA228_BUS_CONFIG_COUNT (sizeof(inaBusConfigs) / sizeof(inaBusConfigs[0]))
 
@@ -230,7 +233,7 @@ static void ReadINADevices(void)
 
 static void PrintHousekeeping(void)
 {
-	printf(">>HOUSE_KEEPING_DATA:\r\n");
+    printf(">>HOUSE_KEEPING_DATA:\r\n");
 
     printf("Time: %lus\r\n", (unsigned long)(HAL_GetTick() / 1000U));
 
@@ -363,17 +366,43 @@ uint8_t RoverHousekeeping_CheckThresholds(FaultCode *outFault)
 {
     for (uint8_t i = 0U; i < inaCount; i++)
     {
+        const INA228_BusConfig *busConfig;
+        uint8_t undervoltageArmed = 1U;
+
         if (!inaValid[i])
         {
             continue;
         }
 
         /*
-         * Ueber-/Unterspannung und Ueberstrom werden jetzt vom INA228
-         * selbst erkannt (SOVL/BOVL/BUVL, siehe ScanINADevices) und hier
-         * nur noch als gelatchtes DIAG_ALRT-Flag abgeholt.
+         * Unterspannung nur pruefen, wenn der zugehoerige PMOS an ist und die
+         * Schiene Zeit zum Hochfahren hatte. Ueberspannung und Ueberstrom
+         * sind immer aktiv.
          */
-        if (inaAlertFlags[i] & (INA228_DIAGALRT_BUSOL | INA228_DIAGALRT_BUSUL))
+        busConfig = FindBusConfig(inaAddresses[i]);
+        if (busConfig != NULL && busConfig->pmos >= 0)
+        {
+            PowerSwitchId id = (PowerSwitchId)busConfig->pmos;
+
+            if (!RoverState_IsPowerSwitchOn(id) ||
+                RoverState_PowerSwitchOnTimeMs(id) < HK_BUS_SETTLE_MS)
+            {
+                undervoltageArmed = 0U;
+            }
+        }
+
+        /*
+         * Ueber-/Unterspannung und Ueberstrom werden vom INA228 selbst
+         * erkannt (SOVL/BOVL/BUVL, siehe ScanINADevices) und hier nur noch
+         * als gelatchtes DIAG_ALRT-Flag abgeholt.
+         */
+        if (inaAlertFlags[i] & INA228_DIAGALRT_BUSOL)
+        {
+            if (outFault != NULL) { *outFault = FAULT_VOLTAGE_HIGH; }
+            return 1U;
+        }
+
+        if (undervoltageArmed && (inaAlertFlags[i] & INA228_DIAGALRT_BUSUL))
         {
             if (outFault != NULL) { *outFault = FAULT_VOLTAGE_HIGH; }
             return 1U;
