@@ -48,13 +48,16 @@ void RoverState_InitPowerSwitches(void);
 
 typedef enum
 {
-    PMOS_11_MOTOR_7V4 = 0,
-    PMOS_12_5V,
+    PMOS_11_5V = 0,
+    PMOS_12_MOTOR_7V4,
     PMOS_21_JETSON_12V,
     PMOS_22_12V,
     PMOS_COUNT
 } PowerSwitchId;
 
 void RoverState_SetPowerSwitch(PowerSwitchId id, uint8_t on);
+
+uint8_t RoverState_IsPowerSwitchOn(PowerSwitchId id);
+uint32_t RoverState_PowerSwitchOnTimeMs(PowerSwitchId id);
 
 #endif /* INC_ROVER_STATE_H_ */

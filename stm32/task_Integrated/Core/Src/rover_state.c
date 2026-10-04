@@ -27,11 +27,14 @@ typedef struct
 
 static const PowerSwitchDef pmosDefs[PMOS_COUNT] =
 {
-    { GPIOB, GPIO_PIN_4,  "PMOS11 7.4V motor bus" },
-    { GPIOB, GPIO_PIN_5,  "PMOS12 5V bus" },
+    { GPIOB, GPIO_PIN_4,  "PMOS11 5V bus" },
+    { GPIOB, GPIO_PIN_5,  "PMOS12 7.4V motor bus" },
     { GPIOB, GPIO_PIN_13, "PMOS21 12V Jetson bus" },
     { GPIOB, GPIO_PIN_14, "PMOS22 12V bus" }
 };
+
+static uint8_t pmosIsOn[PMOS_COUNT];
+static uint32_t pmosOnSinceTick[PMOS_COUNT];
 
 RobotState currentState = STATE_IDLE;
 FaultCode activeFault = FAULT_NONE;
@@ -219,7 +222,28 @@ void RoverState_SetPowerSwitch(PowerSwitchId id, uint8_t on)
     HAL_GPIO_WritePin(pmosDefs[id].port, pmosDefs[id].pin,
                        on ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
+    if (on && !pmosIsOn[id])
+    {
+        pmosOnSinceTick[id] = HAL_GetTick();
+    }
+    pmosIsOn[id] = on ? 1U : 0U;
+
     printf("Power switch %s turned %s\r\n", pmosDefs[id].label, on ? "ON" : "OFF");
+}
+
+uint8_t RoverState_IsPowerSwitchOn(PowerSwitchId id)
+{
+    return (id < PMOS_COUNT) ? pmosIsOn[id] : 0U;
+}
+
+uint32_t RoverState_PowerSwitchOnTimeMs(PowerSwitchId id)
+{
+    if (id >= PMOS_COUNT || !pmosIsOn[id])
+    {
+        return 0U;
+    }
+
+    return HAL_GetTick() - pmosOnSinceTick[id];
 }
 
 static void RoverState_PowerSequenceTask(void)
@@ -276,6 +300,8 @@ void RoverState_InitPowerSwitches(void)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     HAL_GPIO_WritePin(GPIOB, (uint16_t)pinMask, GPIO_PIN_RESET);
+
+    memset(pmosIsOn, 0, sizeof(pmosIsOn));
 }
 
 static void RoverState_OnEnter(RobotState state)

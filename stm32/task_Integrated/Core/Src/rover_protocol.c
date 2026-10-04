@@ -179,7 +179,7 @@ static void PrintHelp(void)
     printf("  >>ERROR: TEMP_HIGH<<\r\n");
     printf("  RECOVER\r\n");
     printf("  pos / status / s / b / si  (direct motor debug commands)\r\n");
-    printf("  pmos <1-4> on|off  (1=PMOS11 7.4V, 2=PMOS12 5V, 3=PMOS21 Jetson 12V, 4=PMOS22 12V)\r\n");
+    printf("  pmos <1-4> on|off  (1=PMOS11 5V, 2=PMOS12 7.4V motor, 3=PMOS21 Jetson 12V, 4=PMOS22 12V)\r\n");
 }
 
 void RoverProtocol_ProcessCommand(char *line)
