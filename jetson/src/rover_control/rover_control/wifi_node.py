@@ -137,7 +137,7 @@ class WifiNode(Node):
         )
     
     
-    self._start_web_server()
+        self._start_web_server()
 
     def state_callback(self, msg):
         self.state = msg.mode
@@ -227,10 +227,10 @@ class WifiNode(Node):
             )
 
             if success == True:
-                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_SUCCESS", message=message))
+                self.publish_operational_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_SUCCESS", message=message))
                 self.publish_wifi_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_SUCCESS", message=message))
             else:
-                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_FAILURE", message=message))
+                self.publish_operational_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_FAILURE", message=message))
                 self.publish_wifi_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_FAILURE", message=message))   
 
         if msg.data == "get_hkd": #housekeepingdata
