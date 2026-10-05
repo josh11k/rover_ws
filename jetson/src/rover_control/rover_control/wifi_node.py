@@ -1,7 +1,14 @@
 import rclpy
 import os
 import shutil
+import signal
 import subprocess
+import threading
+
+try:
+    from flask import Flask, jsonify, request
+except ImportError:  # pip install flask
+    Flask = None
 
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -9,13 +16,70 @@ from std_msgs.msg import String
 from rover_control_msgs.msg import LogMessage, OperationalMode, SystemRequest
 
 
+PAGE = """<!doctype html>
+<html><head><meta charset="utf-8"><title>Rover</title>
+<style>body{font-family:sans-serif;margin:20px}button{margin:3px;padding:8px}
+#out{background:#eee;padding:8px;margin-top:10px;white-space:pre-wrap}
+img{max-width:100%;margin-top:10px;display:none}</style></head><body>
+<h2>Rover</h2>
+<div>Zustand: <b id="state">?</b> | Kamera: <b id="cam">?</b></div>
+<div>
+ <button onclick="send('get_status')">get_status</button>
+ <button onclick="send('get_map')">get_map</button>
+ <button onclick="send('get_hkd')">get_hkd</button>
+</div>
+<div>
+ <button onclick="send('set_state STANDBY')">STANDBY</button>
+ <button onclick="send('set_state MAPPING')">MAPPING</button>
+ <button onclick="send('set_state SAFE')">SAFE</button>
+</div>
+<div>
+ <button onclick="send('camera_on')">Kamera an</button>
+ <button onclick="send('camera_off')">Kamera aus</button>
+</div>
+<div><input id="free" size="30" placeholder="beliebiger Befehl">
+ <button onclick="send(document.getElementById('free').value)">senden</button></div>
+<div id="out"></div>
+<img id="cam_img">
+<script>
+async function send(c){
+  const r = await fetch('/cmd',{method:'POST',body:c});
+  document.getElementById('out').textContent = JSON.stringify(await r.json());
+  if(c==='camera_on') setTimeout(showCam,2500);
+  if(c==='camera_off') hideCam();
+}
+function showCam(){
+  const i=document.getElementById('cam_img');
+  i.src='http://'+location.hostname+':__CAM_PORT__/stream?topic=__CAM_TOPIC__&type=mjpeg&quality=50';
+  i.style.display='block';
+}
+function hideCam(){const i=document.getElementById('cam_img');i.src='';i.style.display='none';}
+async function poll(){
+  try{const j=await (await fetch('/status')).json();
+    document.getElementById('state').textContent=j.state;
+    document.getElementById('cam').textContent=j.camera?'an':'aus';}catch(e){}
+}
+setInterval(poll,2000);poll();
+</script></body></html>"""
+
+
 class WifiNode(Node):
 
     def __init__(self):
         super().__init__("wifi_node")
 
-        self.source_path_map = "~/map"
-        self.source_path_hkd = "~/rover_log"
+        self.declare_parameter("map_path", "/home/team/rover_maps/terrain_map.npz")
+        self.declare_parameter("hkd_path", "~/rover_log/")
+        self.declare_parameter("web_port", 8080)
+        self.declare_parameter("camera_port", 8081)
+        self.declare_parameter("camera_topic", "/mono_cam/image_raw")
+
+        self.source_path_map = os.path.expanduser(self.get_parameter("map_path").value)
+        self.source_path_hkd = os.path.expanduser(self.get_parameter("hkd_path").value)
+        self.web_port = int(self.get_parameter("web_port").value)
+        self.camera_port = int(self.get_parameter("camera_port").value)
+        self.camera_topic = self.get_parameter("camera_topic").value
+        self.camera_proc = None
         self.target_user = "user"  # Ersetzen Sie dies durch den tatsächlichen
 
         self.target_ip = "192.168.2.61"
@@ -71,9 +135,79 @@ class WifiNode(Node):
             '/wifi_node/system_request',
             10
         )
+    
+    
+    self._start_web_server()
 
     def state_callback(self, msg):
         self.state = msg.mode
+    
+    
+    # ---------------- Kamera (web_video_server, per Befehl) ----------------
+    def camera_running(self):
+        return self.camera_proc is not None and self.camera_proc.poll() is None
+
+    def start_camera(self):
+        if self.camera_running():
+            return "Kamera-Stream laeuft bereits"
+        if shutil.which("ros2") is None:
+            return "ros2 nicht gefunden"
+        try:
+            self.camera_proc = subprocess.Popen(
+                ["ros2", "run", "web_video_server", "web_video_server",
+                 "--ros-args", "-p", f"port:={self.camera_port}"],
+                start_new_session=True,
+            )
+        except OSError as e:
+            return f"Kamera-Stream konnte nicht starten: {e}"
+        return f"Kamera-Stream gestartet auf Port {self.camera_port}"
+
+    def stop_camera(self):
+        if not self.camera_running():
+            return "Kamera-Stream war nicht aktiv"
+        try:
+            os.killpg(os.getpgid(self.camera_proc.pid), signal.SIGINT)
+            self.camera_proc.wait(timeout=3)
+        except Exception:
+            try:
+                os.killpg(os.getpgid(self.camera_proc.pid), signal.SIGKILL)
+            except Exception:
+                pass
+        self.camera_proc = None
+        return "Kamera-Stream gestoppt"
+
+    # ---------------- Webserver (Flask) ----------------
+    def _start_web_server(self):
+        if Flask is None:
+            self.get_logger().error("Flask fehlt: pip install flask - Webserver nicht gestartet")
+            return
+
+        app = Flask(__name__)
+        node = self
+
+        @app.route("/")
+        def index():
+            return (PAGE.replace("__CAM_PORT__", str(node.camera_port))
+                        .replace("__CAM_TOPIC__", node.camera_topic))
+
+        @app.route("/status")
+        def status():
+            return jsonify(state=node.state, camera=node.camera_running())
+
+        @app.route("/cmd", methods=["GET", "POST"])
+        def cmd():
+            text = (request.values.get("c") or request.get_data(as_text=True) or "").strip()
+            if not text:
+                return jsonify(ok=False, error="leerer Befehl"), 400
+            node.incoming_callback(String(data=text))
+            return jsonify(ok=True, cmd=text, camera=node.camera_running())
+
+        threading.Thread(
+            target=lambda: app.run(host="0.0.0.0", port=node.web_port,
+                                   threaded=True, use_reloader=False),
+            daemon=True,
+        ).start()
+        self.get_logger().info(f"Webserver auf Port {node.web_port}")
     
 
     def incoming_callback(self, msg):
@@ -83,12 +217,13 @@ class WifiNode(Node):
             msg_log.event = "REQUEST"
             msg_log.message = "Map requested via WiFi"
             self.publish_wifi_log.publish(msg_log)
-            self.publish_operational_mode.publish(msg_log)
+            self.publish_operational_log.publish(msg_log)
             
             success, message = send_map_via_rsync(
                 self.source_path_map,
                 self.target_user,
-                self.target_ip
+                self.target_ip,
+                self.target_dir,
             )
 
             if success == True:
@@ -104,12 +239,13 @@ class WifiNode(Node):
             msg_log.event = "REQUEST"
             msg_log.message = "Housekeeping Data requested via WiFi"
             self.publish_wifi_log.publish(msg_log)
-            self.publish_operational_mode.publish(msg_log)
+            self.publish_operational_log.publish(msg_log)
 
             success, message = send_csv_via_rsync(
                 self.source_path_hkd,
                 self.target_user,
                 self.target_ip,
+                self.target_dir,
             )
 
             if success == True:
@@ -153,6 +289,14 @@ class WifiNode(Node):
             msg_system.task = "SET_STATE"
             msg_system.message = new_state
             self.publish_system_request.publish(msg_system)
+
+        elif msg.data == "camera_on":
+            self.publish_wifi_log.publish(LogMessage(
+                source="CONTROLLER", event="REQUEST", message=self.start_camera()))
+
+        elif msg.data == "camera_off":
+            self.publish_wifi_log.publish(LogMessage(
+                source="CONTROLLER", event="REQUEST", message=self.stop_camera()))
 
         
 
@@ -284,10 +428,12 @@ def main(args=None):
 
     node = WifiNode()
 
-    rclpy.spin(node)
-
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.stop_camera()
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
