@@ -6,7 +6,7 @@ import subprocess
 from rclpy.node import Node
 from std_msgs.msg import String
 
-from rover_control_msgs.msg import LogMessage, OperationalMode
+from rover_control_msgs.msg import LogMessage, OperationalMode, SystemRequest
 
 
 class WifiNode(Node):
@@ -60,11 +60,17 @@ class WifiNode(Node):
             10
             )        
   
-        self.publish_operational_mode = self.create_publisher(
+        self.publish_operational_log = self.create_publisher(
             LogMessage,
             '/log/operations',
             10
             )
+
+        self.publish_system_request = self.create_publisher(
+            SystemRequest,
+            '/wifi_node/system_request',
+            10
+        )
 
     def state_callback(self, msg):
         self.state = msg.mode
@@ -86,11 +92,11 @@ class WifiNode(Node):
             )
 
             if success == True:
-                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_SUCCESS", details=message))
-                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_SUCCESS", details=message))
+                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_SUCCESS", message=message))
+                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_SUCCESS", message=message))
             else:
-                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_FAILURE", details=message))
-                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_FAILURE", details=message))   
+                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_FAILURE", message=message))
+                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="MAP_TRANSFER_FAILURE", message=message))   
 
         if msg.data == "get_hkd": #housekeepingdata
             msg_log = LogMessage()
@@ -107,11 +113,11 @@ class WifiNode(Node):
             )
 
             if success == True:
-                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_SUCCESS", details=message))
-                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_SUCCESS", details=message))
+                self.publish_operational_log.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_SUCCESS", message=message))
+                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_SUCCESS", message=message))
             else:
-                self.publish_operational_mode.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_FAILURE", details=message))
-                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_FAILURE", details=message))
+                self.publish_operational_log.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_FAILURE", message=message))
+                self.publish_wifi_log.publish(LogMessage(source="JETSON", event="HKD_TRANSFER_FAILURE", message=message))
 
         if msg.data == "get_status":
             msg_log = LogMessage()
@@ -119,11 +125,38 @@ class WifiNode(Node):
             msg_log.event = "REQUEST"
             msg_log.message = "Status requested via WiFi"
             self.publish_wifi_log.publish(msg_log)
-            self.publish_operational_mode.publish(msg_log)
+            self.publish_operational_log.publish(msg_log)
 
             # Hier können Sie den Status des Jetson-Boards abrufen und zurücksenden
             status_message = f"Jetson is operational. State: {self.state} "
             self.pub_wifi.publish(String(data=status_message))
+
+        elif msg.data.startswith("set_state"):
+            # erlaubt "set_state MAPPING", "set_state:MAPPING", "set_state=MAPPING"
+            new_state = msg.data[len("set_state"):].strip(" :=").upper()
+
+            if not new_state:
+                self.publish_wifi_log.publish(LogMessage(
+                    source="CONTROLLER", event="ERROR",
+                    message=f"set_state ohne Zielzustand: '{msg.data}'"))
+                return
+
+            msg_log = LogMessage()
+            msg_log.source = "CONTROLLER"
+            msg_log.event = "REQUEST"
+            msg_log.message = f"State change to {new_state} requested via WiFi"
+            self.publish_wifi_log.publish(msg_log)
+            self.publish_operational_log.publish(msg_log)
+
+            msg_system = SystemRequest()
+            msg_system.source = "WIFI"
+            msg_system.task = "SET_STATE"
+            msg_system.message = new_state
+            self.publish_system_request.publish(msg_system)
+
+        
+
+
 
         
   

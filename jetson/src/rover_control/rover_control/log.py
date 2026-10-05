@@ -4,16 +4,16 @@ from datetime import datetime
 
 
 # Ordner, in dem alle Log-Dateien liegen
-LOG_DIRECTORY = "/home/jetson/logs"
+LOG_DIRECTORY = "/home/team/jetson/logs"
 
 
 def write_log(filename, source, event, details):
     """
     Schreibt einen Log-Eintrag in eine CSV-Datei.
-    -> In diesem Fall die für Operations
+    -> Für Operations, Sensors, WiFi und STM-Kommunikation
 
     Args:
-        filename: Name der CSV-Datei
+        filename: Name der CSV-Datei (ohne führenden Schrägstrich)
         source:   Node, der den Eintrag erzeugt hat
         event:    Art des Events
         details:  Zusätzliche Informationen
@@ -22,7 +22,8 @@ def write_log(filename, source, event, details):
     # Sicherstellen, dass der Log-Ordner existiert
     os.makedirs(LOG_DIRECTORY, exist_ok=True)
 
-    filepath = os.path.join(LOG_DIRECTORY, filename)
+    # Führenden Schrägstrich entfernen, sonst verwirft os.path.join das Verzeichnis
+    filepath = os.path.join(LOG_DIRECTORY, filename.lstrip("/"))
 
     # Prüfen, ob die Datei bereits existiert
     file_exists = os.path.isfile(filepath)
@@ -52,22 +53,24 @@ def write_log(filename, source, event, details):
             details
         ])
 
-def write_housekeeping_data(filename, source, event, details):
+
+def write_housekeeping_data(filename, source, component, type, value):
     """
-    Schreibt einen Log-Eintrag in eine CSV-Datei.
-    -> In diesem Fall die für Operations
+    Schreibt einen Housekeeping-Eintrag in eine CSV-Datei.
 
     Args:
-        filename: Name der CSV-Datei
-        source:   Node, der den Eintrag erzeugt hat
-        event:    Art des Events
-        details:  Zusätzliche Informationen
+        filename:  Name der CSV-Datei (ohne führenden Schrägstrich)
+        source:    Node, der den Eintrag erzeugt hat
+        component: Komponente, zu der der Wert gehört
+        type:      Art des Messwerts
+        value:     Messwert
     """
 
     # Sicherstellen, dass der Log-Ordner existiert
     os.makedirs(LOG_DIRECTORY, exist_ok=True)
 
-    filepath = os.path.join(LOG_DIRECTORY, filename)
+    # Führenden Schrägstrich entfernen, sonst verwirft os.path.join das Verzeichnis
+    filepath = os.path.join(LOG_DIRECTORY, filename.lstrip("/"))
 
     # Prüfen, ob die Datei bereits existiert
     file_exists = os.path.isfile(filepath)
@@ -82,8 +85,9 @@ def write_housekeeping_data(filename, source, event, details):
             writer.writerow([
                 "timestamp",
                 "source",
-                "event",
-                "details"
+                "component",
+                "type",
+                "value"
             ])
 
         # Aktuellen Zeitpunkt erzeugen
@@ -93,7 +97,7 @@ def write_housekeeping_data(filename, source, event, details):
         writer.writerow([
             timestamp,
             source,
-            event,
-            details
+            component,
+            type,
+            value
         ])
-

@@ -39,11 +39,18 @@ class CommandNode(Node):
             self.bridge_node_callback,
             10,)
 
-        self.subscribe_bridge_node = self.create_subscription(
+        self.subscribe_xm430_node = self.create_subscription(
             Float64, 
             '/xm430_node/current_position',
             self.motor_rotation_callback,
             10
+        )
+
+        self.subscribe_wifi_node = self.create_subscription(
+            SystemRequest,
+            '/wifi_node/system_request',
+            self.bridge_node_callback,   # gleicher Callback
+            10,
         )
 
         # 3. Publishers
@@ -87,6 +94,7 @@ class CommandNode(Node):
             '/trigger/wifi',
             10
         )
+
 
         # 4. Timer
         self.housekeeping_timer = self.create_timer(

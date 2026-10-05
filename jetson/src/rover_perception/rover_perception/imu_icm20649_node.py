@@ -46,7 +46,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import Imu
-from rover_control_msgs.msg import HousekeepingLog
+from rover_control_msgs.msg import Housekeeping
 
 import board
 import busio
@@ -90,7 +90,7 @@ class ImuIcm20649Node(Node):
         )
 
         self.publish_hkd = self.create_publisher(
-            HousekeepingLog, 
+            Housekeeping, 
             "/log/housekeeping", 
             10
         )
@@ -199,7 +199,7 @@ class ImuIcm20649Node(Node):
     def timer_log(self):
         fields = ["ACCEL_X", "ACCEL_Y", "ACCEL_Z", "GYRO_X", "GYRO_Y", "GYRO_Z", "TEMP"]
         for name, val in zip(fields, self.values):
-            msg = HousekeepingLog()
+            msg = Housekeeping()
             msg.source = "JETSON"
             msg.component = "IMU"
             msg.type = name
