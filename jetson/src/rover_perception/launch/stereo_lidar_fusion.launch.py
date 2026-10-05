@@ -608,8 +608,8 @@ def generate_launch_description():
 
     stm_bridge = Node(
         package="rover_control",
-        executable="stm_bridge_node_V2",
-        name="stm_bridge_node_V2",
+        executable="stm_bridge_node",
+        name="stm_bridge_node",
     )
 
     for action in [

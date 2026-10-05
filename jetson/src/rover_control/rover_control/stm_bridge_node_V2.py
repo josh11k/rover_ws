@@ -84,35 +84,43 @@ class STMBridgeNode(Node):
             self.get_logger().error(f"Konnte serielle Schnittstelle nicht öffnen: {e}") 
             self.ser = None
 
+        # NEU: Timer, der alle 10 ms receive_message aufruft
+        self.read_timer = self.create_timer(0.01, self.receive_message)
+
     def prep_message_callback(self, msg):
         msg_log = LogMessage()
 
         if msg.task == "ALIVE":
             msg_log.source = "JETSON"
             msg_log.event = "INFO"
-            msg_log.details = f"Send heartbeat to STM32: {msg.message}"
+            msg_log.message = f"Send heartbeat to STM32: {msg.message}"
             self.publish_operational_log.publish(msg_log)
             self.publish_com_stm_log.publish(msg_log)
+            command = f">>{msg.task}<<"   
 
         if msg.task == "SET_STATE":
             msg_log.source = "JETSON"
             msg_log.event = "INFO"
-            msg_log.details = f"Request to set STM32 mode to {msg.message}"
+            msg_log.message = f"Request to set STM32 mode to {msg.message}"
             self.publish_operational_log.publish(msg_log)  
             self.publish_com_stm_log.publish(msg_log)
+            command = f">>{msg.task}: {msg.message}<<"
 
         if msg.task == "ERROR":
             msg_log.source = "JETSON"
             msg_log.event = "ERROR"
-            msg_log.details = f"Error reported: {msg.message}"
+            msg_log.message = f"Error reported: {msg.message}"
             self.publish_operational_log.publish(msg_log)
             self.publish_com_stm_log.publish(msg_log)
+            command = f">>{msg.task}: {msg.message}<<"
+
+        self.send_message(command)
 
     def send_motor_position_callback(self, msg):
         msg_log = LogMessage()
         msg_log.source = "JETSON"
         msg_log.event = "INFO"
-        msg_log.details = f"Motor command sent: Motor 1 {msg.motor1}"
+        msg_log.message = f"Motor command sent: Motor 1 {msg.motor1}"
 
         self.publish_operational_log.publish(msg_log)
         self.publish_com_stm_log.publish(msg_log)
@@ -137,22 +145,28 @@ class STMBridgeNode(Node):
             # 1. Befehl EINMALIG senden
             self.ser.write(msg.encode('utf-8'))
             self.get_logger().info(f"Befehl gesendet: {msg.strip()}")
-            self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", details=f"Command sent to STM32"))
-            self.publish_com_stm_log.publish(LogMessage(source="JETSON", event="INFO", details=f"Command sent to STM32"))
+            self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message=f"Command sent to STM32"))
+            self.publish_com_stm_log.publish(LogMessage(source="JETSON", event="INFO", message=f"Command sent to STM32"))
                        
         except Exception as e:
             self.get_logger().error(f"Fehler bei der Kommunikation: {e}")
-            self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", details=f"Communication error: {e}"))
-            self.publish_com_stm_log.publish(LogMessage(source="JETSON", event="ERROR", details=f"Communication error: {e}"))
+            self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", message=f"Communication error: {e}"))
+            self.publish_com_stm_log.publish(LogMessage(source="JETSON", event="ERROR", message=f"Communication error: {e}"))
   
 
 
 
-    def receive_message(self, task):
+    def receive_message(self):  # GEÄNDERT: kein Argument mehr, wird vom Timer aufgerufen
+
+        # NEU: nichts tun, wenn der Port nicht offen ist
+        if self.ser is None or not self.ser.is_open:
+            return
 
         if self.ser.in_waiting > 0:
             # 1. Alle verfügbaren Zeichen in den Puffer lesen
-            self.buffer += self.ser.read(self.ser.in_waiting).decode('utf-8', errors='ignore')
+            chunk = self.ser.read(self.ser.in_waiting).decode('utf-8', errors='ignore')
+            self.get_logger().info(f"RAW: {chunk!r}")  # NEU: alles anzeigen, was ankommt
+            self.buffer += chunk
 
             # 2. Prüfen, ob ein vollständiges Paket vorhanden ist
             while ">>" in self.buffer and "<<" in self.buffer:
@@ -175,7 +189,11 @@ class STMBridgeNode(Node):
                 # Hier kommt serial_msg_processing.py ins Spiel, enthält Funtionen um Nachricht zu verarbeiten
                 self.get_logger().info(f"Received raw data from STM32: {raw_payload}")
 
-                self.process_msg(raw_payload)
+                # NEU: Fehler beim Parsen abfangen, damit die Node weiterläuft
+                try:
+                    self.process_msg(raw_payload)
+                except Exception as e:
+                    self.get_logger().warn(f"Konnte Paket nicht verarbeiten: {raw_payload!r} ({e})")
 
 
 # Functions for processing incoming messages
@@ -195,7 +213,7 @@ class STMBridgeNode(Node):
 
             msg.source = "STM32"
             msg.event = "INFO"
-            msg.details = text
+            msg.message = text
     
             self.publish_operational_log.publish(msg)
             self.publish_com_stm_log.publish(msg)
@@ -211,7 +229,7 @@ class STMBridgeNode(Node):
             msg_log = LogMessage()
             msg_log.source = "STM32"
             msg_log.event = "INFO"
-            msg_log.details = f"Request to set mode to {parts[1]}"
+            msg_log.message = f"Request to set mode to {parts[1]}"
             
             self.publish_operational_log.publish(msg_log)
             self.publish_com_stm_log.publish(msg_log)
@@ -221,7 +239,7 @@ class STMBridgeNode(Node):
             msg = LogMessage()
             msg.source = "STM32"
             msg.event = "INFO"
-            msg.details = f"Motor command acknowledged by STM32"
+            msg.message = f"Motor command acknowledged by STM32"
 
             self.publish_operational_log.publish(msg)
             self.publish_com_stm_log.publish(msg)
@@ -231,7 +249,7 @@ class STMBridgeNode(Node):
             msg.source = "STM32"
             msg.event = "ERROR"
             parts = payload.split(",")
-            msg.details = f"{parts[1]}"
+            msg.message = f"{parts[1]}"
 
             self.publish_operational_log.publish(msg)
             self.publish_com_stm_log.publish(msg)
@@ -240,7 +258,7 @@ class STMBridgeNode(Node):
             msg_log = LogMessage()
             msg_log.source = "STM32"
             msg_log.event = "ERROR"
-            msg_log.details = f"STM32 asks for reboot."
+            msg_log.message = f"STM32 asks for reboot."
 
             msg_system = SystemRequest()
             msg_system.source = "STM32"
@@ -257,7 +275,7 @@ class STMBridgeNode(Node):
             msg = LogMessage()
             msg.source = "STM32"
             msg.event = "INFO"
-            msg.details = f"STM32 booted with STATUS: {parts[1]}"
+            msg.message = f"STM32 booted with STATUS: {parts[1]}"
 
             self.publish_operational_log.publish(msg)
             self.publish_com_stm_log.publish(msg)
@@ -266,7 +284,7 @@ class STMBridgeNode(Node):
             msg_log = LogMessage()
             msg_log.source = "STM32"
             msg_log.event = "ERROR"
-            msg_log.details = f"STM32 asks for shutdown."
+            msg_log.message = f"STM32 asks for shutdown."
 
             msg_system = SystemRequest()
             msg_system.source = "STM32"
@@ -277,12 +295,59 @@ class STMBridgeNode(Node):
             self.publish_com_stm_log.publish(msg_log)
             self.publish_system_request.publish(msg_system)
 
+
         elif payload.startswith("HOUSE_KEEPING_DATA"):
+            lines = [l.strip() for l in payload.splitlines()[1:] if l.strip()]
+            motor_positions = {}
+
+            for line in lines:
+                parts = [p.strip() for p in line.split(":", 2)]
+
+                if len(parts) == 3:
+                    # z.B. "Motor 1: Position: NA"
+                    component, type_, value = parts
+                elif len(parts) == 2:
+                    # z.B. "Time: 5803s" oder "STM Status: STANDBY"
+                    component, type_, value = "STM", parts[0], parts[1]
+                else:
+                    continue
+
+                msg_hkd = Housekeeping()
+                msg_hkd.source = "STM32"
+                msg_hkd.component = component
+                msg_hkd.type = type_
+                msg_hkd.value = value
+                self.publish_housekeeping_data.publish(msg_hkd)
+
+                # Motorpositionen merken (nur numerische Werte)
+                if component.startswith("Motor ") and type_ == "Position":
+                    try:
+                        motor_positions[int(component.split()[1])] = int(value)
+                    except ValueError:
+                        pass   # "NA"
+
+            msg_log = LogMessage()
+            msg_log.source = "STM32"
+            msg_log.event = "INFO"
+            msg_log.message = "Housekeeping data received"   # ggf. .message, je nach .msg
+            self.publish_operational_log.publish(msg_log)
+            self.publish_com_stm_log.publish(msg_log)
+
+            # Motorwerte nur publishen, wenn alle vier gültig sind
+            if all(k in motor_positions for k in (1, 2, 3, 4)):
+                msg_motor = MotorPosition()
+                msg_motor.motor1 = motor_positions[1]
+                msg_motor.motor2 = motor_positions[2]
+                msg_motor.motor3 = motor_positions[3]
+                msg_motor.motor4 = motor_positions[4]
+                self.publish_motor_position.publish(msg_motor)
+
+        '''elif payload.startswith("HOUSE_KEEPING_DATA"):
             parts = payload.split(":")
             msg_log = LogMessage()
             msg_log.source = "STM32"
             msg_log.event = "INFO"
-            msg_log.details = f"Housekeeping data received"
+            msg_log.message = f"Housekeeping data received"
 
             msg_hkd = Housekeeping()
             msg_hkd.source = "STM32"
@@ -304,7 +369,7 @@ class STMBridgeNode(Node):
             msg_motor.motor3 = int(parts[25])
             msg_motor.motor4 = int(parts[31])
 
-            self.publish_motor_position.publish(msg_motor)    
+            self.publish_motor_position.publish(msg_motor)    '''
 
 
 
