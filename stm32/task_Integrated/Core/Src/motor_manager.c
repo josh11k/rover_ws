@@ -54,8 +54,8 @@ static const MotorConfig motorConfigs[] =
     {1U, 512U},
     {2U, 512U},
     {3U, 512U},
-	{4U, 512U},
-	{5U, 512U}
+    {4U, 512U},
+    {5U, 512U}
 };
 
 #define MOTOR_COUNT ((uint8_t)(sizeof(motorConfigs) / sizeof(motorConfigs[0])))
@@ -116,8 +116,9 @@ static const MotorConfig motorConfigs[] =
 // read together with it has already been validated as correct.
 #define HERKULEX_SOFT_STATUS_ERROR_MASK 0x08U
 
-// USER CONFIGURATION: Fixed deployment sequence for the 3-joint arm.
-// Motor 2 = top/outer joint, motor 3 = middle joint, motor 4 = base/bottom joint.
+// USER CONFIGURATION: Fixed deployment sequence for the 4-joint arm.
+// Motor 2 = top/outer joint, motor 3 = middle joint, motor 4 = base/bottom joint,
+// motor 1 = turret (moved last on deploy, first on retract).
 // All angles are RELATIVE and CUMULATIVE from the stowed position captured when
 // "deploy" is issued, all in the same rotational direction (negative raw delta).
 //
@@ -128,9 +129,14 @@ static const MotorConfig motorConfigs[] =
 // measure the actual physical angle change, then adjust this constant if needed.
 #define DEPLOY_RAW_PER_DEGREE 3.077f
 
-#define DEPLOY_STAGE1_MOTOR2_DEG 120.0f   /* stage 1: motor 2 alone            */
-#define DEPLOY_STAGE2_MOTOR3_DEG 90.0f    /* stage 2: motor 3 + motor 4        */
-#define DEPLOY_STAGE2_MOTOR4_DEG 45.0f
+/* Stage 1:  box clearance - motors 3 and 4 rotate 30 deg together.
+ * Stage 1b: motor 2 rotates 90 deg afterwards (separate step).
+ * Stage 3:  motors 2 + 3 + 4 move together to their final angles.
+ * All targets are ABSOLUTE degrees from stowed (the 30 deg of stage 1 are
+ * therefore already included in the final angles).                          */
+#define DEPLOY_STAGE1_MOTOR2_DEG 20.0f    /* stage 1b: motor 2 alone           */
+#define DEPLOY_STAGE1_MOTOR3_DEG 75.0f    /* stage 1: motor 3 + motor 4        */
+#define DEPLOY_STAGE1_MOTOR4_DEG 75.0f
 #define DEPLOY_STAGE3_MOTOR2_DEG 180.0f   /* stage 3: motor 2 + 3 + 4, final   */
 #define DEPLOY_STAGE3_MOTOR3_DEG 180.0f
 #define DEPLOY_STAGE3_MOTOR4_DEG 90.0f
@@ -139,6 +145,7 @@ static const MotorConfig motorConfigs[] =
 #define DEPLOY_RETRACT_SETTLE_DURATION_MS 600U
 
 
+#define DEPLOY_MOTOR_ID_TURRET 1U
 #define DEPLOY_MOTOR_ID_TOP    2U
 #define DEPLOY_MOTOR_ID_MID    3U
 #define DEPLOY_MOTOR_ID_BASE   4U
@@ -153,18 +160,26 @@ static const MotorConfig motorConfigs[] =
 #define DEPLOY_STOWED_MOTOR3 706U
 #define DEPLOY_STOWED_MOTOR4 500U
 
+// USER CONFIGURATION: Motor 1 (turret).
+// DEPLOY_STOWED_MOTOR1 = position before deploy / target at end of retract.
+// DEPLOY_FINAL_MOTOR1  = final position at the end of deploy.
+#define DEPLOY_STOWED_MOTOR1 580U
+#define DEPLOY_FINAL_MOTOR1  60U
+
 typedef enum
 {
     DEPLOY_IDLE = 0,
     DEPLOY_MOVING_TO_STOWED,
     DEPLOY_RUNNING_STAGE1,
-    DEPLOY_RUNNING_STAGE2,
+    DEPLOY_RUNNING_STAGE1B,
     DEPLOY_RUNNING_STAGE3,
     DEPLOY_SEATING,
+    DEPLOY_MOTOR1_DEPLOY,
     DEPLOY_RETRACTING,
+    DEPLOY_RETRACT_MOTOR1,
     DEPLOY_RETRACT_STAGE_A,
-    DEPLOY_RETRACT_STAGE_B,
     DEPLOY_RETRACT_STAGE_C,
+    DEPLOY_RETRACT_STAGE_D,
     DEPLOY_RETRACT_SETTLING
 } DeploymentPhase;
 
@@ -191,7 +206,7 @@ static uint32_t syncSegmentStartTick;
  * so callers like the deployment sequencer can tell how the last sync move ended. */
 static uint8_t syncSegmentLastResultFailed;
 
-/* Fixed 3-stage deployment sequence state (see USER CONFIGURATION above). */
+/* Fixed deployment sequence state (see USER CONFIGURATION above). */
 static DeploymentPhase deploymentPhase;
 static uint8_t deploymentStageRetried;
 static uint8_t deploymentManualAbort;
@@ -256,21 +271,22 @@ static long Motor_CalculateMoveDuration(long distance); // Converts position dis
 static void Motor_PrintDeadZoneWarning(uint8_t motorId,
                                        uint16_t position); // Explains how to leave the dead zone safely.
 
-/* Fixed deployment sequence (motors 2/3/4). See USER CONFIGURATION above. */
+/* Fixed deployment sequence (motors 1/2/3/4). See USER CONFIGURATION above. */
 static uint8_t Deployment_ValidateTarget(uint16_t target);
 static void Deployment_NotifyManualAbort(void);
 static void Deployment_Start(void);
 static void Deployment_StartMoveToStowed(void);
 static void Deployment_StartStage1(void);
-static void Deployment_StartStage2(void);
+static void Deployment_StartStage1B(void);
 static void Deployment_StartStage3(void);
 static void Deployment_StartSeating(void);
 static void Deployment_SeatingTask(void);
+static void Deployment_StartMotor1(uint16_t target, const char *label);
 static void Deployment_StartRetract(void);
 static void Deployment_StartRetractSequence(void);
 static void Deployment_StartRetractA(void);
-static void Deployment_StartRetractB(void);
 static void Deployment_StartRetractC(void);
+static void Deployment_StartRetractD(void);
 static void Deployment_StartSettle(void);
 static void Deployment_SettleTask(void);
 static void Deployment_Task(void);
@@ -424,7 +440,7 @@ void MotorManager_ExecuteCommand(const char *input)
         printf("  i          Initialize all motors\r\n");
         printf("  si         Synchronized initialize all motors\r\n");
         printf("  sync       Synchronized position move, example: sync 1 500 2 520\r\n");
-        printf("  deploy     Run fixed 3-stage arm deployment (motors 2/3/4)\r\n");
+        printf("  deploy     Run fixed arm deployment (motors 3/4, 2, then 2/3/4 final, then motor 1)\r\n");
         printf("  deploy stop Abort an active deployment and brake\r\n");
         printf("  pos        Read all motor positions\r\n");
         printf("  status     Read all motor status\r\n");
@@ -439,7 +455,7 @@ void MotorManager_ExecuteCommand(const char *input)
         printf("  <id> pos   Read one motor position\r\n");
         printf("  <id> status Read one motor status\r\n");
         printf("  <id> clear Clear one motor error\r\n");
-        printf("  retract    Run fixed deployment in reverse (stage3->2->1->stowed, settle, brake)\r\n");
+        printf("  retract    Run deployment in reverse (motor 1, stage3->2->1->stowed, settle, brake)\r\n");
         printf("  retract stop Abort an active retract and brake\r\n");
         return;
     }
@@ -515,14 +531,14 @@ void MotorManager_ExecuteCommand(const char *input)
 
     if (strcmp(command, "b") == 0)
     {
-    	if (syncSegmentActive)
-    	{
-    		Deployment_NotifyManualAbort();
-    		Motor_BrakeSyncSegmentMotors();
-    	    printf("Active sync segmented move cancelled by motor %u brake\r\n",
-    	    		motorId);
-    	    return;
-    	}
+        if (syncSegmentActive)
+        {
+            Deployment_NotifyManualAbort();
+            Motor_BrakeSyncSegmentMotors();
+            printf("Active sync segmented move cancelled by motor %u brake\r\n",
+                   motorId);
+            return;
+        }
         motor->moveActive = 0;
         motor->segmentedMoveActive = 0U;
         Motor_SetState((uint8_t)motorIndex, MOTOR_BRAKED);
@@ -539,7 +555,7 @@ void MotorManager_ExecuteCommand(const char *input)
                    motorId);
             return;
         }
-    	motor->moveActive = 0;
+        motor->moveActive = 0;
         motor->segmentedMoveActive = 0U;
         Motor_SetState((uint8_t)motorIndex, MOTOR_STANDBY);
         return;
@@ -1488,14 +1504,20 @@ static void Motor_SyncSegmentTask(void)
     HAL_Delay(100U);
     Motor_StartSyncSegment();
 }
-
 /*
  * ---------------------------------------------------------------------
- * Fixed 3-stage deployment sequence (motors 2 = top, 3 = middle, 4 = base).
+ * Fixed deployment sequence (motors 2 = top, 3 = middle, 4 = base, 1 = turret).
  *
- * Stage 1: motor 2 alone.
- * Stage 2: motor 3 + motor 4 together.
- * Stage 3: motor 2 + motor 3 + motor 4 together, to their final targets.
+ * Stage 1:  motor 3 (30 deg) + motor 4 (30 deg) together.
+ * Stage 1b: motor 2 alone (90 deg).
+ * Stage 3:  motor 2 + motor 3 + motor 4 together, to their final targets.
+ * Seating: push against the end-stops, then brake.
+ * Motor 1: moved to DEPLOY_FINAL_MOTOR1 as the very last step.
+ *
+ * Retract is the exact reverse: motor 1 -> stowed first, then undo stage 3,
+ * (motor 2 back to its stage-1b angle of 90 deg, motor 3/4 back to their
+ * stage-1 angle of 30 deg), undo stage 1b (motor 2 back to stowed), undo
+ * stage 1 (motor 3/4 back to stowed), settle, brake.
  *
  * Each stage is a normal Motor_StartSegmentedSyncMove(), so it already gets
  * the stall/timeout/brake protection above. On top of that, this sequencer
@@ -1540,6 +1562,38 @@ static void Deployment_NotifyManualAbort(void)
     }
 }
 
+/*
+ * Single-motor sync move for motor 1 (turret). Used as the last deploy step
+ * and as the first retract step.
+ */
+static void Deployment_StartMotor1(uint16_t target, const char *label)
+{
+    uint8_t indexes[1];
+    uint16_t targets[1];
+    int8_t idx = Motor_FindIndex(DEPLOY_MOTOR_ID_TURRET);
+
+    if (idx < 0 || !motors[idx].connected)
+    {
+        printf("%s ABORTED: motor 1 not configured/connected\r\n", label);
+        deploymentPhase = DEPLOY_IDLE;
+        return;
+    }
+
+    if (!Deployment_ValidateTarget(target))
+    {
+        printf("%s ABORTED: motor 1 target %u outside safe range 25..998\r\n", label, target);
+        deploymentPhase = DEPLOY_IDLE;
+        return;
+    }
+
+    indexes[0] = (uint8_t)idx;
+    targets[0] = target;
+
+    printf("%s: motor 1 -> %u\r\n", label, target);
+
+    Motor_StartSegmentedSyncMove(indexes, targets, 1U);
+}
+
 static void Deployment_StartRetractSequence(void)
 {
     if (deploymentPhase != DEPLOY_IDLE)
@@ -1551,14 +1605,12 @@ static void Deployment_StartRetractSequence(void)
     lastMissionSucceeded = 0U;
 
     deploymentStageRetried = 0U;
-
-    deploymentStageRetried = 0U;
     deploymentManualAbort = 0U;
 
-    printf("RETRACT: running deployment stages in reverse (3 -> 2 -> 1 -> stowed)\r\n");
+    printf("RETRACT: running deployment in reverse (motor 1, final stage, 1b, 1, stowed)\r\n");
 
-    deploymentPhase = DEPLOY_RETRACT_STAGE_A;
-    Deployment_StartRetractA();
+    deploymentPhase = DEPLOY_RETRACT_MOTOR1;
+    Deployment_StartMotor1((uint16_t)DEPLOY_STOWED_MOTOR1, "RETRACT motor 1");
 }
 
 static void Deployment_StartRetractA(void)
@@ -1569,16 +1621,16 @@ static void Deployment_StartRetractA(void)
     int32_t rawMid;
     int32_t rawBase;
 
-    /* Undo stage 3: back to the post-stage-2 positions (motor2 at the
-     * stage-1 angle, motor3/4 at their stage-2 angles). Uses the fixed
-     * stowed constants, not deploymentHomePosition, so "retract" works
-     * standalone even without a deploy earlier in this power cycle. */
+    /* Undo stage 3: back to the post-stage-1b positions (motor2 at 90 deg,
+     * motor3/4 at 30 deg). Uses the fixed stowed constants, not
+     * deploymentHomePosition, so "retract" works standalone even without
+     * a deploy earlier in this power cycle. */
     rawTop = (int32_t)DEPLOY_STOWED_MOTOR2 -
              (int32_t)(DEPLOY_STAGE1_MOTOR2_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
     rawMid = (int32_t)DEPLOY_STOWED_MOTOR3 -
-             (int32_t)(DEPLOY_STAGE2_MOTOR3_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
+             (int32_t)(DEPLOY_STAGE1_MOTOR3_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
     rawBase = (int32_t)DEPLOY_STOWED_MOTOR4 -
-              (int32_t)(DEPLOY_STAGE2_MOTOR4_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
+              (int32_t)(DEPLOY_STAGE1_MOTOR4_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
 
     if (rawTop < 0)  rawTop = 0;
     if (rawMid < 0)  rawMid = 0;
@@ -1608,39 +1660,12 @@ static void Deployment_StartRetractA(void)
     Motor_StartSegmentedSyncMove(indexes, targets, 3U);
 }
 
-static void Deployment_StartRetractB(void)
-{
-    uint8_t indexes[2];
-    uint16_t targets[2];
-
-    /* Undo stage 2: motor3/4 back to stowed; motor2 stays where it is
-     * (its stage-1 angle), same grouping as the forward stage 2. */
-    targets[0] = (uint16_t)DEPLOY_STOWED_MOTOR3;
-    targets[1] = (uint16_t)DEPLOY_STOWED_MOTOR4;
-
-    if (!Deployment_ValidateTarget(targets[0]) || !Deployment_ValidateTarget(targets[1]))
-    {
-        printf("RETRACT ABORTED: stage B target outside safe range 25..998 (mid=%u, base=%u)\r\n",
-               targets[0], targets[1]);
-        deploymentPhase = DEPLOY_IDLE;
-        return;
-    }
-
-    indexes[0] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_MID);
-    indexes[1] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_BASE);
-
-    printf("RETRACT stage B (undo stage 2): motor %u -> %u, motor %u -> %u\r\n",
-           DEPLOY_MOTOR_ID_MID, targets[0], DEPLOY_MOTOR_ID_BASE, targets[1]);
-
-    Motor_StartSegmentedSyncMove(indexes, targets, 2U);
-}
-
 static void Deployment_StartRetractC(void)
 {
     uint8_t indexes[1];
     uint16_t targets[1];
 
-    /* Undo stage 1: motor2 back to stowed. */
+    /* Undo stage 1b: motor 2 back to stowed. */
     targets[0] = (uint16_t)DEPLOY_STOWED_MOTOR2;
 
     if (!Deployment_ValidateTarget(targets[0]))
@@ -1653,10 +1678,36 @@ static void Deployment_StartRetractC(void)
 
     indexes[0] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_TOP);
 
-    printf("RETRACT stage C (undo stage 1): motor %u -> %u\r\n",
+    printf("RETRACT stage C (undo stage 1b): motor %u -> %u\r\n",
            DEPLOY_MOTOR_ID_TOP, targets[0]);
 
     Motor_StartSegmentedSyncMove(indexes, targets, 1U);
+}
+
+static void Deployment_StartRetractD(void)
+{
+    uint8_t indexes[2];
+    uint16_t targets[2];
+
+    /* Undo stage 1: motor 3/4 back to stowed. */
+    targets[0] = (uint16_t)DEPLOY_STOWED_MOTOR3;
+    targets[1] = (uint16_t)DEPLOY_STOWED_MOTOR4;
+
+    if (!Deployment_ValidateTarget(targets[0]) || !Deployment_ValidateTarget(targets[1]))
+    {
+        printf("RETRACT ABORTED: stage D target outside safe range 25..998 (mid=%u, base=%u)\r\n",
+               targets[0], targets[1]);
+        deploymentPhase = DEPLOY_IDLE;
+        return;
+    }
+
+    indexes[0] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_MID);
+    indexes[1] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_BASE);
+
+    printf("RETRACT stage D (undo stage 1): motor %u -> %u, motor %u -> %u\r\n",
+           DEPLOY_MOTOR_ID_MID, targets[0], DEPLOY_MOTOR_ID_BASE, targets[1]);
+
+    Motor_StartSegmentedSyncMove(indexes, targets, 2U);
 }
 
 static void Deployment_StartSettle(void)
@@ -1703,23 +1754,26 @@ static void Deployment_SettleTask(void)
 
 static void Deployment_StartMoveToStowed(void)
 {
-    uint8_t indexes[3];
-    uint16_t targets[3];
+    uint8_t indexes[4];
+    uint16_t targets[4];
 
     indexes[0] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_TOP);
     indexes[1] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_MID);
     indexes[2] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_BASE);
+    indexes[3] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_TURRET);
 
     targets[0] = (uint16_t)DEPLOY_STOWED_MOTOR2;
     targets[1] = (uint16_t)DEPLOY_STOWED_MOTOR3;
     targets[2] = (uint16_t)DEPLOY_STOWED_MOTOR4;
+    targets[3] = (uint16_t)DEPLOY_STOWED_MOTOR1;
 
-    printf("DEPLOY moving to stowed position: motor %u -> %u, motor %u -> %u, motor %u -> %u\r\n",
+    printf("DEPLOY moving to stowed position: motor %u -> %u, motor %u -> %u, motor %u -> %u, motor %u -> %u\r\n",
            DEPLOY_MOTOR_ID_TOP, targets[0],
            DEPLOY_MOTOR_ID_MID, targets[1],
-           DEPLOY_MOTOR_ID_BASE, targets[2]);
+           DEPLOY_MOTOR_ID_BASE, targets[2],
+           DEPLOY_MOTOR_ID_TURRET, targets[3]);
 
-    Motor_StartSegmentedSyncMove(indexes, targets, 3U);
+    Motor_StartSegmentedSyncMove(indexes, targets, 4U);
 }
 
 static void Deployment_Start(void)
@@ -1727,6 +1781,7 @@ static void Deployment_Start(void)
     int8_t idxTop;
     int8_t idxMid;
     int8_t idxBase;
+    int8_t idxTurret;
     uint16_t curTop;
     uint16_t curMid;
     uint16_t curBase;
@@ -1749,32 +1804,36 @@ static void Deployment_Start(void)
     idxTop = Motor_FindIndex(DEPLOY_MOTOR_ID_TOP);
     idxMid = Motor_FindIndex(DEPLOY_MOTOR_ID_MID);
     idxBase = Motor_FindIndex(DEPLOY_MOTOR_ID_BASE);
+    idxTurret = Motor_FindIndex(DEPLOY_MOTOR_ID_TURRET);
 
-    if (idxTop < 0 || idxMid < 0 || idxBase < 0)
+    if (idxTop < 0 || idxMid < 0 || idxBase < 0 || idxTurret < 0)
     {
-        printf("DEPLOY rejected: motor 2/3/4 not configured\r\n");
+        printf("DEPLOY rejected: motor 1/2/3/4 not configured\r\n");
         return;
     }
 
-    if (!motors[idxTop].connected || !motors[idxMid].connected || !motors[idxBase].connected)
+    if (!motors[idxTop].connected || !motors[idxMid].connected ||
+        !motors[idxBase].connected || !motors[idxTurret].connected)
     {
-        printf("DEPLOY rejected: motor 2/3/4 not all connected\r\n");
+        printf("DEPLOY rejected: motor 1/2/3/4 not all connected\r\n");
         return;
     }
 
     if (motors[idxTop].state == MOTOR_WORKING ||
         motors[idxMid].state == MOTOR_WORKING ||
-        motors[idxBase].state == MOTOR_WORKING)
+        motors[idxBase].state == MOTOR_WORKING ||
+        motors[idxTurret].state == MOTOR_WORKING)
     {
-        printf("DEPLOY rejected: motor 2/3/4 already moving\r\n");
+        printf("DEPLOY rejected: motor 1/2/3/4 already moving\r\n");
         return;
     }
 
     if (!Herkulex_ReadPositionReliable(DEPLOY_MOTOR_ID_TOP, &motors[idxTop].currentPosition) ||
         !Herkulex_ReadPositionReliable(DEPLOY_MOTOR_ID_MID, &motors[idxMid].currentPosition) ||
-        !Herkulex_ReadPositionReliable(DEPLOY_MOTOR_ID_BASE, &motors[idxBase].currentPosition))
+        !Herkulex_ReadPositionReliable(DEPLOY_MOTOR_ID_BASE, &motors[idxBase].currentPosition) ||
+        !Herkulex_ReadPositionReliable(DEPLOY_MOTOR_ID_TURRET, &motors[idxTurret].currentPosition))
     {
-        printf("DEPLOY rejected: position read failed on motor 2/3/4\r\n");
+        printf("DEPLOY rejected: position read failed on motor 1/2/3/4\r\n");
         return;
     }
 
@@ -1796,14 +1855,16 @@ static void Deployment_Start(void)
     needsPrecheck =
         (labs((long)curTop - (long)DEPLOY_STOWED_MOTOR2) > MOTOR_POSITION_TOLERANCE_RAW) ||
         (labs((long)curMid - (long)DEPLOY_STOWED_MOTOR3) > MOTOR_POSITION_TOLERANCE_RAW) ||
-        (labs((long)curBase - (long)DEPLOY_STOWED_MOTOR4) > MOTOR_POSITION_TOLERANCE_RAW);
+        (labs((long)curBase - (long)DEPLOY_STOWED_MOTOR4) > MOTOR_POSITION_TOLERANCE_RAW) ||
+        (labs((long)motors[idxTurret].currentPosition - (long)DEPLOY_STOWED_MOTOR1) > MOTOR_POSITION_TOLERANCE_RAW);
 
     if (needsPrecheck)
     {
-        printf("DEPLOY precheck: motors not at stowed position (top=%u, mid=%u, base=%u) "
-               "- moving to stowed (top=%u, mid=%u, base=%u) first\r\n",
-               curTop, curMid, curBase,
-               deploymentHomePosition[0], deploymentHomePosition[1], deploymentHomePosition[2]);
+        printf("DEPLOY precheck: motors not at stowed position (top=%u, mid=%u, base=%u, turret=%u) "
+               "- moving to stowed (top=%u, mid=%u, base=%u, turret=%u) first\r\n",
+               curTop, curMid, curBase, motors[idxTurret].currentPosition,
+               deploymentHomePosition[0], deploymentHomePosition[1], deploymentHomePosition[2],
+               (unsigned)DEPLOY_STOWED_MOTOR1);
 
         deploymentPhase = DEPLOY_MOVING_TO_STOWED;
         Deployment_StartMoveToStowed();
@@ -1822,10 +1883,48 @@ static void Deployment_Start(void)
 
 static void Deployment_StartStage1(void)
 {
+    uint8_t indexes[2];
+    uint16_t targets[2];
+    int32_t raw[2];
+
+    raw[0] = (int32_t)deploymentHomePosition[1] -
+             (int32_t)(DEPLOY_STAGE1_MOTOR3_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
+    raw[1] = (int32_t)deploymentHomePosition[2] -
+             (int32_t)(DEPLOY_STAGE1_MOTOR4_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
+
+    for (uint8_t i = 0U; i < 2U; i++)
+    {
+        if (raw[i] < 0)
+        {
+            raw[i] = 0;
+        }
+
+        targets[i] = (uint16_t)raw[i];
+    }
+
+    if (!Deployment_ValidateTarget(targets[0]) || !Deployment_ValidateTarget(targets[1]))
+    {
+        printf("DEPLOY ABORTED: stage 1 target outside safe range 25..998 (mid=%u, base=%u)\r\n",
+               targets[0], targets[1]);
+        deploymentPhase = DEPLOY_IDLE;
+        return;
+    }
+
+    indexes[0] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_MID);
+    indexes[1] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_BASE);
+
+    printf("DEPLOY stage 1: motor %u -> %u (%d deg), motor %u -> %u (%d deg)\r\n",
+           DEPLOY_MOTOR_ID_MID, targets[0], (int)DEPLOY_STAGE1_MOTOR3_DEG,
+           DEPLOY_MOTOR_ID_BASE, targets[1], (int)DEPLOY_STAGE1_MOTOR4_DEG);
+
+    Motor_StartSegmentedSyncMove(indexes, targets, 2U);
+}
+
+static void Deployment_StartStage1B(void)
+{
     uint8_t indexes[1];
     uint16_t targets[1];
     int32_t raw;
-    uint16_t target;
 
     raw = (int32_t)deploymentHomePosition[0] -
           (int32_t)(DEPLOY_STAGE1_MOTOR2_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
@@ -1835,70 +1934,22 @@ static void Deployment_StartStage1(void)
         raw = 0;
     }
 
-    target = (uint16_t)raw;
+    targets[0] = (uint16_t)raw;
 
-    if (!Deployment_ValidateTarget(target))
+    if (!Deployment_ValidateTarget(targets[0]))
     {
-        printf("DEPLOY ABORTED: stage 1 target %u for motor %u outside safe range 25..998\r\n",
-               target, DEPLOY_MOTOR_ID_TOP);
+        printf("DEPLOY ABORTED: stage 1b target %u for motor %u outside safe range 25..998\r\n",
+               targets[0], DEPLOY_MOTOR_ID_TOP);
         deploymentPhase = DEPLOY_IDLE;
         return;
     }
 
     indexes[0] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_TOP);
-    targets[0] = target;
 
-    printf("DEPLOY stage 1: motor %u -> %u (%d deg from stowed)\r\n",
-           DEPLOY_MOTOR_ID_TOP, target, (int)DEPLOY_STAGE1_MOTOR2_DEG);
+    printf("DEPLOY stage 1b: motor %u -> %u (%d deg)\r\n",
+           DEPLOY_MOTOR_ID_TOP, targets[0], (int)DEPLOY_STAGE1_MOTOR2_DEG);
 
     Motor_StartSegmentedSyncMove(indexes, targets, 1U);
-}
-
-static void Deployment_StartStage2(void)
-{
-    uint8_t indexes[2];
-    uint16_t targets[2];
-    int32_t rawMid;
-    int32_t rawBase;
-    uint16_t targetMid;
-    uint16_t targetBase;
-
-    rawMid = (int32_t)deploymentHomePosition[1] -
-             (int32_t)(DEPLOY_STAGE2_MOTOR3_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
-    rawBase = (int32_t)deploymentHomePosition[2] -
-              (int32_t)(DEPLOY_STAGE2_MOTOR4_DEG * DEPLOY_RAW_PER_DEGREE + 0.5f);
-
-    if (rawMid < 0)
-    {
-        rawMid = 0;
-    }
-
-    if (rawBase < 0)
-    {
-        rawBase = 0;
-    }
-
-    targetMid = (uint16_t)rawMid;
-    targetBase = (uint16_t)rawBase;
-
-    if (!Deployment_ValidateTarget(targetMid) || !Deployment_ValidateTarget(targetBase))
-    {
-        printf("DEPLOY ABORTED: stage 2 target outside safe range 25..998 (mid=%u, base=%u)\r\n",
-               targetMid, targetBase);
-        deploymentPhase = DEPLOY_IDLE;
-        return;
-    }
-
-    indexes[0] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_MID);
-    indexes[1] = (uint8_t)Motor_FindIndex(DEPLOY_MOTOR_ID_BASE);
-    targets[0] = targetMid;
-    targets[1] = targetBase;
-
-    printf("DEPLOY stage 2: motor %u -> %u (%d deg), motor %u -> %u (%d deg)\r\n",
-           DEPLOY_MOTOR_ID_MID, targetMid, (int)DEPLOY_STAGE2_MOTOR3_DEG,
-           DEPLOY_MOTOR_ID_BASE, targetBase, (int)DEPLOY_STAGE2_MOTOR4_DEG);
-
-    Motor_StartSegmentedSyncMove(indexes, targets, 2U);
 }
 
 static void Deployment_StartStage3(void)
@@ -2003,12 +2054,13 @@ static void Deployment_StartSeating(void)
         !Deployment_ValidateTarget(targetMid) ||
         !Deployment_ValidateTarget(targetBase))
     {
-        /* Overshoot would leave the safe 25..998 range - skip seating,
-         * deployment still counts as complete at the plain stage-3 target. */
-        printf("DEPLOY: seating overshoot out of safe range (top=%u, mid=%u, base=%u) - skipping, staying in normal HOLDING\r\n",
+        /* Overshoot would leave the safe 25..998 range - skip seating and
+         * continue directly with the final motor 1 move. */
+        printf("DEPLOY: seating overshoot out of safe range (top=%u, mid=%u, base=%u) - skipping seating\r\n",
                targetTop, targetMid, targetBase);
-               lastMissionSucceeded = 1U;
-        deploymentPhase = DEPLOY_IDLE;
+        deploymentStageRetried = 0U;
+        deploymentPhase = DEPLOY_MOTOR1_DEPLOY;
+        Deployment_StartMotor1((uint16_t)DEPLOY_FINAL_MOTOR1, "DEPLOY motor 1");
         return;
     }
 
@@ -2066,9 +2118,11 @@ static void Deployment_SeatingTask(void)
     Motor_SetState(indexes[1], MOTOR_BRAKED);
     Motor_SetState(indexes[2], MOTOR_BRAKED);
 
-    printf("DEPLOY complete: seated against end-stops, holding in BRAKE mode\r\n");
-    lastMissionSucceeded = 1U;
-    deploymentPhase = DEPLOY_IDLE;
+    printf("DEPLOY seated against end-stops (BRAKE mode) - now moving motor 1\r\n");
+
+    deploymentStageRetried = 0U;
+    deploymentPhase = DEPLOY_MOTOR1_DEPLOY;
+    Deployment_StartMotor1((uint16_t)DEPLOY_FINAL_MOTOR1, "DEPLOY motor 1");
 }
 
 static void Deployment_StartRetract(void)
@@ -2177,29 +2231,36 @@ static void Deployment_Task(void)
                 case DEPLOY_RUNNING_STAGE1:
                     Deployment_StartStage1();
                     break;
-                case DEPLOY_RUNNING_STAGE2:
-                    Deployment_StartStage2();
+                case DEPLOY_RUNNING_STAGE1B:
+                    Deployment_StartStage1B();
                     break;
                 case DEPLOY_RUNNING_STAGE3:
                     Deployment_StartStage3();
                     break;
+                case DEPLOY_MOTOR1_DEPLOY:
+                    Deployment_StartMotor1((uint16_t)DEPLOY_FINAL_MOTOR1, "DEPLOY motor 1 retry");
+                    break;
+                case DEPLOY_RETRACT_MOTOR1:
+                    Deployment_StartMotor1((uint16_t)DEPLOY_STOWED_MOTOR1, "RETRACT motor 1 retry");
+                    break;
                 case DEPLOY_RETRACT_STAGE_A:
                     Deployment_StartRetractA();
                     break;
-                case DEPLOY_RETRACT_STAGE_B:
-                    Deployment_StartRetractB();
-                    break;
                 case DEPLOY_RETRACT_STAGE_C:
                     Deployment_StartRetractC();
+                    break;
+                case DEPLOY_RETRACT_STAGE_D:
+                    Deployment_StartRetractD();
                     break;
                 default:
                     break;
             }
             return;
         }
-        if (deploymentPhase == DEPLOY_RETRACT_STAGE_A ||
-            deploymentPhase == DEPLOY_RETRACT_STAGE_B ||
-            deploymentPhase == DEPLOY_RETRACT_STAGE_C)
+        if (deploymentPhase == DEPLOY_RETRACT_MOTOR1 ||
+            deploymentPhase == DEPLOY_RETRACT_STAGE_A ||
+            deploymentPhase == DEPLOY_RETRACT_STAGE_C ||
+            deploymentPhase == DEPLOY_RETRACT_STAGE_D)
         {
             printf("RETRACT CRITICAL: retract sequence failed twice - motors braked in place, manual inspection required\r\n");
             Motor_LogToJetson(0U, "RETRACT_FAILED", "RETRY_LIMIT", 0U, 0U, 0U, 0U);
@@ -2225,12 +2286,12 @@ static void Deployment_Task(void)
 
         case DEPLOY_RUNNING_STAGE1:
             printf("DEPLOY stage 1 complete\r\n");
-            deploymentPhase = DEPLOY_RUNNING_STAGE2;
-            Deployment_StartStage2();
+            deploymentPhase = DEPLOY_RUNNING_STAGE1B;
+            Deployment_StartStage1B();
             break;
 
-        case DEPLOY_RUNNING_STAGE2:
-            printf("DEPLOY stage 2 complete\r\n");
+        case DEPLOY_RUNNING_STAGE1B:
+            printf("DEPLOY stage 1b complete\r\n");
             deploymentPhase = DEPLOY_RUNNING_STAGE3;
             Deployment_StartStage3();
             break;
@@ -2240,25 +2301,37 @@ static void Deployment_Task(void)
             Deployment_StartSeating();
             break;
 
+        case DEPLOY_MOTOR1_DEPLOY:
+            printf("DEPLOY complete: arm seated, motor 1 in final position\r\n");
+            lastMissionSucceeded = 1U;
+            deploymentPhase = DEPLOY_IDLE;
+            break;
+
         case DEPLOY_RETRACTING:
             printf("DEPLOY retract complete: motor 2/3/4 back at stowed position\r\n");
             deploymentPhase = DEPLOY_IDLE;
             break;
-        
-        case DEPLOY_RETRACT_STAGE_A:
-            printf("RETRACT stage A complete (undo stage 3)\r\n");
-            deploymentPhase = DEPLOY_RETRACT_STAGE_B;
-            Deployment_StartRetractB();
+
+        case DEPLOY_RETRACT_MOTOR1:
+            printf("RETRACT motor 1 complete\r\n");
+            deploymentPhase = DEPLOY_RETRACT_STAGE_A;
+            Deployment_StartRetractA();
             break;
 
-        case DEPLOY_RETRACT_STAGE_B:
-            printf("RETRACT stage B complete (undo stage 2)\r\n");
+        case DEPLOY_RETRACT_STAGE_A:
+            printf("RETRACT stage A complete (undo stage 3)\r\n");
             deploymentPhase = DEPLOY_RETRACT_STAGE_C;
             Deployment_StartRetractC();
             break;
 
         case DEPLOY_RETRACT_STAGE_C:
-            printf("RETRACT stage C complete (undo stage 1, at stowed position)\r\n");
+            printf("RETRACT stage C complete (undo stage 1b)\r\n");
+            deploymentPhase = DEPLOY_RETRACT_STAGE_D;
+            Deployment_StartRetractD();
+            break;
+
+        case DEPLOY_RETRACT_STAGE_D:
+            printf("RETRACT stage D complete (undo stage 1, at stowed position)\r\n");
             Deployment_StartSettle();
             break;
 
@@ -2267,14 +2340,13 @@ static void Deployment_Task(void)
             break;
     }
 }
-
 static void Motor_PositionMoveTask(void)
 {
-	uint32_t now;
+    uint32_t now;
 
-	Motor_SyncSegmentTask();
+    Motor_SyncSegmentTask();
 
-	now = HAL_GetTick();
+    now = HAL_GetTick();
 
     for (uint8_t index = 0; index < MOTOR_COUNT; index++)
     {
@@ -2370,43 +2442,43 @@ static void Motor_PositionMoveTask(void)
                  * Do not trigger recovery immediately.
                  * The motor may still be settling or the position feedback may lag.
                  */
-            	if (!motor->arrivalWaitActive)
-            	{
-            	    motor->arrivalWaitActive = 1U;
-            	    motor->arrivalWaitStartTick = now;
+                if (!motor->arrivalWaitActive)
+                {
+                    motor->arrivalWaitActive = 1U;
+                    motor->arrivalWaitStartTick = now;
 
-            	    /*
-            	     * Keep this motor active so Motor_PositionMoveTask()
-            	     * will check it again later.
-            	     */
-            	    motor->moveActive = 1U;
-            	    motor->moveEndTick = now + MOTOR_POSITION_RECHECK_INTERVAL_MS;
+                    /*
+                     * Keep this motor active so Motor_PositionMoveTask()
+                     * will check it again later.
+                     */
+                    motor->moveActive = 1U;
+                    motor->moveEndTick = now + MOTOR_POSITION_RECHECK_INTERVAL_MS;
 
-            	    printf("Motor %u waiting for target: target=%u, actual=%u, error=%ld\r\n",
-            	           motorId,
-            	           motor->moveTarget,
-            	           motor->currentPosition,
-            	           targetError);
+                    printf("Motor %u waiting for target: target=%u, actual=%u, error=%ld\r\n",
+                           motorId,
+                           motor->moveTarget,
+                           motor->currentPosition,
+                           targetError);
 
-            	    continue;
-            	}
+                    continue;
+                }
 
-            	if (now - motor->arrivalWaitStartTick < MOTOR_POSITION_SETTLE_TIMEOUT_MS)
-            	{
-            	    /*
-            	     * Keep rechecking until settle timeout expires.
-            	     */
-            	    motor->moveActive = 1U;
-            	    motor->moveEndTick = now + MOTOR_POSITION_RECHECK_INTERVAL_MS;
+                if (now - motor->arrivalWaitStartTick < MOTOR_POSITION_SETTLE_TIMEOUT_MS)
+                {
+                    /*
+                     * Keep rechecking until settle timeout expires.
+                     */
+                    motor->moveActive = 1U;
+                    motor->moveEndTick = now + MOTOR_POSITION_RECHECK_INTERVAL_MS;
 
-            	    printf("Motor %u still settling: target=%u, actual=%u, error=%ld\r\n",
-            	           motorId,
-            	           motor->moveTarget,
-            	           motor->currentPosition,
-            	           targetError);
+                    printf("Motor %u still settling: target=%u, actual=%u, error=%ld\r\n",
+                           motorId,
+                           motor->moveTarget,
+                           motor->currentPosition,
+                           targetError);
 
-            	    continue;
-            	}
+                    continue;
+                }
 
                 /*
                  * Only now treat it as real POSITION_NOT_REACHED.
@@ -2535,16 +2607,16 @@ static void Motor_ConnectionTask(void)
 
         if (motor->missCount >= MOTOR_DISCOVERY_MISS_LIMIT)
         {
-        	motor->connected = 0;
-        	motor->missCount = 0;
-        	motor->moveActive = 0U;
-        	motor->segmentedMoveActive = 0U;
-        	motor->internalTemperatureValid = 0U;
-        	motor->arrivalWaitActive = 0U;
-        	motor->arrivalWaitStartTick = 0U;
-        	motor->recoveryRetryCount = 0U;
-        	detectedMotor[motorId] = 0;
-        	printf("Motor %u disconnected\r\n", motorId);
+            motor->connected = 0;
+            motor->missCount = 0;
+            motor->moveActive = 0U;
+            motor->segmentedMoveActive = 0U;
+            motor->internalTemperatureValid = 0U;
+            motor->arrivalWaitActive = 0U;
+            motor->arrivalWaitStartTick = 0U;
+            motor->recoveryRetryCount = 0U;
+            detectedMotor[motorId] = 0;
+            printf("Motor %u disconnected\r\n", motorId);
         }
     }
 }
@@ -2871,7 +2943,7 @@ static void Motor_ExecuteSyncCommand(const char *input)
         {
             maxDistance = distance;
         }
-		*/
+        */
 
         /*ids[count] = (uint8_t)parsedId;*/
         targets[count] = (uint16_t)parsedTarget;
