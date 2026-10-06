@@ -67,3 +67,10 @@ uint32_t FanDriver_GetRPM(void)
 {
     return fanRPM;
 }
+
+void FanDriver_SetPWM(uint8_t percent)
+{
+    /* PWM-Leitung aktuell nicht verkabelt/nicht initialisiert – Lüfter läuft ungeregelt.
+     * TODO: TIM1_CH1 (PA8) richtig initialisieren, sobald PWM-Leitung angeschlossen ist. */
+    (void)percent;
+}

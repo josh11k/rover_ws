@@ -606,9 +606,15 @@ def generate_launch_description():
         name="logger_node",
     )
 
+    stm_bridge = Node(
+        package="rover_control",
+        executable="stm_bridge_node",
+        name="stm_bridge_node",
+    )
+
     for action in [
         lidar, stereo, mono_camera, imu,
-        mast_pose, command, set_mode, wifi, rover_pose, logger,
+        mast_pose, command, set_mode, wifi, rover_pose, logger, stm_bridge,
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,
         stereo_to_cloud, stereo_transform, stereo_preprocessing,

@@ -1,0 +1,2 @@
+../Core/Src/temperature_logger.c:10:13:PrintFixed1	3
+../Core/Src/temperature_logger.c:23:6:TemperatureLogger_PrintMotorTemperatures	4

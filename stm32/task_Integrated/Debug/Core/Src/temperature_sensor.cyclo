@@ -1,0 +1,13 @@
+../Core/Src/temperature_sensor.c:66:6:TemperatureSensor_Init	1
+../Core/Src/temperature_sensor.c:73:6:HAL_ADC_ConvCpltCallback	2
+../Core/Src/temperature_sensor.c:81:13:TemperatureSensor_InvalidateChannel	3
+../Core/Src/temperature_sensor.c:94:16:TemperatureSensor_IsSupplyValid	3
+../Core/Src/temperature_sensor.c:104:16:TemperatureSensor_IsChannelValid	10
+../Core/Src/temperature_sensor.c:143:14:ConvertAdcToVoltage	1
+../Core/Src/temperature_sensor.c:148:14:ConvertPtVoltageToResistance	5
+../Core/Src/temperature_sensor.c:173:14:CalculatePt1000ResistanceFromTemperature	2
+../Core/Src/temperature_sensor.c:200:14:ConvertPt1000ResistanceToTemperature	8
+../Core/Src/temperature_sensor.c:278:9:TemperatureSensor_Read	10
+../Core/Src/temperature_sensor.c:378:13:PrintFixed1	3
+../Core/Src/temperature_sensor.c:391:13:PrintFixed2	3
+../Core/Src/temperature_sensor.c:404:6:TemperatureSensor_PrintHeartbeat	4

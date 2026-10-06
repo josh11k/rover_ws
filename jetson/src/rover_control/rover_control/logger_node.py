@@ -11,36 +11,36 @@ class LoggerNode(Node):
     def __init__(self):
         super().__init__('logger_node')
 
-        # Subscriber für Log-Nachrichten
-        self.subscription = self.create_subscription(
+        # Subscriber für Log-Nachrichten (jeweils eigene Variable)
+        self.sub_operations = self.create_subscription(
             LogMessage,
             '/log/operations',
             self.log_operations_callback,
             10
         )
 
-        self.subscription = self.create_subscription(
+        self.sub_sensors = self.create_subscription(
             LogMessage,
             '/log/sensors',
             self.log_sensors_callback,
             10
         )
 
-        self.subscription = self.create_subscription(
+        self.sub_housekeeping = self.create_subscription(
             Housekeeping,
             '/log/housekeeping',
             self.log_housekeeping_callback,
             50
         )
 
-        self.subscription = self.create_subscription(
+        self.sub_wifi = self.create_subscription(
             LogMessage,
             '/log/wifi',
             self.log_wifi_callback,
             10
         )
 
-        self.subscription = self.create_subscription(
+        self.sub_com_stm = self.create_subscription(
             LogMessage,
             '/log/com_stm',
             self.log_com_stm_callback,
@@ -52,62 +52,63 @@ class LoggerNode(Node):
 
     def log_operations_callback(self, msg):
 
-        filename = '~/rover_log/log_operations.csv'
+        filename = 'log_operations.csv'
 
-        # Nachricht an logger.py weitergeben
-        log.write_log(
+        # Nachricht an log.py weitergeben
+        logger.write_log(
             filename,
             msg.source,
             msg.event,
-            msg.details
+            msg.message
         )
 
     def log_sensors_callback(self, msg):
 
-        filename = '~/rover_log/log_sensors.csv'
+        filename = 'log_sensors.csv'
 
-        # Nachricht an logger.py weitergeben
-        log.write_log(
+        # Nachricht an log.py weitergeben
+        logger.write_log(
             filename,
             msg.source,
             msg.event,
-            msg.details
+            msg.message
         )
 
     def log_housekeeping_callback(self, msg):
 
-        filename = '~/rover_log/log_housekeeping.csv'
+        filename = 'log_housekeeping.csv'
 
-        # Nachricht an logger.py weitergeben
-        log.write_log(
+        # Housekeeping hat eigene Spalten -> eigene Funktion
+        logger.write_housekeeping_data(
             filename,
             msg.source,
             msg.component,
+            msg.type,
             msg.value
         )
 
     def log_wifi_callback(self, msg):
 
-        filename = '~/rover_log/log_wifi.csv'
+        filename = 'log_wifi.csv'
 
-        # Nachricht an logger.py weitergeben
-        log .write_log(
+        # Nachricht an log.py weitergeben
+        logger.write_log(
             filename,
             msg.source,
             msg.event,
-            msg.details
+            msg.message
         )
 
     def log_com_stm_callback(self, msg):
 
-        filename = '~/rover_log/log_com_stm.csv'
+        filename = 'log_com_stm.csv'
 
-        # Nachricht an logger.py weitergeben
-        log.write_log(
+        # Nachricht an log.py weitergeben
+        logger.write_log(
             filename,
             msg.source,
             msg.event,
-            msg.details
+            msg.message
         )
 
 

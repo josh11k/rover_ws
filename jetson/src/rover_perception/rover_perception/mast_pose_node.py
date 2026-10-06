@@ -106,7 +106,7 @@ DEFAULTS = {
     "hardware_box_imu_topic": "/hardware_box/imu",
     "stereo_imu_topic": "/camera/imu",
     "lidar_imu_topic": "/livox/imu",
-    "motor_position_topic": "/motor_position/current",
+    "motor_position_topic": "/motor_position/current_position",
 
     "world_frame": "world",
     "mast_base_frame": "mast_base_link",

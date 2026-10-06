@@ -6,9 +6,20 @@
  */
 
 #ifndef INC_INA228_H_
+#include <stdint.h>
+
 #define INC_INA228_H_
 
-#include <stdint.h>
+#define INA228_DIAGALRT_TMPOL  0x0080U
+#define INA228_DIAGALRT_SHNTOL 0x0040U
+#define INA228_DIAGALRT_SHNTUL 0x0020U
+#define INA228_DIAGALRT_BUSOL  0x0010U
+#define INA228_DIAGALRT_BUSUL  0x0008U
+#define INA228_DIAGALRT_POL    0x0004U
+
+uint8_t INA228_ReadAlertFlags(uint8_t address, uint16_t *flags);
+
+
 
 typedef struct
 {
@@ -20,6 +31,11 @@ typedef struct
 uint8_t INA228_IsReady(uint8_t address); // Checks whether an INA228 responds at this 7-bit address.
 
 uint8_t INA228_SetAveraging64(uint8_t address); // Configures averaging over 64 samples.
+
+uint8_t INA228_SetAlertLimits(uint8_t address,
+                              int16_t sovl,
+                              uint16_t bovl,
+                              uint16_t buvl);
 
 uint8_t INA228_ReadTemperature(
     uint8_t address,
