@@ -174,6 +174,10 @@ from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -612,8 +616,23 @@ def generate_launch_description():
         name="stm_bridge_node",
     )
 
+    housekeeping = Node(
+        package="rover_control",
+        executable="house_keeping_node",
+        name="housekeeping_node",
+    )
+
+    xm430 = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("dxl_xm430_control"),
+                "launch", "xm430.launch.py",
+            )
+        )
+    )
+
     for action in [
-        lidar, stereo, mono_camera, imu,
+        lidar, stereo, mono_camera, imu, xm430, housekeeping,
         mast_pose, command, set_mode, wifi, rover_pose, logger, stm_bridge,
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,
