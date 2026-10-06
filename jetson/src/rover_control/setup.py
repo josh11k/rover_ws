@@ -31,6 +31,7 @@ setup(
             'stm_bridge_node = rover_control.stm_bridge_node_V2:main',
             'set_mode_node = rover_control.set_mode_node:main',
             'logger_node = rover_control.logger_node:main',
+            'house_keeping_node = rover_control.house_keeping_node:main',
             
             
         ],

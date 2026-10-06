@@ -1,5 +1,5 @@
 from asyncio.log import logger
-from time import time
+import time
 
 import rclpy
 from rclpy.node import Node
