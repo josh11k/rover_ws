@@ -10,5 +10,6 @@
 ../Core/Src/rover_protocol.c:394:6:RoverProtocol_Task	16	static
 ../Core/Src/rover_protocol.c:436:6:RoverProtocol_CheckAliveTimeout	16	static
 ../Core/Src/rover_protocol.c:449:9:RoverProtocol_HasAliveSince	16	static
-../Core/Src/rover_protocol.c:454:6:SendAck	16	static
-../Core/Src/rover_protocol.c:459:6:SendNack	16	static
+../Core/Src/rover_protocol.c:454:6:RoverProtocol_SendToJetson	24	static
+../Core/Src/rover_protocol.c:464:6:SendAck	16	static
+../Core/Src/rover_protocol.c:469:6:SendNack	16	static
