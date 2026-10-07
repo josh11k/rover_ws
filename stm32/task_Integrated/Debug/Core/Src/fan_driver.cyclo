@@ -1,5 +1,5 @@
-../Core/Src/fan_driver.c:20:6:FanDriver_Init	1
-../Core/Src/fan_driver.c:30:6:HAL_GPIO_EXTI_Falling_Callback	2
-../Core/Src/fan_driver.c:41:6:FanDriver_Task	2
-../Core/Src/fan_driver.c:66:10:FanDriver_GetRPM	1
-../Core/Src/fan_driver.c:71:6:FanDriver_SetPWM	1
+../Core/Src/fan_driver.c:21:6:FanDriver_Init	1
+../Core/Src/fan_driver.c:32:6:HAL_GPIO_EXTI_Falling_Callback	2
+../Core/Src/fan_driver.c:43:6:FanDriver_Task	2
+../Core/Src/fan_driver.c:68:10:FanDriver_GetRPM	1
+../Core/Src/fan_driver.c:73:6:FanDriver_SetPWM	2

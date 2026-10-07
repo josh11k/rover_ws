@@ -5,6 +5,7 @@
 #include "motor_manager.h"
 #include "rover_state.h"
 #include "temperature_sensor.h"
+#include "fan_control.h"
 #include <stdlib.h>
 
 #include <stdio.h>
@@ -45,7 +46,7 @@ static const INA228_BusConfig inaBusConfigs[] =
 {
     { 0x45U, "12V_BUS1 Jetson (3A)", 9000, 4224, 3456, PMOS_21_JETSON_12V }, /* Alert1, PC0 */
     { 0x44U, "12V_BUS2 (3A)",        9000, 4224, 3456, PMOS_22_12V },        /* Alert2, PC1 */
-    { 0x41U, "7V4_BUS3 Motor (6A)", 18000, 2605, 2131, PMOS_12_MOTOR_7V4 }, /* Alert3, PC2 */
+    { 0x41U, "9V_BUS3 Motor", 18000, 3168, 2592, PMOS_12_MOTOR_7V4 }, /* Alert3, PC2 */
     { 0x40U, "5V_BUS4 (1.6A)",       4800, 1760, 1440, PMOS_11_5V },         /* Alert4, PC3 */
 };
 #define INA228_BUS_CONFIG_COUNT (sizeof(inaBusConfigs) / sizeof(inaBusConfigs[0]))
@@ -216,6 +217,23 @@ static void ReadTemperatures(void)
     }
 }
 
+static uint8_t IsUndervoltageArmed(uint8_t address)
+{
+    const INA228_BusConfig *busConfig = FindBusConfig(address);
+
+    if (busConfig != NULL && busConfig->pmos >= 0)
+    {
+        PowerSwitchId id = (PowerSwitchId)busConfig->pmos;
+
+        if (!RoverState_IsPowerSwitchOn(id) ||
+            RoverState_PowerSwitchOnTimeMs(id) < HK_BUS_SETTLE_MS)
+        {
+            return 0U;
+        }
+    }
+
+    return 1U;
+}
 
 static void ReadINADevices(void)
 {
@@ -227,6 +245,11 @@ static void ReadINADevices(void)
         if (!INA228_ReadAlertFlags(inaAddresses[i], &inaAlertFlags[i]))
         {
             inaAlertFlags[i] = 0U;
+        }
+        
+        if (!IsUndervoltageArmed(inaAddresses[i]))
+        {
+            inaAlertFlags[i] &= (uint16_t)~INA228_DIAGALRT_BUSUL;
         }
     }
 }
@@ -445,6 +468,84 @@ uint8_t RoverHousekeeping_CheckThresholds(FaultCode *outFault)
     return 0U;
 }
 
+#define HK_ESP_TEMP_TIMEOUT_MS 15000U
+
+static int16_t espTemperatureC = 0;
+static uint32_t espTemperatureTick = 0U;
+static uint8_t espTemperatureSeen = 0U;
+
+void RoverHousekeeping_SetEspTemperatureC(int16_t temperatureC)
+{
+    espTemperatureC = temperatureC;
+    espTemperatureTick = HAL_GetTick();
+    espTemperatureSeen = 1U;
+}
+
+/* Hoechste plausible Temperatur aller Quellen an die Luefterregelung geben. */
+static void UpdateFanTemperature(void)
+{
+    float maxT = -1000.0f;
+
+    /* PT1000 */
+    if (temperatureValid)
+    {
+        for (uint8_t i = 0U; i < TEMP_SENSOR_COUNT; i++)
+        {
+            float t = latestTemperature.temperature[i];
+            if (latestTemperature.valid[i] && t > -40.0f && t < 150.0f && t > maxT)
+            {
+                maxT = t;
+            }
+        }
+    }
+
+    /* INA228 Chiptemperatur (in Milli-Grad) */
+    for (uint8_t i = 0U; i < inaCount; i++)
+    {
+        if (inaValid[i])
+        {
+            float t = (float)inaMeasurements[i].temperatureMilliC / 1000.0f;
+            if (t > -40.0f && t < 150.0f && t > maxT)
+            {
+                maxT = t;
+            }
+        }
+    }
+
+    /* HerkuleX-Motoren (interne Temperatur) */
+    for (uint8_t motorId = 1U; motorId <= HK_MOTOR_COUNT; motorId++)
+    {
+        int16_t motorTemperatureC;
+        uint8_t tempConnected;
+
+        if (MotorManager_GetInternalTemperatureCById(motorId, &motorTemperatureC, &tempConnected) &&
+            tempConnected &&
+            motorTemperatureC > -40 && motorTemperatureC < 150 &&
+            (float)motorTemperatureC > maxT)
+        {
+            maxT = (float)motorTemperatureC;
+        }
+    }
+
+    /* ESP32 (nur, wenn zuletzt gemeldet) */
+    if (espTemperatureSeen &&
+        (HAL_GetTick() - espTemperatureTick) < HK_ESP_TEMP_TIMEOUT_MS &&
+        espTemperatureC > -40 && espTemperatureC < 150 &&
+        (float)espTemperatureC > maxT)
+    {
+        maxT = (float)espTemperatureC;
+    }
+
+    if (maxT > -999.0f)
+    {
+        if (maxT < 0.0f)
+        {
+            maxT = 0.0f;
+        }
+        FanControl_SetTemperature((int)maxT);
+    }
+}
+
 void RoverHousekeeping_Init(ADC_HandleTypeDef *hadc)
 {
     TemperatureSensor_Init(hadc);
@@ -468,6 +569,7 @@ void RoverHousekeeping_Task(void)
     {
         lastTempTick = now;
         ReadTemperatures();
+        UpdateFanTemperature();
     }
 
     if (now - lastInaTick >= HK_INA_INTERVAL_MS)

@@ -6,6 +6,7 @@
 
 void RoverHousekeeping_Init(ADC_HandleTypeDef *hadc);
 void RoverHousekeeping_Task(void);
+void RoverHousekeeping_SetEspTemperatureC(int16_t temperatureC);
 uint8_t RoverHousekeeping_CheckThresholds(FaultCode *outFault);
 
 #endif /* INC_ROVER_HOUSEKEEPING_H_ */

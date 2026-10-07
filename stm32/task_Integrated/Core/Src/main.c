@@ -19,6 +19,7 @@
 /* USER CODE BEGIN Includes */
 #include "esp_protocol.h"
 #include "fan_driver.h"
+#include "fan_control.h"
 #include "motor_manager.h"
 #include "rover_heartbeat.h"
 #include "rover_housekeeping.h"
@@ -119,6 +120,7 @@ int main(void)
   MotorManager_Init();
 
   FanDriver_Init();
+  FanControl_Init();
   RoverHousekeeping_Init(&hadc1);
   /* USER CODE END 2 */
 
@@ -134,6 +136,7 @@ int main(void)
     MotorManager_Task();
 
     FanDriver_Task();
+    FanControl_Task();
 
     RoverHousekeeping_Task();
     RoverState_AutoCheckTask();
