@@ -42,6 +42,7 @@ typedef struct
     uint8_t recoveryRetryCount;
     uint8_t arrivalWaitActive;
     uint32_t arrivalWaitStartTick;
+    uint8_t positionReadFailures;
 } MotorControl;
 
 #define MOTOR_INITIAL_POSITION_UNSET 0xFFFFU
@@ -1184,6 +1185,77 @@ static void Motor_BrakeSyncSegmentMotors(void)
     Motor_CancelSyncSegment();
 }
 
+/* Tolerance for unreliable position reads during a sync move (e.g. bad cable). */
+#define POSITION_READ_MAX_CONSECUTIVE_FAILS 4U
+#define POSITION_READ_CONFIRM_ROUNDS        3U
+
+/* Mandatory read at the end of a stage: more rounds, longer pause. */
+static uint8_t Motor_ReadPositionConfirmed(uint8_t motorId, uint16_t *position)
+{
+    for (uint8_t round = 0U; round < POSITION_READ_CONFIRM_ROUNDS; round++)
+    {
+        if (Herkulex_ReadPositionReliable(motorId, position))
+        {
+            return 1U;
+        }
+
+        HAL_Delay(50U);
+    }
+
+    return 0U;
+}
+
+/*
+ * mustConfirm = 0: a failed read is tolerated for a few segments in a row;
+ *                  'fallback' is used as position instead.
+ * mustConfirm = 1: final segment of a move -> real position is required.
+ */
+static uint8_t Motor_ReadPositionTolerant(uint8_t index,
+                                          uint16_t fallback,
+                                          uint8_t mustConfirm)
+{
+    MotorControl *motor = &motors[index];
+    uint8_t motorId = motorConfigs[index].id;
+    uint16_t position;
+    uint8_t ok;
+
+    if (mustConfirm)
+    {
+        ok = Motor_ReadPositionConfirmed(motorId, &position);
+    }
+    else
+    {
+        ok = Herkulex_ReadPositionReliable(motorId, &position);
+    }
+
+    if (ok)
+    {
+        motor->currentPosition = position;
+        motor->positionReadFailures = 0U;
+        return 1U;
+    }
+
+    if (mustConfirm)
+    {
+        printf("Motor %u: final position could not be confirmed\r\n", motorId);
+        return 0U;
+    }
+
+    motor->positionReadFailures++;
+    printf("Motor %u position read failed (%u in a row) - using %u\r\n",
+           motorId,
+           (unsigned)motor->positionReadFailures,
+           fallback);
+
+    if (motor->positionReadFailures > POSITION_READ_MAX_CONSECUTIVE_FAILS)
+    {
+        return 0U;
+    }
+
+    motor->currentPosition = fallback;
+    return 1U;
+}
+
 static void Motor_StartSegmentedSyncMove(const uint8_t *indexes,
                                          const uint16_t *finalTargets,
                                          uint8_t count)
@@ -1223,6 +1295,7 @@ static void Motor_StartSegmentedSyncMove(const uint8_t *indexes,
         syncSegmentPrevPositions[i] = motors[index].currentPosition;
 
         motors[index].recoveryRetryCount = 0U;
+        motors[index].positionReadFailures = 0U;
         motors[index].arrivalWaitActive = 0U;
         motors[index].arrivalWaitStartTick = 0U;
 
@@ -1267,7 +1340,7 @@ static void Motor_StartSyncSegment(void)
             return;
         }
 
-        if (!Herkulex_ReadPositionReliable(motorId, &motor->currentPosition))
+        if (!Motor_ReadPositionTolerant(index, motor->currentPosition, 0U))
         {
             printf("SYNC segmented move stopped: motor %u position unavailable\r\n",
                    motorId);
@@ -1378,8 +1451,12 @@ static void Motor_SyncSegmentTask(void)
         uint8_t statusDetail;
         long finalError;
         uint16_t movedThisAttempt;
+        uint8_t isFinalSegment;
 
-        if (!Herkulex_ReadPositionReliable(motorId, &motor->currentPosition))
+        isFinalSegment =
+            (motor->moveTarget == syncSegmentFinalTargets[i]) ? 1U : 0U;
+
+        if (!Motor_ReadPositionTolerant(index, motor->moveTarget, isFinalSegment))
         {
             printf("SYNC segmented move stopped: motor %u position read failed\r\n",
                    motorId);
@@ -2303,6 +2380,22 @@ static void Deployment_Task(void)
 
         case DEPLOY_MOTOR1_DEPLOY:
             printf("DEPLOY complete: arm seated, motor 1 in final position\r\n");
+
+            {
+                uint8_t ids[4] = { DEPLOY_MOTOR_ID_TURRET, DEPLOY_MOTOR_ID_TOP,
+                                DEPLOY_MOTOR_ID_MID, DEPLOY_MOTOR_ID_BASE };
+
+                for (uint8_t i = 0U; i < 4U; i++)
+                {
+                    int8_t idx = Motor_FindIndex(ids[i]);
+
+                    if (idx >= 0)
+                    {
+                        Motor_SetState((uint8_t)idx, MOTOR_BRAKED);
+                    }
+                }
+            }
+
             lastMissionSucceeded = 1U;
             deploymentPhase = DEPLOY_IDLE;
             break;

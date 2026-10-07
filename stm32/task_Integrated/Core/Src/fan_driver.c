@@ -8,6 +8,7 @@
 
 
 #include "fan_driver.h"
+#include "tim.h"
 
 #define FAN_PULSES_PER_REV 2U
 
@@ -19,6 +20,7 @@ static uint32_t fanRPM = 0U;
 
 void FanDriver_Init(void)
 {
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     lastPulses = tachPulses;
     lastTick = HAL_GetTick();
     fanRPM = 0U;
@@ -70,7 +72,7 @@ uint32_t FanDriver_GetRPM(void)
 
 void FanDriver_SetPWM(uint8_t percent)
 {
-    /* PWM-Leitung aktuell nicht verkabelt/nicht initialisiert – Lüfter läuft ungeregelt.
-     * TODO: TIM1_CH1 (PA8) richtig initialisieren, sobald PWM-Leitung angeschlossen ist. */
-    (void)percent;
+    if (percent > 100U) percent = 100U;
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,
+                          ((uint32_t)percent * (htim1.Init.Period + 1U)) / 100U);
 }
