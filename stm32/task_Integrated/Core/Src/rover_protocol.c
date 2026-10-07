@@ -178,6 +178,7 @@ static void PrintHelp(void)
     printf("  >>SET_MOTOR: tilt or 512,512,512,512,512<<  (M1..M5 position codes, 25..998)\r\n");
     printf("  >>ERROR: TEMP_HIGH<<\r\n");
     printf("  RECOVER\r\n");
+    printf("  >>MAPPING_START<<\r\n");
     printf("  pos / status / s / b / si  (direct motor debug commands)\r\n");
     printf("  pmos <1-4> on|off  (1=PMOS11 5V, 2=PMOS12 7.4V motor, 3=PMOS21 Jetson 12V, 4=PMOS22 12V)\r\n");
 }
@@ -224,6 +225,19 @@ void RoverProtocol_ProcessCommand(char *line)
         lastAliveTick = HAL_GetTick();
         aliveTimeoutReported = 0U;
         SendAck("ALIVE");
+        return;
+    }
+
+    if (strcmp(message, "MAPPING_START") == 0)
+    {
+        if (RoverState_IsLocked())
+        {
+            SendNack("LOCKED");
+            return;
+        }
+
+        RoverState_InstructJetson("MAPPING");
+        SendAck("MAPPING_START");
         return;
     }
 

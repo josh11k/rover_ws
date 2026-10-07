@@ -26,7 +26,8 @@ class CommandNode(Node):
         self.mapping_timer = None    # nur aktiv, solange state == MAPPING
         self.wedges_width = 30  # Not in Degree
         self.time_mapping = 10.0 # time for mapping in sec
-        self.neutral_position = 355.5/180.0*math.pi  # Neutral position in rad
+        self.neutral_position = 0.0 #355.5/(180.0*math.pi)  # Neutral position in rad
+        self.neutral_wait_s = 5.0
 
         self.motor5_position_old = 0.0
         self.motor5_position_new = 0.0
@@ -160,6 +161,17 @@ class CommandNode(Node):
     # triggert by stm message
     def bridge_node_callback(self, msg):
 
+        if msg.task == "SET_STATE" and msg.message in ("RETRACT", "SHUTDOWN"):
+            self._stop_mapping()
+            self.wedges = 0
+            self.old_state = self.state
+            self.state = "STANDBY"
+            self.publish_operational_mode.publish(OperationalMode(mode="STANDBY"))
+            self._mast_to_neutral()
+            if msg.message == "SHUTDOWN":
+                self._run_later(self.neutral_wait_s, self._poweroff)
+            return
+
         if msg.task == "SET_STATE":
             msg_state = OperationalMode()
             msg_state.mode = msg.message  # Ergebnis: "STANDBY"
@@ -179,20 +191,46 @@ class CommandNode(Node):
 
 
         if msg.task == "REBOOT":
-            self.publish_motor5(Float64(self.neutral_position))
-            try:
-                self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Rebooting system..."))
-                subprocess.run(['systemctl', 'reboot'], check=True)
-            except subprocess.CalledProcessError as e:
-                self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", message=f"Reboot failed: {e}"))
+            self._mast_to_neutral()
+            self._run_later(self.neutral_wait_s, self._reboot)
 
         if msg.task == "SHUTDOWN":
-            self.publish_motor5(Float64(self.neutral_position))
-            try:
-                self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Shutting down system..."))
-                subprocess.Popen(['systemctl', 'poweroff'])
-            except Exception as e:
-                self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", message=f"Shutdown failed: {e}"))
+            self._mast_to_neutral()
+            self._run_later(self.neutral_wait_s, self._poweroff)
+
+    def _mast_to_neutral(self):
+        self.publish_rotation_position.publish(Float64(data=self.neutral_position))
+        self.publish_operational_log.publish(LogMessage(
+            source="JETSON", event="INFO",
+            message="Mast (motor 5) moving to neutral position."))
+
+    def _run_later(self, delay_s, fn):
+        holder = {}
+
+        def _cb():
+            holder["t"].cancel()
+            self.destroy_timer(holder["t"])
+            fn()
+
+        holder["t"] = self.create_timer(delay_s, _cb)
+
+    def _poweroff(self):
+        try:
+            self.publish_operational_log.publish(LogMessage(
+                source="JETSON", event="INFO", message="Shutting down system..."))
+            subprocess.Popen(['systemctl', 'poweroff'])
+        except Exception as e:
+            self.publish_operational_log.publish(LogMessage(
+                source="JETSON", event="ERROR", message=f"Shutdown failed: {e}"))
+
+    def _reboot(self):
+        try:
+            self.publish_operational_log.publish(LogMessage(
+                source="JETSON", event="INFO", message="Rebooting system..."))
+            subprocess.run(['systemctl', 'reboot'], check=True)
+        except subprocess.CalledProcessError as e:
+            self.publish_operational_log.publish(LogMessage(
+                source="JETSON", event="ERROR", message=f"Reboot failed: {e}"))
 
     # triggert by timer
     def trigger_housekeeping(self):
@@ -243,12 +281,9 @@ class CommandNode(Node):
             placeholder = 1  # Hier können Sie die Logik für den TRACKING-Zustand implementieren
 
         elif self.state == "HOT_SWAP":
-            self.publish_motor5(Float64(self.neutral_position))
-            try:
-                self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Shutting down system..."))
-                subprocess.Popen(['systemctl', 'poweroff'])
-            except Exception as e:
-                self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", message=f"Shutdown failed: {e}"))
+            self._mast_to_neutral()
+            self._run_later(self.neutral_wait_s, self._poweroff)
+            
 
         elif self.state == "MAST_DEPLOYMENT":
             placeholder = 1  # Hier können Sie die Logik für den MAST_DEPLOYMENT-Zustand implementieren

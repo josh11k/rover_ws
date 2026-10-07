@@ -12,5 +12,6 @@ void RoverProtocol_ProcessCommand(char *line);
 void RoverProtocol_SetReplyUart(UART_HandleTypeDef *uart);
 UART_HandleTypeDef *RoverProtocol_GetReplyUart(void);
 uint8_t RoverProtocol_HasAliveSince(uint32_t sinceTick);
+uint8_t RoverState_IsLocked(void);
 
 #endif /* INC_ROVER_PROTOCOL_H_ */
