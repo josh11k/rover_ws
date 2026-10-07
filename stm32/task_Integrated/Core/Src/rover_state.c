@@ -12,6 +12,7 @@
 #define ROVERSTATE_SETUP_TIMEOUT_MS     20000U
 #define ROVERSTATE_SHUTDOWN_WAIT_MS     30000U  /* must be long enough for a clean Jetson shutdown */
 #define ROVERSTATE_SHUTDOWN_MAX_RETRIES 2U
+#define ROVERSTATE_RETRACT_PRE_WAIT_MS  8000U  /* Jetson-Zeit, um Motor 5 in Neutral zu fahren */
 
 // USER CONFIGURATION: PMOS power-switch pins (HIGH = switch ON). Order here
 // is also the SETUP power-up sequence order, with
@@ -47,6 +48,8 @@ static uint8_t shutdownRetryCount = 0U;
 static uint8_t setupPowerStepIndex = 0U;
 static uint32_t setupPowerStepNextTick = 0U;
 static uint8_t setupPowerSequenceDone = 0U;
+static uint8_t retractPendingStart = 0U;
+static uint32_t retractRequestTick = 0U;
 
 static void RoverState_OnEnter(RobotState state);
 static void RoverState_ShutdownTask(void);
@@ -306,6 +309,7 @@ void RoverState_InitPowerSwitches(void)
 
 static void RoverState_OnEnter(RobotState state)
 {
+    retractPendingStart = 0U;
     switch (state)
     {
         case STATE_SETUP:
@@ -319,7 +323,10 @@ static void RoverState_OnEnter(RobotState state)
             break;
 
         case STATE_RETRACT:
-            MotorManager_StartRetract();
+            RoverState_InstructJetson("RETRACT");
+            retractPendingStart = 1U;
+            retractRequestTick = HAL_GetTick();
+            printf("RETRACT: waiting for Jetson to move mast to neutral\r\n");
             break;
 
         case STATE_SHUTDOWN:
@@ -430,6 +437,20 @@ void RoverState_ModeTask(void)
             break;
 
         case STATE_RETRACT:
+            if (retractPendingStart)
+            {
+                if ((int32_t)(HAL_GetTick() - retractRequestTick) <
+                    (int32_t)ROVERSTATE_RETRACT_PRE_WAIT_MS)
+                {
+                    break; /* Jetson faehrt noch Motor 5 in Neutral */
+                }
+
+                retractPendingStart = 0U;
+                printf("RETRACT: starting motor retract\r\n");
+                MotorManager_StartRetract();
+                break;
+            }
+
             if (missionWasActive && !missionActiveNow)
             {
                 if (MotorManager_GetLastMissionSucceeded())
