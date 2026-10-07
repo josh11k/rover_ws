@@ -25,7 +25,8 @@ class CommandNode(Node):
         self.max_wedges = 6          # Anzahl Wedges pro Mapping-Session -- anpassen
         self.mapping_timer = None    # nur aktiv, solange state == MAPPING
         self.wedges_width = 30  # Not in Degree
-        self.time_mapping = 5.0 # time for mapping in sec
+        self.time_mapping = 10.0 # time for mapping in sec
+        self.neutral_position = 355.5/180.0*math.pi  # Neutral position in rad
 
         self.motor5_position_old = 0.0
         self.motor5_position_new = 0.0
@@ -178,7 +179,7 @@ class CommandNode(Node):
 
 
         if msg.task == "REBOOT":
-            self.publish_rotation_position.publish(Float64(data=0.0))
+            self.publish_motor5(Float64(self.neutral_position))
             try:
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Rebooting system..."))
                 subprocess.run(['systemctl', 'reboot'], check=True)
@@ -186,7 +187,7 @@ class CommandNode(Node):
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="ERROR", message=f"Reboot failed: {e}"))
 
         if msg.task == "SHUTDOWN":
-            self.publish_rotation_position.publish(Float64(data=0.0))
+            self.publish_motor5(Float64(self.neutral_position))
             try:
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Shutting down system..."))
                 subprocess.Popen(['systemctl', 'poweroff'])
@@ -242,6 +243,7 @@ class CommandNode(Node):
             placeholder = 1  # Hier können Sie die Logik für den TRACKING-Zustand implementieren
 
         elif self.state == "HOT_SWAP":
+            self.publish_motor5(Float64(self.neutral_position))
             try:
                 self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Shutting down system..."))
                 subprocess.Popen(['systemctl', 'poweroff'])
