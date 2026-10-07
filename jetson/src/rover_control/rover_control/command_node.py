@@ -26,7 +26,7 @@ class CommandNode(Node):
         self.mapping_timer = None    # nur aktiv, solange state == MAPPING
         self.wedges_width = 30  # Not in Degree
         self.time_mapping = 10.0 # time for mapping in sec
-        self.neutral_position = 355.5/180.0*/math.pi  # Neutral position in rad
+        self.neutral_position = 355.5/180.0*math.pi  # Neutral position in rad
 
         self.motor5_position_old = 0.0
         self.motor5_position_new = 0.0

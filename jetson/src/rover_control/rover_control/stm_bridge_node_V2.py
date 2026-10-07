@@ -96,7 +96,7 @@ class STMBridgeNode(Node):
             msg_log.message = f"Send heartbeat to STM32: {msg.message}"
             self.publish_operational_log.publish(msg_log)
             self.publish_com_stm_log.publish(msg_log)
-            command = f">>{msg.task}<<"   
+            command = f">>{msg.task}: {msg.message}<<"   
 
         if msg.task == "SET_STATE":
             msg_log.source = "JETSON"
@@ -143,7 +143,7 @@ class STMBridgeNode(Node):
 
         try:
             # 1. Befehl EINMALIG senden
-            self.ser.write(msg.encode('utf-8'))
+            self.ser.write((msg + "\n").encode('utf-8'))
             self.get_logger().info(f"Befehl gesendet: {msg.strip()}")
             self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message=f"Command sent to STM32"))
             self.publish_com_stm_log.publish(LogMessage(source="JETSON", event="INFO", message=f"Command sent to STM32"))
