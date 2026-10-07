@@ -207,12 +207,14 @@ void PrintState(void)
 
 void RoverState_InstructJetson(const char *stateName)
 {
+    char buffer[48];
+
     /*
-     * One-shot instruction to the Jetson, deliberately decoupled from our
-     * own currentState - the Jetson can have its own internal sub-states
-     * (e.g. MAPPING -> TRACKING) that the STM never adopts itself.
+     * One-shot instruction to the Jetson, always on the Jetson UART - not on
+     * the active reply channel (which is the ESP when the trigger came from there).
      */
-    printf(">>SET_STATE %s<<\r\n", stateName);
+    snprintf(buffer, sizeof(buffer), ">>SET_STATE %s<<\r\n", stateName);
+    RoverProtocol_SendToJetson(buffer);
 }
 
 void RoverState_SetPowerSwitch(PowerSwitchId id, uint8_t on)

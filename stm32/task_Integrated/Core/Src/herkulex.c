@@ -3,6 +3,7 @@
 #include "main.h"
 
 #include <stddef.h>
+#include <stdio.h>
 
 #define HERKULEX_RX_BUFFER_SIZE 32U
 #define HERKULEX_TX_BUFFER_SIZE 64U
@@ -201,6 +202,11 @@ uint8_t Herkulex_ReadPosition(uint8_t id, uint16_t *position)
         rxBuffer[7] != 0x3A ||
         rxBuffer[8] != 0x02)
     {
+    printf("HK id=%u len=%u ore=%u:", id, length,
+           (unsigned)__HAL_UART_GET_FLAG(&huart1, UART_FLAG_ORE));
+    for (uint16_t i = 0U; i < length && i < 16U; i++)
+        printf(" %02X", rxBuffer[i]);
+    printf("\r\n");
         return 0;
     }
 

@@ -451,6 +451,16 @@ uint8_t RoverProtocol_HasAliveSince(uint32_t sinceTick)
     return ((int32_t)(lastAliveTick - sinceTick) >= 0) ? 1U : 0U;
 }
 
+void RoverProtocol_SendToJetson(const char *text)
+{
+    if (protocolUart == NULL)
+    {
+        return;
+    }
+
+    HAL_UART_Transmit(protocolUart, (uint8_t *)text, (uint16_t)strlen(text), HAL_MAX_DELAY);
+}
+
 void SendAck(const char *message)
 {
     printf(">>ACK, %s<<\r\n", message);
