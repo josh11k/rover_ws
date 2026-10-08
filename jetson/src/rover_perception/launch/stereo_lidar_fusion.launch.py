@@ -348,9 +348,6 @@ def generate_launch_description():
         package="rover_perception",
         executable="mast_pose_node",
         name="mast_pose_node",
-        parameters=[{
-        "joint_state_topic": "/motor_position/current",
-        }],
     )
 
     # ------------------------------------------------------------------
@@ -444,9 +441,12 @@ def generate_launch_description():
         parameters=[{
             "input_topic": "/lidar/points_mast_base_link",
             "output_topic": "/lidar/points_filtered",
-            "voxel_size": 0.20,
-            "outlier_radius": 2.0,
-            "min_neighbors": 1,
+            "voxel_size": 0.05,
+            "outlier_radius": 0.5,
+            "min_neighbors": 2,
+            "min_x": -30.0, "max_x": 30.0,
+            "min_y": -30.0, "max_y": 30.0,
+            "min_z": -6.0,  "max_z": 6.0,
             "state_field": "lidar",
             # Driven by the shared enable_filters launch arg -- see its
             # DeclareLaunchArgument above. ParameterValue(..., value_type=bool)
@@ -526,6 +526,8 @@ def generate_launch_description():
             "grid_resolution": ParameterValue(grid_resolution, value_type=float),
             "grid_size_x": ParameterValue(grid_size, value_type=float),
             "grid_size_y": ParameterValue(grid_size, value_type=float),
+            "min_ground_weight": 20.0,
+            "z_gap_threshold": 0.20,
         }],
     )
 
@@ -543,6 +545,10 @@ def generate_launch_description():
             "grid_size_x": ParameterValue(grid_size, value_type=float),
             "grid_size_y": ParameterValue(grid_size, value_type=float),
             "map_save_path": map_save_path,
+            "max_step_height": 0.20,
+            "max_roughness": 0.10,
+            "max_slope_deg": 18.0,
+            "min_points_per_cell": 20,
         }],
     )
 

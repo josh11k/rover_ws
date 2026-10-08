@@ -202,11 +202,6 @@ uint8_t Herkulex_ReadPosition(uint8_t id, uint16_t *position)
         rxBuffer[7] != 0x3A ||
         rxBuffer[8] != 0x02)
     {
-    printf("HK id=%u len=%u ore=%u:", id, length,
-           (unsigned)__HAL_UART_GET_FLAG(&huart1, UART_FLAG_ORE));
-    for (uint16_t i = 0U; i < length && i < 16U; i++)
-        printf(" %02X", rxBuffer[i]);
-    printf("\r\n");
         return 0;
     }
 
@@ -230,7 +225,7 @@ uint8_t Herkulex_ReadPosition(uint8_t id, uint16_t *position)
 
 uint8_t Herkulex_ReadPositionReliable(uint8_t id, uint16_t *position)
 {
-    for (uint8_t attempt = 0; attempt < 3U; attempt++)
+    for (uint8_t attempt = 0; attempt < 5U; attempt++)
     {
         if (Herkulex_ReadPosition(id, position))
             return 1;

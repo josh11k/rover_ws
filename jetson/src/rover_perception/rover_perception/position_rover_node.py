@@ -956,6 +956,13 @@ class PositionRoverNode(Node):
             )
             return
 
+        # Tilt-Befehle begrenzen: Feedback kommt nur alle ~5 s, der STM
+        # startet pro Befehl eine neue Bewegung -> max. 1 Befehl alle 2 s.
+        now_s = self.get_clock().now().nanoseconds * 1e-9
+        if now_s - getattr(self, "_last_tilt_cmd_s", 0.0) < 2.0:
+            return
+        self._last_tilt_cmd_s = now_s
+
         cmd = MotorPosition()
         cmd.motor2 = self._latest_tilt_position.motor2
         cmd.motor3 = self._latest_tilt_position.motor3
@@ -995,18 +1002,26 @@ class PositionRoverNode(Node):
         self._pan_blocked = False
         self._tilt_blocked = False
         self._search_exhausted = False
+        self._search_start_at = start_at 
         self._search_positions = self._build_search_positions(start_at)
         self._search_index = 0
         self._advance_to_next_search_position()
 
     def _advance_to_next_search_position(self):
         if self._search_index >= len(self._search_positions):
-            self.get_logger().error(
-                "LED-Suchlauf abgeschlossen -- kein Pattern ueber den "
-                "gesamten erreichbaren Pan-Bereich gefunden."
+            # NEU: nicht parken -- neuen Durchlauf in Gegenrichtung starten.
+            # Der letzte Durchlauf endete am gegenueberliegenden Rand, also
+            # beginnt der neue genau dort und laeuft zurueck.
+            next_start = "max" if self._search_start_at == "min" else "min"
+            self.get_logger().warn(
+                "LED-Suchlauf ohne Fund beendet -- starte neuen Durchlauf "
+                f"rueckwaerts (ab pan_{next_start}_deg)."
             )
-            self._search_exhausted = True
-            return
+            self._search_start_at = next_start
+            self._search_positions = self._build_search_positions(next_start)
+            # Position 0 ist der Rand, an dem wir gerade stehen und den wir
+            # eben schon abgesucht haben -> direkt mit der naechsten weiter.
+            self._search_index = 1 if len(self._search_positions) > 1 else 0
 
         target_deg = self._search_positions[self._search_index]
         self._search_phase = "moving"

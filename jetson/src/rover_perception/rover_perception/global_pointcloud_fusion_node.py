@@ -86,7 +86,8 @@ class GlobalPointcloudFusionNode(Node):
 
         self.pub = None
         self.lidar_sub = None
-        self.stereo_sub = None  
+        self.stereo_sub = None 
+        self._last_sent_stamp = None 
 
         self.state_sub = self.create_subscription(
             OperationalModeSettings,
@@ -97,7 +98,10 @@ class GlobalPointcloudFusionNode(Node):
 
     def state_callback(self, msg):
 
-        self.state = msg.make_global_pointcloud
+        new_state = msg.make_global_pointcloud
+        if new_state == self.state:
+            return  # unveraendert -> nichts doppelt anlegen
+        self.state = new_state
 
         if self.state == "OFF":
             self.get_logger().info(f"global_pointcloud_fusion_node: OFF")
@@ -110,7 +114,8 @@ class GlobalPointcloudFusionNode(Node):
             self.stereo_sub = None  
             self.pub = None
 
-            self.timer.destroy()  # Löscht den Timer komplett aus ROS 2
+            if getattr(self, "timer", None) is not None:
+                self.timer.destroy()
             self.timer = None
 
         elif self.state == "ON":
@@ -185,7 +190,12 @@ class GlobalPointcloudFusionNode(Node):
     def _publish_fused(self):
         try:
             lidar_msg = self._fresh_or_none(self._latest_lidar)
-            stereo_msg = self._fresh_or_none(self._latest_stereo)
+            if lidar_msg is not None and lidar_msg.header.stamp == self._last_sent_stamp:
+                return  # diese Wolke wurde schon publiziert -> keine Duplikate
+            if lidar_msg is not None:
+                self._last_sent_stamp = lidar_msg.header.stamp
+            #Stereo wird aktuell nicht genutzt, da die Stereo-Kamera noch nicht korrekt funktioniert
+            stereo_msg = None #self._fresh_or_none(self._latest_stereo)
 
             if lidar_msg is None and stereo_msg is None:
                 # Neither sensor has current data -- nothing to publish,
