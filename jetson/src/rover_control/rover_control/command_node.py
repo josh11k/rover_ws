@@ -5,7 +5,7 @@ import time
 
 import rclpy
 from rclpy.node import Node
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
 # Uniform Service Interface
@@ -22,27 +22,37 @@ class CommandNode(Node):
         self.state = "STANDBY"  # Initialer Modus
         self.old_state = "STANDBY"  # Initialer alter Modus
         self.wedges = 0
-        self.max_wedges = 6          # Anzahl Wedges pro Mapping-Session -- anpassen
-        self.mapping_timer = None    # nur aktiv, solange state == MAPPING
+        self.max_wedges = 2         # Anzahl Wedges pro Mapping-Session -- anpassen
+        self.mapping_timer = None    # nur aktiv, solange eine Mapping-Session laeuft
         self.wedges_width = 30  # Not in Degree
-        self.time_mapping = 10.0 # time for mapping in sec
+        self.time_mapping = 60 # time for mapping in sec
         self.neutral_position = 0.0 #355.5/(180.0*math.pi)  # Neutral position in rad
         self.neutral_wait_s = 5.0
+
+        # Karten-Abschluss
+        self.combine_settle_s = 2.0   # Wartezeit nach MAP_COMBINE, bis die Auswerte-Nodes ON sind
+        self.save_settle_s = 2.0      # Wartezeit nach combine, bis obstacle_grid gerechnet hat
+        self.max_wedge_retries = 2    # Fehlversuche je Mast-Position, bevor sie uebersprungen wird
+        self.wedge_retries = 0
 
         self.motor5_position_old = 0.0
         self.motor5_position_new = 0.0
 
         cb_group = ReentrantCallbackGroup()
+        # eigene Gruppe fuer STM-/WiFi-Befehle und ALIVE -- so laufen sie
+        # weiter, auch waehrend timer_mapping auf Service-Antworten wartet
+        cmd_group = MutuallyExclusiveCallbackGroup()
 
         # 2. Subscribers
         self.subscribe_bridge_node = self.create_subscription(
             SystemRequest,
             '/bridge_node/system_request',
             self.bridge_node_callback,
-            10,)
+            10,
+            callback_group=cmd_group,)
 
         self.subscribe_xm430_node = self.create_subscription(
-            Float64, 
+            Float64,
             '/xm430_node/current_position',
             self.motor_rotation_callback,
             10
@@ -53,6 +63,7 @@ class CommandNode(Node):
             '/wifi_node/system_request',
             self.bridge_node_callback,   # gleicher Callback
             10,
+            callback_group=cmd_group,
         )
 
         # 3. Publishers
@@ -104,7 +115,7 @@ class CommandNode(Node):
         )
 
         self.alive_timer = self.create_timer(
-            5.0, self.send_alive_message
+            5.0, self.send_alive_message, callback_group=cmd_group
         )
 
         self.get_logger().info(
@@ -128,13 +139,15 @@ class CommandNode(Node):
         self.combine_wedges_client = self.create_client(
             Trigger, "combine_wedges", callback_group=cb_group,
         )
+        # fertige Karte speichern (obstacle_grid_node)
+        self.save_terrain_map_client = self.create_client(
+            Trigger, "save_terrain_map", callback_group=cb_group,
+        )
 
-    # ------------------------------------------------------------------
-    # Generischer Helper fuer alle vier Trigger-Services -- blockiert
-    # den aufrufenden Thread, bis die Antwort da ist oder ein Timeout
+
+    # blockiert den aufrufenden Thread, bis die Antwort da ist oder ein Timeout
     # greift. Braucht die ReentrantCallbackGroup + MultiThreadedExecutor
-    # (siehe main()), sonst deadlockt es.
-    # ------------------------------------------------------------------
+
     def motor_rotation_callback(self, msg):
         self.motor5_position_old = msg.data
 
@@ -157,6 +170,15 @@ class CommandNode(Node):
             f"{name}: success={result.success}, message={result.message}"
         )
         return result.success, result.message
+
+    def _log_op(self, message, event="INFO"):
+        self.publish_operational_log.publish(LogMessage(
+            source="JETSON", event=event, message=message))
+
+    def _set_mode(self, mode):
+        """Internen Zustand setzen und an set_mode_node weitergeben."""
+        self.state = mode
+        self.publish_operational_mode.publish(OperationalMode(mode=mode))
 
     # triggert by stm message
     def bridge_node_callback(self, msg):
@@ -264,38 +286,42 @@ class CommandNode(Node):
 
     def check_state(self):
 
-        valid_states = ["STANDBY", "MAPPING", "SAFE", "ASSEMBLY_MAP", "TRACKING", "HOT_SWAP", "MAST_DEPLOYMENT"]
+        valid_states = ["STANDBY", "MAPPING", "SAFE", "ASSEMBLY_MAP", "MAP_COMBINE",
+                        "TRACKING", "HOT_SWAP", "MAST_DEPLOYMENT"]
 
         if self.state not in valid_states:
             self.get_logger().error(f"Invalid state: {self.state}")
             return False
-    # Neu: Uebergang in MAPPING startet die Wedge-Session
-        elif self.state == "MAPPING" and self.old_state != "MAPPING":
-            self._start_mapping()
-    
-        # Wenn wir MAPPING verlassen, laueft der Mapping-Timer nicht weiter
-        elif self.old_state == "MAPPING" and self.state != "MAPPING":
+
+        # Mapping von aussen abgebrochen (anderer Zustand per STM/GUI,
+        # waehrend eine Session laeuft) -> Timer stoppen UND Session
+        # zuruecksetzen, damit das naechste MAPPING sauber bei Wedge 0 beginnt.
+        # Eigenes 'if' (nicht Teil der elif-Kette), damit z.B. HOT_SWAP
+        # danach trotzdem ausgefuehrt wird.
+        if self.state != "MAPPING" and self.mapping_timer is not None:
             self._stop_mapping()
+            self.wedges = 0
+            self._log_op(f"Mapping aborted (new state {self.state}) -- session reset, nothing saved.",
+                         event="ERROR")
+
+        #Uebergang in MAPPING startet die Wedge-Session
+        if self.state == "MAPPING" and self.old_state != "MAPPING":
+            self._start_mapping()
 
         elif self.state == "TRACKING":
-            placeholder = 1  # Hier können Sie die Logik für den TRACKING-Zustand implementieren
+            placeholder = 1
 
         elif self.state == "HOT_SWAP":
             self._mast_to_neutral()
             self._run_later(self.neutral_wait_s, self._poweroff)
-            
+
 
         elif self.state == "MAST_DEPLOYMENT":
-            placeholder = 1  # Hier können Sie die Logik für den MAST_DEPLOYMENT-Zustand implementieren
+            placeholder = 1
 
 
-        
+    # Wird einmalig beim Uebergang in MAPPING aufgerufen (ausbridge_node_callback).
 
-            
-    # ------------------------------------------------------------------
-    # Wird einmalig beim Uebergang in MAPPING aufgerufen (aus
-    # bridge_node_callback).
-    # ------------------------------------------------------------------
     def _start_mapping(self):
         # trigger srv clear if self.wedges == 0
         if self.wedges == 0:
@@ -304,8 +330,9 @@ class CommandNode(Node):
             )
             self.motor5_position_old = - math.pi
             self.publish_rotation_position.publish(Float64(data=self.motor5_position_old))
+            self.wedge_retries = 0
 
-        # start timer (nach 3 min soll getriggert werden)
+        # start timer (nach time_mapping soll getriggert werden)
         if self.mapping_timer is None:
             self.mapping_timer = self.create_timer(self.time_mapping, self.timer_mapping)
 
@@ -315,83 +342,118 @@ class CommandNode(Node):
 
     def _stop_mapping(self):
         if self.mapping_timer is not None:
-            self.mapping_timer.destroy()
+            self.mapping_timer.cancel()
+            self.destroy_timer(self.mapping_timer)
             self.mapping_timer = None
-        self.get_logger().info("Mapping-Timer gestoppt (state != MAPPING).")
+        self.get_logger().info("Mapping-Timer gestoppt.")
 
-    # triggert alle 3 Minuten, solange state == MAPPING
+    # triggert alle time_mapping Sekunden, solange eine Session laeuft
     def timer_mapping(self):
+        if self.mapping_timer is None:
+            return  # Session wurde inzwischen abgebrochen
 
-        msg = LogMessage()
-        msg.source = "JETSON"
-        msg.event = "INFO"
-        msg.message = "Mapping timer triggered. Requesting to save current map slice."
-        self.publish_operational_log.publish(msg)
+        self._log_op("Mapping timer triggered. Saving current wedge.")
 
-        self.state = "ASSEMBLY_MAP"
-        self.publish_operational_mode.publish(OperationalMode(mode=self.state))
-        self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Turn of Perception to save map and rotate mast."))
+        # 1. Wedge sichern, SOLANGE die Perception noch ON ist
+        #    Das finalize pro Wedge entfaellt: klassifiziert wird erst am
+        #    Ende ueber die kombinierte Wolke.
+        ok, msg = self._call_trigger(self.save_wedge_points_client, "save_wedge_points")
 
-        # 1. aktuelle Wedge fertig klassifizieren + publishen lassen
-        self._call_trigger(
-            self.finalize_ground_segmentation_client, "finalize_ground_segmentation"
-        )
+        if self.mapping_timer is None:
+            return  # waehrend des Speicherns abgebrochen
 
-        # 2. Mast-Rotation ansteuern, damit der naechste Wedge-Bereich
-        #    gescannt werden kann. Kein eigener Service dafuer vorhanden --
-        #    ueber den bestehenden SystemRequest-Publisher geschickt.
-        #    ANPASSEN: Task-Name je nachdem, wie der Mast-Node es erwartet.
-
-        # 3. aktuellen Wedge-Ausschnitt als Rohdaten sichern
-        self._call_trigger(
-            self.save_wedge_points_client, "save_wedge_points"
-        )
-
-        self.wedges += 1
-
-        self.get_logger().info(
-            f"timer_mapping: wedge {self.wedges}/{self.max_wedges} gesichert."
-        )
-        self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message=f"Wedge {self.wedges}/{self.max_wedges} saved."))
-
-        # wedges genug?
-        if self.wedges >= self.max_wedges:
-            # trigger das map in wedges combine ausgegeben wird
-            self._call_trigger(
-                self.combine_wedges_client, "combine_wedges", timeout_sec=30.0
-            )
-
-            # setze wedges auf 0
-            self.wedges = 0
-            self._stop_mapping()
-            self.state = "STANDBY"
-            self.publish_operational_mode.publish(OperationalMode(mode=self.state))
-            self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message="Mapping completed. All wedges combined and system back to STANDBY."))
-
-            self.get_logger().info(
-                "timer_mapping: max_wedges erreicht, combine_wedges ausgeloest, "
-                "wedges zurueckgesetzt."
-            )
+        if ok:
+            self.wedges += 1
+            self.wedge_retries = 0
+            self._log_op(f"Wedge {self.wedges}/{self.max_wedges} saved.")
+            self.get_logger().info(f"timer_mapping: wedge {self.wedges}/{self.max_wedges} gesichert.")
         else:
-            if self.motor5_position_old <= math.pi:
-                self.get_logger().info(f"geht in die if schleife {self.motor5_position_old} <= {math.pi}")
-                self.motor5_position_new = self.motor5_position_old + 2 * math.pi /(self.max_wedges)
-                self.publish_rotation_position.publish(Float64(data=self.motor5_position_new))
-                self.motor5_position_old = self.motor5_position_new
-                self.publish_operational_log.publish(LogMessage(source="JETSON", event="INFO", message=f"Rotating mast to position {self.motor5_position_new} rad for next wedge."))
-                time.sleep(2.0)  # give time for mast to start moving
-                self.state = "MAPPING"
-                self.publish_operational_mode.publish(OperationalMode(mode="MAPPING"))
+            self.wedge_retries += 1
+            if self.wedge_retries <= self.max_wedge_retries:
+                # gleiche Mast-Position, naechster Timer-Durchlauf versucht es erneut
+                self._log_op(f"Saving wedge failed ({msg}) -- retry "
+                             f"{self.wedge_retries}/{self.max_wedge_retries} at same position.",
+                             event="ERROR")
+                return
+            # zu oft gescheitert -> Position ueberspringen, damit die Session endet
+            self.wedges += 1
+            self.wedge_retries = 0
+            self._log_op(f"Wedge {self.wedges}/{self.max_wedges} skipped after repeated failures ({msg}).",
+                         event="ERROR")
+
+        if self.wedges >= self.max_wedges:
+            self._finish_mapping()
+            return
+
+        # 2. Perception aus, Mast zur naechsten Position drehen
+        self._set_mode("ASSEMBLY_MAP")
+        self._log_op("Perception off, rotating mast for next wedge.")
+
+        if self.motor5_position_old <= math.pi:
+            self.motor5_position_new = self.motor5_position_old + 2 * math.pi /(self.max_wedges)
+            self.publish_rotation_position.publish(Float64(data=self.motor5_position_new))
+            self.motor5_position_old = self.motor5_position_new
+            self._log_op(f"Rotating mast to position {self.motor5_position_new} rad for next wedge.")
+        time.sleep(2.0)  # give time for mast to move
+
+        if self.mapping_timer is None:
+            return  # waehrend der Drehung abgebrochen -> nicht wieder einschalten
+
+        # 3. naechster Wedge: Perception wieder an (leert den Puffer von
+        #    ground_segmentation_node) und dem Wedge die volle Scanzeit geben
+        self._set_mode("MAPPING")
+        self.mapping_timer.reset()
+
+    # Abschluss der Session -- Wedges kombinieren, Karte speichern
+    def _finish_mapping(self):
+        self._stop_mapping()
+        self._log_op("All wedges saved -- combining map.")
+
+        # 1. Nur die Auswerte-Pipeline an (Sensoren aus): ground_segmentation_
+        #    und obstacle_grid_node gehen ON, ground_segmentation startet mit
+        #    leerem Puffer, es kommen keine Live-Daten dazu.
+        self._set_mode("ASSEMBLY_MAP")   # erst alles OFF -> sauberer Neustart der Auswerte-Nodes
+        time.sleep(1.5)
+        self._set_mode("MAP_COMBINE")
+        time.sleep(self.combine_settle_s)
+
+        # 2. Wedges laden, zusammenfuegen, klassifizieren
+        #    (combine_wedges ruft finalize_ground_segmentation selbst auf).
+        ok_c, msg_c = self._call_trigger(
+            self.combine_wedges_client, "combine_wedges", timeout_sec=30.0
+        )
+
+        ok_s, msg_s = False, "not attempted (combine failed)"
+        if ok_c:
+            # obstacle_grid_node braucht kurz, um ground_points zu gridden
+            time.sleep(self.save_settle_s)
+            # 3. fertige Karte nach terrain_map.npz schreiben
+            ok_s, msg_s = self._call_trigger(
+                self.save_terrain_map_client, "save_terrain_map", timeout_sec=10.0
+            )
+
+        if ok_c and ok_s:
+            self._log_op(f"Mapping completed, map saved: {msg_s}")
+        else:
+            self._log_op(f"Mapping finished WITHOUT saved map. combine: {msg_c} | save: {msg_s}",
+                         event="ERROR")
+
+        # 4. Session beenden
+        self.wedges = 0
+        self.old_state = "MAPPING"
+        self._set_mode("STANDBY")
+        self._mast_to_neutral()
+        self.get_logger().info("Mapping-Session beendet, zurueck in STANDBY.")
 
 
 def main(args=None):
     rclpy.init(args=args)
     node = CommandNode()
 
-    # 2 Threads minimum -- timer_mapping/_call_trigger blockieren auf
-    # eingehende Service-Antworten, waehrend der Node parallel noch auf
-    # /bridge_node/system_request, Timer usw. reagieren koennen muss.
-    executor = MultiThreadedExecutor(num_threads=2)
+    # 3 Threads -- timer_mapping blockiert auf Service-Antworten
+    # (Reentrant-Gruppe braucht einen Thread fuer die Antworten), und
+    # STM-/WiFi-Befehle + ALIVE (cmd_group) sollen parallel weiterlaufen.
+    executor = MultiThreadedExecutor(num_threads=3)
     executor.add_node(node)
 
     try:

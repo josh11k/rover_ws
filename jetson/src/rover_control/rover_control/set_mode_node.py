@@ -7,7 +7,7 @@ from rover_control_msgs.msg import  OperationalModeSettings, OperationalMode
 
 class OperationalModes(Node):
     """Class to define the operational modes of the system"""
-    
+
     #STANDBY = "00"
     #PERCEPTION = "01"
     #SAFE = "02"
@@ -23,30 +23,30 @@ class OperationalModes(Node):
         self.declare_parameter('make_global_pointcloud', "OFF")
 
         self.subscription = self.create_subscription(
-            OperationalMode, 
-            '/operational_mode/current', 
+            OperationalMode,
+            '/operational_mode/current',
             self.set_operational_mode_callback,
               10)
-        
+
         self.publisher = self.create_publisher(
-            OperationalModeSettings, 
+            OperationalModeSettings,
             '/operational_mode/settings',
               10)
 
-        
-    # Changes the current state of the mono cam   
+
+    # Changes the current state of the mono cam
 
     def set_operational_mode_callback(self, current_mode):
-        
+
         msg = OperationalModeSettings()
         mode = current_mode.mode
 
         if mode == "STANDBY":
             msg.stereo_cam = "OFF"
             msg.mono_cam = "OFF"
-            msg.lidar = "OFF"   
+            msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
-        
+
         elif mode == "MAPPING":
             msg.stereo_cam = "ON"
             msg.mono_cam = "OFF"
@@ -55,41 +55,50 @@ class OperationalModes(Node):
 
         elif mode == "MAPPING_BREAK":
             msg.stereo_cam = "OFF"
-            msg.mono_cam = "OFF"        
+            msg.mono_cam = "OFF"
             msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
-        
+
         elif mode == "SAFE":
             msg.stereo_cam = "OFF"
-            msg.mono_cam = "OFF"        
+            msg.mono_cam = "OFF"
             msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
 
         elif mode == "ASSEMBLY_MAP":
             msg.stereo_cam = "OFF"
-            msg.mono_cam = "OFF"        
+            msg.mono_cam = "OFF"
             msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
 
+        # Kartenabschluss -- Sensoren aus (keine Live-Daten), aber die
+        # Auswerte-Pipeline (ground_segmentation_node, obstacle_grid_node)
+        # an, damit combine_wedges/finalize/save_terrain_map arbeiten koennen.
+        elif mode == "MAP_COMBINE":
+            msg.stereo_cam = "OFF"
+            msg.mono_cam = "OFF"
+            msg.lidar = "OFF"
+            msg.make_global_pointcloud = "ON"
+
         elif mode == "TRACKING":
             msg.stereo_cam = "OFF"
-            msg.mono_cam = "ON"        
+            msg.mono_cam = "ON"
             msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
 
         elif mode == "HOT_SWAP":
             msg.stereo_cam = "OFF"
-            msg.mono_cam = "OFF"        
+            msg.mono_cam = "OFF"
             msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
 
         elif mode == "MAST_DEPLOYMENT":
             msg.stereo_cam = "OFF"
-            msg.mono_cam = "OFF"        
+            msg.mono_cam = "OFF"
             msg.lidar = "OFF"
             msg.make_global_pointcloud = "OFF"
 
-        
+
 
         self.get_logger().info(f"Stereo camera set to: {msg.stereo_cam}")
         self.get_logger().info(f"Mono camera set to: {msg.mono_cam}")
@@ -102,7 +111,7 @@ def main(args=None):
 
     rclpy.init(args=args)
     node = OperationalModes()
-    
+
     try:
 
         rclpy.spin(node)
@@ -114,9 +123,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-         
-
-
-
-

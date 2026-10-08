@@ -48,9 +48,6 @@ class HousekeepingNode(Node):
 
 
         for status in msg.status:
-            # Optional: nur auf deine Kamera filtern
-            # if status.hardware_id != '918512073905':
-            #     continue
 
             if status.name.endswith('Temperatures'):
                 temps = {}

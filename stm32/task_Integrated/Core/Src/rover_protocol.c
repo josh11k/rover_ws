@@ -174,11 +174,12 @@ static void PrintHelp(void)
     printf("  >>SET_STATE: STANDBY<<\r\n");
     printf("  >>SET_STATE: SETUP<<\r\n");
     printf("  >>SET_STATE: RETRACT<<\r\n");
-    printf("  >>SET_STATE: SHUTDOWN<<\r\n");;
+    printf("  >>SET_STATE: SHUTDOWN<<\r\n");
     printf("  >>SET_MOTOR: tilt or 512,512,512,512,512<<  (M1..M5 position codes, 25..998)\r\n");
     printf("  >>ERROR: TEMP_HIGH<<\r\n");
     printf("  RECOVER\r\n");
     printf("  >>MAPPING_START<<\r\n");
+    printf("  >>JETSON_REBOOT<<\r\n");
     printf("  pos / status / s / b / si  (direct motor debug commands)\r\n");
     printf("  pmos <1-4> on|off  (1=PMOS11 5V, 2=PMOS12 7.4V motor, 3=PMOS21 Jetson 12V, 4=PMOS22 12V)\r\n");
 }
@@ -224,6 +225,10 @@ void RoverProtocol_ProcessCommand(char *line)
     {
         lastAliveTick = HAL_GetTick();
         aliveTimeoutReported = 0U;
+        if (activeFault == FAULT_COMM_TIMEOUT)
+        {
+            activeFault = FAULT_NONE;
+        }
         SendAck("ALIVE");
         return;
     }
@@ -238,6 +243,13 @@ void RoverProtocol_ProcessCommand(char *line)
 
         RoverState_InstructJetson("MAPPING");
         SendAck("MAPPING_START");
+        return;
+    }
+
+    if (strcmp(message, "JETSON_REBOOT") == 0)
+    {
+        RoverProtocol_SendToJetson(">>REBOOT<<\r\n");
+        SendAck("JETSON_REBOOT");
         return;
     }
 

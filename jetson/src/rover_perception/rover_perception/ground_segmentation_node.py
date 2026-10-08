@@ -335,7 +335,10 @@ class GroundSegmentationNode(Node):
             )
             return
 
-        self.state = getattr(msg, self.state_field, "OFF")
+        new_state = getattr(msg, self.state_field, "OFF")
+        if new_state == self.state:
+            return  # unveraendert -> nichts doppelt anlegen
+        self.state = new_state
 
         if self.state == "OFF":
             self.get_logger().info("ground_segmentation_node: OFF")

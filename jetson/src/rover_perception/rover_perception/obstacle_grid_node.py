@@ -192,7 +192,10 @@ class ObstacleGridNode(Node):
 
     def state_callback(self, msg):
 
-        self.state = msg.make_global_pointcloud
+        new_state = msg.make_global_pointcloud
+        if new_state == self.state:
+            return  # unveraendert -> nichts doppelt anlegen
+        self.state = new_state
 
         if self.state == "OFF":
 

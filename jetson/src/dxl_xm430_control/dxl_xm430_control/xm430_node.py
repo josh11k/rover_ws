@@ -174,7 +174,7 @@ class XM430Node(Node):
             msg_log.event = "INFO"
             msg_log.message =f"Set Motor to new position: {msg_pos.data}"
             self.publish_operation_log.publish(msg_log)
-            self.js_pub.publish(msg_pos)
+            #self.js_pub.publish(msg_pos)
             self.publish_hkd.publish(msg_hkd)
 
 
