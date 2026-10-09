@@ -193,7 +193,7 @@ class LedDetectorNode(Node):
             10,
         )
 
-     def state_callback(self, msg):
+    def state_callback(self, msg):
         new_state = msg.mono_cam
         if new_state == self.state:
             return  # unveraendert -> nichts doppelt anlegen/abbauen
