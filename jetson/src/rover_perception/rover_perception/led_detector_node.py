@@ -193,15 +193,22 @@ class LedDetectorNode(Node):
             10,
         )
 
-    def state_callback(self, msg):
-        self.state = msg.mono_cam
+     def state_callback(self, msg):
+        new_state = msg.mono_cam
+        if new_state == self.state:
+            return  # unveraendert -> nichts doppelt anlegen/abbauen
+        self.state = new_state
 
-        if self.state in ("OFF"):
+        if self.state == "OFF":
             self.get_logger().info("led_detector_node: STANDBY/OFF")
 
-            self.destroy_subscription(self.image_sub.sub)
-            self.destroy_subscription(self.info_sub.sub)
-            self.destroy_publisher(self.detections_pub)
+            # nur abbauen, was auch existiert (beim ersten OFF ist noch nichts angelegt)
+            if self.image_sub is not None:
+                self.destroy_subscription(self.image_sub.sub)
+            if self.info_sub is not None:
+                self.destroy_subscription(self.info_sub.sub)
+            if self.detections_pub is not None:
+                self.destroy_publisher(self.detections_pub)
 
             self.image_sub = None
             self.info_sub = None
