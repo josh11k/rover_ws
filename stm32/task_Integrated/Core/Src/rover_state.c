@@ -133,6 +133,13 @@ uint8_t RoverState_SetStateFromString(const char *stateText)
 
     if (strcmp(stateText, "MAST_DEPLOYMENT") == 0)
     {
+        /*nur mit eingeschaltetem Motorbus und nicht waehrend SETUP */
+        if (currentState == STATE_SETUP ||
+            !RoverState_IsPowerSwitchOn(PMOS_12_MOTOR_7V4))
+        {
+            printf("MAST_DEPLOYMENT rejected: run SETUP first (motor power PMOS12 off or SETUP still running)\r\n");
+            return 0U;
+        }
         return RoverState_SetState(STATE_MAST_DEPLOYMENT);
     }
 
@@ -251,6 +258,16 @@ uint32_t RoverState_PowerSwitchOnTimeMs(PowerSwitchId id)
     return HAL_GetTick() - pmosOnSinceTick[id];
 }
 
+/* Einschalt-Reihenfolge im SETUP (unabhaengig von der Enum-/pmos-Nummerierung).
+   Jetson-Bus (PMOS21) bewusst als letzter. */
+static const PowerSwitchId setupPowerOrder[PMOS_COUNT] =
+{
+    PMOS_11_5V,
+    PMOS_12_MOTOR_7V4,
+    PMOS_22_12V,
+    PMOS_21_JETSON_12V,
+};
+
 static void RoverState_PowerSequenceTask(void)
 {
     if (setupPowerSequenceDone)
@@ -263,7 +280,7 @@ static void RoverState_PowerSequenceTask(void)
         return;
     }
 
-    RoverState_SetPowerSwitch((PowerSwitchId)setupPowerStepIndex, 1U);
+    RoverState_SetPowerSwitch(setupPowerOrder[setupPowerStepIndex], 1U);
     setupPowerStepIndex++;
 
     if (setupPowerStepIndex >= PMOS_COUNT)
@@ -409,16 +426,11 @@ void RoverState_ModeTask(void)
                 break; /* noch beim Hochfahren der Spannungsschienen */
             }
 
-            if (RoverProtocol_HasAliveSince(setupEntryTick))
-            {
-                printf("SETUP complete: Jetson alive - starting mast deployment\r\n");
-                RoverState_SetState(STATE_MAST_DEPLOYMENT);
-            }
-            else if ((int32_t)(HAL_GetTick() - setupEntryTick) > (int32_t)ROVERSTATE_SETUP_TIMEOUT_MS)
-            {
-                printf("SETUP failed: no ALIVE from Jetson within timeout\r\n");
-                ReportFault(FAULT_SETUP_TIMEOUT);
-            }
+            /* SETUP schaltet nur noch die PMOS ein. Das Deployment
+            wird manuell ausgeloest (ESP: >>SET_STATE: MAST_DEPLOYMENT<<). */
+            printf("SETUP complete: power rails on - waiting in IDLE for manual deployment\r\n");
+            RoverState_SetState(STATE_IDLE);
+
             break;
 
         case STATE_MAST_DEPLOYMENT:
