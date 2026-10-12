@@ -552,6 +552,20 @@ def generate_launch_description():
         }],
     )
 
+    # Fuegt die gespeicherten Wedges am Ende des Mappings zusammen
+    # (Service combine_wedges, aufgerufen vom command_node).
+    wedge_combiner = Node(
+        package="rover_perception",
+        executable="wedge_combiner_node",
+        name="wedge_combiner_node",
+        parameters=[{
+            # ~5 Mio. Punkte in einer Nachricht -> mehr Zeit zum Empfangen/Puffern
+            "post_publish_delay_sec": 10.0,
+            # Klassifizieren von ~5 Mio. Punkten dauert deutlich laenger als 10 s
+            "finalize_service_timeout_sec": 120.0,
+        }],
+    )
+
     # RViz2 visualization of the elevation grid (mean_z etc. as a colored
     # PointCloud2) -- see terrain_visualization_node.py. Gated by its own
     # flag since it's a debug aid, not part of the core pipeline; default
@@ -638,7 +652,7 @@ def generate_launch_description():
     )
 
     for action in [
-        lidar, stereo, mono_camera, imu, xm430, housekeeping,
+        lidar, stereo, mono_camera, imu, xm430, housekeeping, wedge_combiner,
         mast_pose, command, set_mode, wifi, rover_pose, logger, stm_bridge,
         lidar_static_tf, stereo_static_tf, mono_static_tf,
         lidar_transform, lidar_preprocessing,

@@ -9,7 +9,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallb
 from rclpy.executors import MultiThreadedExecutor
 
 # Uniform Service Interface
-from rover_control_msgs.msg import OperationalMode, SystemRequest, LogMessage
+from rover_control_msgs.msg import OperationalMode, SystemRequest, LogMessage, MotorPosition
 from std_msgs.msg import String, Float64
 from std_srvs.srv import Trigger
 
@@ -28,10 +28,11 @@ class CommandNode(Node):
         self.time_mapping = 60 # time for mapping in sec
         self.neutral_position = 0.0 #355.5/(180.0*math.pi)  # Neutral position in rad
         self.neutral_wait_s = 5.0
+        self.tilt_level_raw = 256   # Motor 1 waagrecht (wie DEPLOY_FINAL_MOTOR1 im STM)
 
         # Karten-Abschluss
         self.combine_settle_s = 2.0   # Wartezeit nach MAP_COMBINE, bis die Auswerte-Nodes ON sind
-        self.save_settle_s = 2.0      # Wartezeit nach combine, bis obstacle_grid gerechnet hat
+        self.save_settle_s = 10.0      # Wartezeit nach combine, bis obstacle_grid gerechnet hat
         self.max_wedge_retries = 2    # Fehlversuche je Mast-Position, bevor sie uebersprungen wird
         self.wedge_retries = 0
 
@@ -72,6 +73,14 @@ class CommandNode(Node):
             '/xm430_node/goal_position',
             10
         )
+
+        # Tilt (Motor 1) -> stm_bridge_node -> >>SET_MOTOR: x<< an den STM
+        self.publish_tilt_goal = self.create_publisher(
+            MotorPosition,
+            '/motor_position/goal_position',
+            10
+        )
+
         self.publish_operational_mode = self.create_publisher(
             OperationalMode,
             '/operational_mode/current',
@@ -331,6 +340,9 @@ class CommandNode(Node):
             self.motor5_position_old = - math.pi
             self.publish_rotation_position.publish(Float64(data=self.motor5_position_old))
             self.wedge_retries = 0
+            self.publish_tilt_goal.publish(MotorPosition(
+                motor1=self.tilt_level_raw, motor2=-1, motor3=-1, motor4=-1))
+            self._log_op(f"Platform tilt (motor 1) -> {self.tilt_level_raw} (horizontal).")
 
         # start timer (nach time_mapping soll getriggert werden)
         if self.mapping_timer is None:
@@ -420,7 +432,7 @@ class CommandNode(Node):
         # 2. Wedges laden, zusammenfuegen, klassifizieren
         #    (combine_wedges ruft finalize_ground_segmentation selbst auf).
         ok_c, msg_c = self._call_trigger(
-            self.combine_wedges_client, "combine_wedges", timeout_sec=30.0
+            self.combine_wedges_client, "combine_wedges", timeout_sec=180.0
         )
 
         ok_s, msg_s = False, "not attempted (combine failed)"
@@ -429,7 +441,7 @@ class CommandNode(Node):
             time.sleep(self.save_settle_s)
             # 3. fertige Karte nach terrain_map.npz schreiben
             ok_s, msg_s = self._call_trigger(
-                self.save_terrain_map_client, "save_terrain_map", timeout_sec=10.0
+                self.save_terrain_map_client, "save_terrain_map", timeout_sec=30.0
             )
 
         if ok_c and ok_s:
