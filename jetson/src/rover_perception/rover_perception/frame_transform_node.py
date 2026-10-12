@@ -131,7 +131,10 @@ class FrameTransformNode(Node):
             )
             return
 
-        self.state = getattr(msg, self.state_field, "OFF")
+        new_state = getattr(msg, self.state_field, "OFF")
+        if new_state == self.state:
+            return  # unveraendert -> nichts doppelt anlegen
+        self.state = new_state
 
         if self.state == "OFF":
             self.get_logger().info(f"frame_transform_node: OFF")
@@ -191,6 +194,9 @@ class FrameTransformNode(Node):
             setattr(self, name, self.get_parameter(name).value)
 
     def cloud_callback(self, msg: PointCloud2):
+        # Schutz: Nachricht kommt evtl. noch nach dem Abschalten an
+        if self.pub is None or self.tf_buffer is None:
+            return
         source_frame = msg.header.frame_id
 
         if source_frame == self.target_frame:
