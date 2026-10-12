@@ -361,7 +361,7 @@ def generate_launch_description():
         name="lidar_to_mast_platform_link",
         arguments=[
             "--x", "0.0535", "--y", "0.00265", "--z", "0.00444",
-            "--roll", "0.0", "--pitch", "0.0", "--yaw", "0.0",
+            "--roll", "0.0", "--pitch", "0.0", "--yaw", "3.1416",
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "lidar_frame",
         ],
@@ -393,7 +393,7 @@ def generate_launch_description():
             # its own forward axis. Adjust pitch/yaw too if the mount turns
             # out to also be tilted or facing a different direction than
             # assumed here.
-            "--roll", "0.0", "--pitch", "1.5708", "--yaw", "0.0",
+            "--roll", "0.0", "--pitch", "3.1416", "--yaw", "0.0",
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "camera_link",
         ],
@@ -410,7 +410,7 @@ def generate_launch_description():
             # both cameras use the same (Z-forward, X-right, Y-down)
             # convention. Adjust once the mono cam's physical mount pose on
             # the platform is known.
-            "--roll", "-1.5708", "--pitch", "0.0", "--yaw", "-1.5708",
+            "--roll", "0.0", "--pitch", "0.0", "--yaw", "1.5708",
             "--frame-id", "mast_platform_link",
             "--child-frame-id", "mono_cam_optical_frame",
         ],
@@ -428,7 +428,7 @@ def generate_launch_description():
         parameters=[{
             "input_topic": "/livox/lidar",
             "output_topic": "/lidar/points_mast_base_link",
-            "target_frame": "mast_base_link",
+            "target_frame": "world",
             "state_field": "lidar",
         }],
         condition=IfCondition(use_lidar),
@@ -474,7 +474,7 @@ def generate_launch_description():
         parameters=[{
             "input_topic": "/stereo/points",
             "output_topic": "/stereo/points_mast_base_link",
-            "target_frame": "mast_base_link",
+            "target_frame": "world",
             "state_field": "stereo_cam",
         }],
         condition=IfCondition(use_stereo),
