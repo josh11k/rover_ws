@@ -76,9 +76,9 @@ DEFAULTS = {
     # TILT: HerkuleX Motor 1 aus dem STM-Housekeeping (MotorPosition.motor1)
     "motor_position_topic": "/motor_position/current_position",
     "tilt_motor_field": "motor1",
-    "tilt_motor_raw_center": 512,     # raw-Wert, bei dem die Plattform waagrecht ist -- KALIBRIEREN
+    "tilt_motor_raw_center": 256,     # raw-Wert, bei dem die Plattform waagrecht ist -- KALIBRIEREN
     "tilt_motor_raw_to_deg": 0.325,   # HerkuleX DRS-0101: 0.325 deg/raw
-    "tilt_sign": 1.0,                 # -1.0, falls die Plattform in RViz falsch herum kippt
+    "tilt_sign": -1.0,                 # -1.0, falls die Plattform in RViz falsch herum kippt
 
     # PAN: XM430 (Motor 5) aus dem xm430_node, bereits in Radiant
     "pan_topic": "/xm430_node/current_position",

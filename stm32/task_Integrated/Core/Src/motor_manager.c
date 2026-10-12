@@ -164,8 +164,8 @@ static const MotorConfig motorConfigs[] =
 // USER CONFIGURATION: Motor 1 (turret).
 // DEPLOY_STOWED_MOTOR1 = position before deploy / target at end of retract.
 // DEPLOY_FINAL_MOTOR1  = final position at the end of deploy.
-#define DEPLOY_STOWED_MOTOR1 580U
-#define DEPLOY_FINAL_MOTOR1  60U
+#define DEPLOY_STOWED_MOTOR1 512U
+#define DEPLOY_FINAL_MOTOR1  256U
 
 typedef enum
 {
