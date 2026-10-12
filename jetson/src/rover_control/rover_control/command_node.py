@@ -22,13 +22,13 @@ class CommandNode(Node):
         self.state = "STANDBY"  # Initialer Modus
         self.old_state = "STANDBY"  # Initialer alter Modus
         self.wedges = 0
-        self.max_wedges = 2         # Anzahl Wedges pro Mapping-Session -- anpassen
+        self.max_wedges = 1         # Anzahl Wedges pro Mapping-Session -- anpassen
         self.mapping_timer = None    # nur aktiv, solange eine Mapping-Session laeuft
         self.wedges_width = 30  # Not in Degree
         self.time_mapping = 60 # time for mapping in sec
         self.neutral_position = 0.0 #355.5/(180.0*math.pi)  # Neutral position in rad
         self.neutral_wait_s = 5.0
-        self.tilt_level_raw = 256   # Motor 1 waagrecht (wie DEPLOY_FINAL_MOTOR1 im STM)
+        self.tilt_level_raw = 265   # Motor 1 waagrecht (wie DEPLOY_FINAL_MOTOR1 im STM)
 
         # Karten-Abschluss
         self.combine_settle_s = 2.0   # Wartezeit nach MAP_COMBINE, bis die Auswerte-Nodes ON sind
