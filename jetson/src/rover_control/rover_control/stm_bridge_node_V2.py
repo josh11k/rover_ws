@@ -14,7 +14,7 @@ class STMBridgeNode(Node):
         super().__init__('stm_bridge_node')
 
         # 1. Parameter für die Hardware
-        self.port = '/dev/ttyACM0'  # Für Jetson ggf. anpassen (z.B. /dev/ttyUSB0)
+        self.port = '/dev/ttyTHS0'   # direkter UART statt USB/ST-Link davor ACM0  # Für Jetson ggf. anpassen (z.B. /dev/ttyUSB0)
         self.baudrate = 115200
 
         # Puffer für empfangene, noch nicht vollständig geparste Daten vom
