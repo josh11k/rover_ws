@@ -15256,8 +15256,8 @@ static void Deployment_StartSeating(void)
  80062c6:	701a      	strb	r2, [r3, #0]
         Deployment_StartMotor1((uint16_t)DEPLOY_FINAL_MOTOR1, "DEPLOY motor 1");
  80062c8:	4a3f      	ldr	r2, [pc, #252]	@ (80063c8 <Deployment_StartSeating+0x1ac>)
- 80062ca:	2380      	movs	r3, #128	@ 0x80
- 80062cc:	005b      	lsls	r3, r3, #1
+ 80062ca:	230a      	movs	r3, #10
+ 80062cc:	33ff      	adds	r3, #255	@ 0xff
  80062ce:	0011      	movs	r1, r2
  80062d0:	0018      	movs	r0, r3
  80062d2:	f7ff f9bf 	bl	8005654 <Deployment_StartMotor1>
@@ -15486,8 +15486,8 @@ static void Deployment_SeatingTask(void)
  800644c:	701a      	strb	r2, [r3, #0]
     Deployment_StartMotor1((uint16_t)DEPLOY_FINAL_MOTOR1, "DEPLOY motor 1");
  800644e:	4a0a      	ldr	r2, [pc, #40]	@ (8006478 <Deployment_SeatingTask+0xa4>)
- 8006450:	2380      	movs	r3, #128	@ 0x80
- 8006452:	005b      	lsls	r3, r3, #1
+ 8006450:	230a      	movs	r3, #10
+ 8006452:	33ff      	adds	r3, #255	@ 0xff
  8006454:	0011      	movs	r1, r2
  8006456:	0018      	movs	r0, r3
  8006458:	f7ff f8fc 	bl	8005654 <Deployment_StartMotor1>
@@ -15842,8 +15842,8 @@ static void Deployment_Task(void)
                 case DEPLOY_MOTOR1_DEPLOY:
                     Deployment_StartMotor1((uint16_t)DEPLOY_FINAL_MOTOR1, "DEPLOY motor 1 retry");
  8006654:	4a85      	ldr	r2, [pc, #532]	@ (800686c <Deployment_Task+0x368>)
- 8006656:	2380      	movs	r3, #128	@ 0x80
- 8006658:	005b      	lsls	r3, r3, #1
+ 8006656:	230a      	movs	r3, #10
+ 8006658:	33ff      	adds	r3, #255	@ 0xff
  800665a:	0011      	movs	r1, r2
  800665c:	0018      	movs	r0, r3
  800665e:	f7fe fff9 	bl	8005654 <Deployment_StartMotor1>

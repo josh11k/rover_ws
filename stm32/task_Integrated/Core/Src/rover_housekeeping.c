@@ -45,7 +45,7 @@ typedef struct
 static const INA228_BusConfig inaBusConfigs[] =
 {
     { 0x45U, "12V_BUS1 Jetson (3A)", 9000, 4224, 3456, PMOS_22_12V}, /* Alert1, PC0 */
-    { 0x44U, "12V_BUS2 (3A)",        9000, 4224, 3456, PMOS_21_JETSON_12V},        /* Alert2, PC1 */
+    { 0x44U, "12V_BUS2 (3A)",        9000, 6300, 3456, PMOS_21_JETSON_12V},        /* Alert2, PC1 */
     { 0x41U, "9V_BUS3 Motor", 18000, 3168, 2592, PMOS_12_MOTOR_7V4 }, /* Alert3, PC2 */
     { 0x40U, "5V_BUS4 (1.6A)",       4800, 1760, 1440, PMOS_11_5V },         /* Alert4, PC3 */
 };

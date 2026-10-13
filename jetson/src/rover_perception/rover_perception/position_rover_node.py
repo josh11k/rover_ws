@@ -362,12 +362,12 @@ DEFAULTS = {
     # (pan and tilt motor models were swapped 2026-09 -- see chat).
     "tilt_raw_min": 71,        # Zeile 363: -60 Grad
     "tilt_raw_max": 564,       # Zeile 364: +100 Grad 
-    "tilt_raw_center": 256,    # Zeile 365: waagrecht
+    "tilt_raw_center": 265,    # Zeile 365: waagrecht
     "tilt_deg_per_raw": 0.325, # Zeile 366: HerkuleX
 
     # Tilt position (raw) held during the search sweep and while a pan
     # correction is blocked. Tilt never sweeps on its own (only pan does).
-    "tilt_home_raw": 256,
+    "tilt_home_raw": 265,
 
     # Pan -- Dynamixel XM430-W350, via its own dedicated xm430_node, NOT
     # bundled into MotorPosition. Wire format is std_msgs/Float64 in
